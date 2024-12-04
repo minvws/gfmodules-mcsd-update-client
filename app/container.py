@@ -35,4 +35,5 @@ def get_example_service() -> ExampleService:
     return inject.instance(ExampleService)
 
 
-inject.configure(container_config)
+def setup_container() -> None:
+    inject.configure(container_config, once=True)

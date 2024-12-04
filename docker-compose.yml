@@ -1,25 +1,58 @@
 services:
     app:
-        build:
-            context: .
-            args:
-                NEW_UID: ${NEW_UID:-1000}
-                NEW_GID: ${NEW_GID:-1000}
-        volumes:
-            - ./:/src
-        ports:
-            - 8509:8509
-        networks:
-            - zmodules
+      build:
+        context: .
+        args:
+          NEW_UID: ${NEW_UID:-1000}
+          NEW_GID: ${NEW_GID:-1000}
+        dockerfile: docker/Dockerfile
+      volumes:
+        - ./:/src
+        - ./secrets:/src/secrets
+      ports:
+        - "8509:8509"
+      healthcheck:
+        test: [ "CMD", "curl", "-f", "http://localhost:8509/health" ]
+        start_period: 30s
+        interval: 30m
+      depends_on:
+        mcsd_consumer_db:
+          condition: service_healthy
+      networks:
+        zmodules:
+          aliases:
+            - mcsd-consumer-app
 
-    postgres:
+    app_ssl:
+      image: httpd
+      restart: "no"
+      ports:
+        - "8543:443"
+      volumes:
+        - "./secrets:/usr/local/secrets"
+        - "./docker/httpd.conf:/usr/local/apache2/conf/httpd.conf"
+        - "./docker/httpd-ssl.conf:/usr/local/apache2/conf/extra/httpd-ssl.conf"
+      depends_on:
+        app:
+          condition: service_healthy
+      networks:
+        zmodules:
+          aliases:
+            - mcsd-consumer
+
+    mcsd_consumer_db:
         image: postgres:14
+        healthcheck:
+          test: [ "CMD-SHELL", "pg_isready --user postgres" ]
+          start_period: 30s
+          interval: 30m
+        restart: always
         environment:
             POSTGRES_DB: postgres
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: postgres
         ports:
-            - 5409:5432
+            - "5409:5432"
         networks:
             - zmodules
 

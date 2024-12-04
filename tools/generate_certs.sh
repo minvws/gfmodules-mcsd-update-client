@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 
-KEYFILE=secrets/ssl/server.key
-CERTFILE=secrets/ssl/server.cert
+set -e
 
-# Do nothing if file(s) exist
-if [[ -f $KEYFILE || -f $CERTFILE ]] ; then
-    echo "Certification already exists in secrets/ssl directory. Not attempting to create a new certificate."
-    exit 1
+SECRETS_DIR=secrets
+
+echo "Downloading generated certs from secrets container"
+
+response=$(curl --write-out '%{http_code}' --output /dev/null http://secrets/README.md)
+
+if [[ "$response" -ne 200 ]] ; then
+  echo "Unable to download secrets from secrets container"
+  echo "Did you start the docker compose project from the coordination repo?"
+  exit 1
 fi
 
-# Create dir structure
-mkdir -p `dirname $CERTFILE`
+curl -f http://secrets/mcsd-consumer/mcsd-consumer.crt -o $SECRETS_DIR/mcsd-consumer.crt
+curl -f http://secrets/mcsd-consumer/mcsd-consumer.key -o $SECRETS_DIR/mcsd-consumer.key
+curl -f http://secrets/uzi-server-ca.crt -o $SECRETS_DIR/uzi-server-ca.crt
 
-# Generate key and cert
-openssl req -x509 -newkey rsa:2048 \
-    -keyout $KEYFILE -out $CERTFILE -sha256 -days 3650 \
-    -nodes -subj "/C=NL/L=Den Haag/O=MinVWS/OU=RDO/CN=zmodules.skeleton-service.pgo"
-
-echo "Created certificate at $CERTFILE"
+echo "Downloaded generated certs from secrets container"
