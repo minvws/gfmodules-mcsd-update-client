@@ -1,0 +1,10 @@
+.coverage
+__pycache__
+app.conf
+secrets/*
+*.crt
+*.key
+*.priv
+*.pub
+docker-compose.override.yml
+coverage.xml
