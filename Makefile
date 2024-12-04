@@ -10,9 +10,6 @@ endif
 .SILENT: help
 all: help
 
-autopilot: ## Runs the autopilot script for no-config setup of the project
-	./tools/autopilot.sh
-
 container-build: ## Build the container
 	docker compose build --build-arg="NEW_UID=${NEW_UID}" --build-arg="NEW_GID=${NEW_GID}"
 
@@ -35,13 +32,13 @@ safety-check: ## Check for security vulnerabilities
 	$(RUN_PREFIX) safety check
 
 spelling-check: ## Check spelling mistakes
-	$(RUN_PREFIX) codespell .
+	$(RUN_PREFIX) codespell -L selectin .
 
 spelling-fix: ## Fix spelling mistakes
-	$(RUN_PREFIX) codespell . --write-changes --interactive=3
+	$(RUN_PREFIX) codespell -L selectin . --write-changes --interactive=3
 
 test: ## Runs automated tests
-	$(RUN_PREFIX) pytest --cov
+	$(RUN_PREFIX) pytest --cov --cov-report=term --cov-report=xml
 
 check: lint type-check safety-check spelling-check test ## Runs all checks
 fix: lint-fix spelling-fix ## Runs all fixers
