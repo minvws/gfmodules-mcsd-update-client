@@ -4,11 +4,9 @@ version = "0.1.0"
 description = ""
 license = "EUPL-1.2"
 authors = ["Ministerie van Volksgezondheid, Welzijn en Sport"]
-repository = "https://github.com/minvws/nl-irealisatie-python-api-skeleton"
+repository = "https://github.com/minvws/gfmodules-mcsd-consumer-private"
 readme = "README.md"
-packages = [
-    { include = "app" },
-]
+packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -35,11 +33,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 cache-dir = "~/.cache/ruff"
-include = [
-    "pyproject.toml",
-    "app/*.py",
-    "tests/*.py",
-]
+include = ["pyproject.toml", "app/*.py", "tests/*.py"]
 
 [tool.mypy]
 files = "app,tests"
@@ -50,6 +44,4 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 cache_dir = "~/.cache/pytest"
-testpaths = [
-    "tests",
-]
+testpaths = ["tests"]

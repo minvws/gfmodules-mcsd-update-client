@@ -5,21 +5,27 @@ from typing import Any
 from fastapi import FastAPI
 import uvicorn
 
-from routers.default import router as default_router
-from routers.health import router as health_router
-from routers.example import router as example_router
-from config import get_config
+from app.container import setup_container
+from app.routers.default import router as default_router
+from app.routers.health import router as health_router
+from app.config import get_config
 
 
 def get_uvicorn_params() -> dict[str, Any]:
     config = get_config()
-
     kwargs = {
         "host": config.uvicorn.host,
         "port": config.uvicorn.port,
         "reload": config.uvicorn.reload,
+        "reload_delay": config.uvicorn.reload_delay,
+        "reload_dirs": config.uvicorn.reload_dirs,
     }
-    if config.uvicorn.use_ssl:
+    if (
+        config.uvicorn.use_ssl
+        and config.uvicorn.ssl_base_dir is not None
+        and config.uvicorn.ssl_cert_file is not None
+        and config.uvicorn.ssl_key_file is not None
+    ):
         kwargs["ssl_keyfile"] = (
             config.uvicorn.ssl_base_dir + "/" + config.uvicorn.ssl_key_file
         )
@@ -30,7 +36,7 @@ def get_uvicorn_params() -> dict[str, Any]:
 
 
 def run() -> None:
-    uvicorn.run("application:create_fastapi_app", **get_uvicorn_params())
+    uvicorn.run("app.application:create_fastapi_app", **get_uvicorn_params())
 
 
 def create_fastapi_app() -> FastAPI:
@@ -41,6 +47,7 @@ def create_fastapi_app() -> FastAPI:
 
 
 def application_init() -> None:
+    setup_container()
     setup_logging()
 
 
@@ -59,16 +66,12 @@ def setup_fastapi() -> FastAPI:
     config = get_config()
 
     fastapi = (
-        FastAPI(
-            docs_url=config.uvicorn.docs_url,
-            redoc_url=config.uvicorn.redoc_url
-        ) if config.uvicorn.swagger_enabled else FastAPI(
-            docs_url=None,
-            redoc_url=None
-        )
+        FastAPI(docs_url=config.uvicorn.docs_url, redoc_url=config.uvicorn.redoc_url)
+        if config.uvicorn.swagger_enabled
+        else FastAPI(docs_url=None, redoc_url=None)
     )
 
-    routers = [default_router, health_router, example_router]
+    routers = [default_router, health_router]
     for router in routers:
         fastapi.include_router(router)
 
