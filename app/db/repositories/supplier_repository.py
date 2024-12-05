@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import exists, select
 from sqlalchemy.exc import DatabaseError
 
 from app.db.decorator import repository
@@ -52,3 +52,11 @@ class SuppliersRepository(RepositoryBase):
             logging.error(f"Failed to delete Supplier: {e}")
             self.db_session.session.rollback()
             raise
+
+    def supplier_exists(self, supplier_id: str) -> bool:
+        stmt = exists(1).where(Supplier.id == supplier_id).select()
+        results = self.db_session.session.execute(stmt).scalar()
+        if not isinstance(results, bool):
+            raise TypeError("Incorrect return from sql statement")
+
+        return results

@@ -28,6 +28,9 @@ class SupplierService:
     def add_one(self, dto: SupplierCreateDto) -> Supplier:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(SuppliersRepository)
+            if repository.supplier_exists(dto.id):
+                raise HTTPException(status_code=400)
+
             new_supplier = repository.create(Supplier(**dto.model_dump()))
             return new_supplier
 

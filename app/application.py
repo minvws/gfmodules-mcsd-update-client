@@ -8,6 +8,7 @@ import uvicorn
 from app.container import setup_container
 from app.routers.default import router as default_router
 from app.routers.health import router as health_router
+from app.routers.supplier_router import router as supplier_router
 from app.config import get_config
 
 
@@ -71,7 +72,7 @@ def setup_fastapi() -> FastAPI:
         else FastAPI(docs_url=None, redoc_url=None)
     )
 
-    routers = [default_router, health_router]
+    routers = [default_router, health_router, supplier_router]
     for router in routers:
         fastapi.include_router(router)
 
