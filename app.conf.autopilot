@@ -3,7 +3,7 @@ loglevel=debug
 override_authentication_ura=
 
 [database]
-dsn=postgresql+psycopg://postgres:postgres@postgres:5432/postgres
+dsn=postgresql+psycopg://postgres:postgres@mcsd_consumer_db:5432/postgres
 create_tables=false
 retry_backoff=0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 4.8, 6.4, 10.0
 pool_size=5

@@ -8,7 +8,7 @@ from app.db.entities.base import Base
 
 
 class resource_map(Base):
-    __tablename__ = "resource_map"
+    __tablename__ = "resource_maps"
     __table_args__ = (PrimaryKeyConstraint("id"),)
 
     id: Mapped[UUID] = mapped_column(

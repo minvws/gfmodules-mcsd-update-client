@@ -4,7 +4,7 @@ loglevel=debug
 
 [database]
 # Dsn for database connection
-dsn=postgresql+psycopg://postgres:postgres@localhost:5432/postgres
+dsn=postgresql+psycopg://postgres:postgres@mcsd_consumer_db:5432/postgres
 
 [example]
 argument1: "foobar"

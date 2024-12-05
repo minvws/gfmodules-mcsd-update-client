@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 import logging
 
 from sqlalchemy import select
@@ -12,10 +13,13 @@ logger = logging.getLogger(__name__)
 
 @repository(Supplier)
 class SuppliersRepository(RepositoryBase):
-    def get(self, supplie_id: str) -> Supplier | None:
-        stmt = select(Supplier).where(Supplier.id == supplie_id)
+    def get(self, supplier_id: str) -> Supplier | None:
+        stmt = select(Supplier).where(Supplier.id == supplier_id)
         supplier = self.db_session.session.execute(stmt).scalars().first()
         return supplier
+
+    def get_all(self) -> Sequence[Supplier]:
+        return self.db_session.session.execute(select(Supplier)).scalars().all()
 
     def create(self, supplier_entity: Supplier) -> Supplier:
         try:
