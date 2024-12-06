@@ -4,27 +4,22 @@ loglevel=debug
 
 [database]
 # Dsn for database connection
-dsn=postgresql+psycopg://postgres:postgres@localhost:5432/postgres
-
-[example]
-argument1: "foobar"
-argument2: true
+dsn=postgresql+psycopg://postgres:postgres@mcsd_consumer_db:5432/postgres
+create_tables=false
+retry_backoff=0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 4.8, 6.4, 10.0
+pool_size=5
+max_overflow=10
+pool_pre_ping=False
+pool_recycle=1800
 
 [uvicorn]
-# If true, the api docs will be enabled
 swagger_enabled = True
-# Endpoint for swagger api docs
 docs_url = /docs
-# Endpoint for redoc api docs
 redoc_url = /redocs
-# Host for the uvicorn server
 host = 0.0.0.0
-# Port for the uvicorn server
-port = 8009
-# Live reload for uvicorn server
+port = 8509
 reload = True
 
-# SSL configuration
 use_ssl = False
 ssl_base_dir = secrets/ssl
 ssl_cert_file = server.cert

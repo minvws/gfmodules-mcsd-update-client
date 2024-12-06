@@ -1,0 +1,154 @@
+name: CI
+
+on:
+    workflow_dispatch:
+    pull_request:
+    push:
+        branches:
+            - main
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build:
+        name: Build
+        runs-on: ubuntu-22.04
+
+        steps:
+            - name: Checkout repositories
+              uses: actions/checkout@v4
+
+            - name: Run build action
+              uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main
+              with:
+                python_version: "3.11"
+
+    lint:
+        name: Run code linter
+        runs-on: ubuntu-22.04
+        needs: build
+
+        steps:
+            - name: Checkout repositories
+              uses: actions/checkout@v4
+
+            - name: Run build action
+              uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main
+              with:
+                python_version: "3.11"
+
+            - name: Lint
+              run: poetry run $(make lint --just-print --silent)
+
+    type-check:
+        name: Check static types
+        runs-on: ubuntu-22.04
+        needs: build
+
+        steps:
+            - name: Checkout repositories
+              uses: actions/checkout@v4
+
+            - name: Run build action
+              uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main
+              with:
+                python_version: "3.11"
+
+            - name: Check static types
+              run: poetry run $(make type-check --just-print --silent)
+
+    safety-check:
+        name: Scan packages for vulnerabilities
+        runs-on: ubuntu-22.04
+        needs: build
+
+        steps:
+            - name: Checkout repositories
+              uses: actions/checkout@v4
+
+            - name: Run build action
+              uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main
+              with:
+                python_version: "3.11"
+
+            - name: Scan packages for vulnerabilities
+              run: poetry run $(make safety-check --just-print --silent)
+
+    spelling-check:
+        name: Run spelling check
+        runs-on: ubuntu-22.04
+        needs: build
+
+        steps:
+            - name: Checkout repositories
+              uses: actions/checkout@v4
+
+            - name: Run build action
+              uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main
+              with:
+                python_version: "3.11"
+
+            - name: Run spelling check
+              run: poetry run $(make spelling-check --just-print --silent)
+
+    test:
+        name: Run the tests
+        runs-on: ubuntu-22.04
+        container: python:3.11-bookworm
+        needs: build
+        services:
+          mcsd_consumer_db:
+            image: postgres:14
+            env:
+              POSTGRES_USER: postgres
+              POSTGRES_PASSWORD: postgres
+              POSTGRES_DB: testing
+            options: >-
+              --health-cmd pg_isready
+              --health-interval 10s
+              --health-timeout 5s
+              --health-retries 5
+
+        steps:
+            - name: Checkout repositories
+              uses: actions/checkout@v4
+
+            - name: Copy CI configuration
+              run: cp app.conf.autopilot app.conf
+
+            - name: Run build action
+              uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main
+              with:
+                python_version: "3.11"
+
+            - name: Install dependencies
+              run: |
+                apt-get update
+                apt-get install --yes --no-install-recommends postgresql-client
+
+            - name: Run the tests
+              run: poetry run $(make test --just-print --silent)
+
+            - name: Upload coverage report
+              uses: actions/upload-artifact@v4
+              with:
+                name: coverage
+                path: coverage.xml
+
+    sonar:
+        name: SonarCloud
+        runs-on: ubuntu-latest
+        needs: test
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            - name: Download coverage report
+              uses: actions/download-artifact@v4
+            - name: Run SonarCloud scanner
+              uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/sonarcloud@main
+              with:
+                sonar-token: ${{ secrets.SONAR_TOKEN }}

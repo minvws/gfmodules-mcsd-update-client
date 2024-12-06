@@ -3,8 +3,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-import container
-from db.db import Database
+from app.container import get_database
+from app.db.db import Database
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -15,15 +15,12 @@ def ok_or_error(value: bool) -> str:
 
 
 @router.get("/health")
-def health(db: Database = Depends(container.get_database)) -> dict[str, Any]:
+def health(db: Database = Depends(get_database)) -> dict[str, Any]:
     logger.info("Checking database health")
 
     components = {
-        'database': ok_or_error(db.is_healthy()),
+        "database": ok_or_error(db.is_healthy()),
     }
     healthy = ok_or_error(all(value == "ok" for value in components.values()))
 
-    return {
-        "status": healthy,
-        "components": components
-    }
+    return {"status": healthy, "components": components}
