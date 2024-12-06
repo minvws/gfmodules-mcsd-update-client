@@ -41,7 +41,9 @@ class resource_map(Base):
         nullable=False,
         default=func.now(),
     )
-    create_at: Mapped[datetime] = mapped_column("created_at", TIMESTAMP, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        "created_at", TIMESTAMP, nullable=False
+    )
     modified_at: Mapped[datetime] = mapped_column(
         "modified_at", TIMESTAMP, nullable=False
     )

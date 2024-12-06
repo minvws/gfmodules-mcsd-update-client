@@ -13,7 +13,7 @@ class Supplier(Base):
     id: Mapped[str] = mapped_column("id", String(8), nullable=False, unique=True)
     name: Mapped[str] = mapped_column("name", String(150), nullable=False)
     endpoint: Mapped[str] = mapped_column("endpoint", String, nullable=False)
-    create_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         "created_at", TIMESTAMP, nullable=False, default=datetime.now()
     )
     modified_at: Mapped[datetime] = mapped_column(
