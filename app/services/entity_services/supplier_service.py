@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from app.db.db import Database
 from app.db.entities.supplier import Supplier
 from app.db.repositories.supplier_repository import SuppliersRepository
-from app.models.supplier.dto import SupplierCreateDto, SupplierUpdateDto
+from app.models.supplier.dto import SupplierDto, SupplierUpdateDto
 
 
 class SupplierService:
@@ -25,7 +25,7 @@ class SupplierService:
             suppliers = repository.get_all()
             return suppliers
 
-    def add_one(self, dto: SupplierCreateDto) -> Supplier:
+    def add_one(self, dto: SupplierDto) -> Supplier:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(SuppliersRepository)
             if repository.supplier_exists(dto.id):

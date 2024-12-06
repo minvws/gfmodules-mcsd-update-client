@@ -6,7 +6,7 @@ class SupplierBase(BaseModel):
     endpoint: str
 
 
-class SupplierCreateDto(SupplierBase):
+class SupplierDto(SupplierBase):
     id: str
 
 

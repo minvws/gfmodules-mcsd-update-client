@@ -13,7 +13,7 @@ CREATE TABLE suppliers
 CREATE TABLE resource_maps
 (
   id                        uuid    NOT NULL         DEFAULT gen_random_uuid(),
-  supplier_id               VARCHAR NOT NULL,
+  supplier_id               VARCHAR(8) NOT NULL,
   resource_type             VARCHAR NOT NULL,
   supplier_resource_id      VARCHAR NOT NULL UNIQUE,
   supplier_resource_version INT     NOT NULL,

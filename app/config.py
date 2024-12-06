@@ -39,7 +39,7 @@ class ConfigUvicorn(BaseModel):
     docs_url: str = Field(default="/docs")
     redoc_url: str = Field(default="/redoc")
     host: str = Field(default="0.0.0.0")
-    port: int = Field(default=8501, gt=0, lt=65535)
+    port: int = Field(default=8509, gt=0, lt=65535)
     reload: bool = Field(default=True)
     reload_delay: float = Field(default=1)
     reload_dirs: list[str] = Field(default=["app"])

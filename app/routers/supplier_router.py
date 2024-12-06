@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from app.db.entities.supplier import Supplier
 from app.container import get_supplier_service
 from app.services.entity_services.supplier_service import SupplierService
-from app.models.supplier.dto import SupplierCreateDto, SupplierUpdateDto
+from app.models.supplier.dto import SupplierDto, SupplierUpdateDto
 
 router = APIRouter(prefix="/supplier", tags=["Supplier"])
 
@@ -25,7 +25,7 @@ def get_one_supplier(
 
 @router.post("", response_model=None)
 def add_one_supplier(
-    data: SupplierCreateDto, service: SupplierService = Depends(get_supplier_service)
+    data: SupplierDto, service: SupplierService = Depends(get_supplier_service)
 ) -> Supplier:
     return service.add_one(data)
 

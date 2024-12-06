@@ -1,29 +1,29 @@
 from fastapi import HTTPException
 import pytest
 from app.db.entities.supplier import Supplier
-from app.models.supplier.dto import SupplierCreateDto, SupplierUpdateDto
+from app.models.supplier.dto import SupplierDto, SupplierUpdateDto
 from app.services.entity_services.supplier_service import SupplierService
 
 
 @pytest.fixture
-def mock_dto() -> SupplierCreateDto:
-    return SupplierCreateDto(
+def mock_dto() -> SupplierDto:
+    return SupplierDto(
         id="12345657", name="name", endpoint="http://some.endpoint"
     )
 
 
 def test_add_one_should_succeed_when_supplier_is_new(
-    supplier_service: SupplierService, mock_dto: SupplierCreateDto
+    supplier_service: SupplierService, mock_dto: SupplierDto
 ) -> None:
     expected = supplier_service.add_one(mock_dto)
     assert mock_dto.id == expected.id
 
 
 def test_add_one_should_raise_exception_when_supplier_exists(
-    supplier_service: SupplierService, mock_dto: SupplierCreateDto
+    supplier_service: SupplierService, mock_dto: SupplierDto
 ) -> None:
     supplier_service.add_one(mock_dto)
-    new_dto = SupplierCreateDto(
+    new_dto = SupplierDto(
         id=mock_dto.id, name="some new name", endpoint="http://example.nl"
     )
     with pytest.raises(HTTPException):
@@ -31,7 +31,7 @@ def test_add_one_should_raise_exception_when_supplier_exists(
 
 
 def test_get_one_should_succeed_when_id_is_correct(
-    supplier_service: SupplierService, mock_dto: SupplierCreateDto
+    supplier_service: SupplierService, mock_dto: SupplierDto
 ) -> None:
     expected = supplier_service.add_one(mock_dto)
     actual = supplier_service.get_one(mock_dto.id)
@@ -42,7 +42,7 @@ def test_get_one_should_succeed_when_id_is_correct(
 
 
 def test_get_one_should_raise_exception_when_id_does_not_exists(
-    supplier_service: SupplierService, mock_dto: SupplierCreateDto
+    supplier_service: SupplierService, mock_dto: SupplierDto
 ) -> None:
     supplier_service.add_one(mock_dto)
     with pytest.raises(HTTPException):
@@ -50,7 +50,7 @@ def test_get_one_should_raise_exception_when_id_does_not_exists(
 
 
 def test_update_one_should_succeed_when_supplier_exists(
-    supplier_service: SupplierService, mock_dto: SupplierCreateDto
+    supplier_service: SupplierService, mock_dto: SupplierDto
 ) -> None:
     supplier_service.add_one(mock_dto)
     expected = supplier_service.update_one(
@@ -63,7 +63,7 @@ def test_update_one_should_succeed_when_supplier_exists(
 
 
 def test_update_one_should_raise_exception_when_id_does_not_exists(
-    supplier_service: SupplierService, mock_dto: SupplierCreateDto
+    supplier_service: SupplierService, mock_dto: SupplierDto
 ) -> None:
     supplier_service.add_one(mock_dto)
     with pytest.raises(HTTPException):
@@ -74,7 +74,7 @@ def test_update_one_should_raise_exception_when_id_does_not_exists(
 
 
 def test_delete_one_should_suceed_when_supplier_exists(
-    supplier_service: SupplierService, mock_dto: SupplierCreateDto
+    supplier_service: SupplierService, mock_dto: SupplierDto
 ) -> None:
     supplier_service.add_one(mock_dto)
     supplier_service.delete_one(mock_dto.id)
@@ -86,7 +86,7 @@ def test_delete_one_should_suceed_when_supplier_exists(
 
 
 def test_delete_one_should_raise_exception_when_id_does_not_exists(
-    supplier_service: SupplierService, mock_dto: SupplierCreateDto
+    supplier_service: SupplierService, mock_dto: SupplierDto
 ) -> None:
     supplier_service.add_one(mock_dto)
     with pytest.raises(HTTPException):

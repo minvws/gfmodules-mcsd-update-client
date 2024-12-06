@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "skeleton-service"
+name = "mcsd-consumer"
 version = "0.1.0"
 description = ""
 license = "EUPL-1.2"

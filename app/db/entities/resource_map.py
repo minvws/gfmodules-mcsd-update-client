@@ -19,7 +19,7 @@ class resource_map(Base):
     )
     supplier_id: Mapped[str] = mapped_column(
         "supplier_id",
-        String,
+        String(8),
         nullable=False,
     )
     resource_type: Mapped[str] = mapped_column("resource_type", String, nullable=False)
