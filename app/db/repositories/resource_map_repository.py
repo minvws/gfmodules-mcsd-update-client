@@ -79,7 +79,7 @@ class ResourceMapRepository(RepositoryBase):
             return data
         except DatabaseError as e:
             self.db_session.rollback()
-            logging.error(f"Failed to add organization {data.id}: {e}")
+            logging.error(f"Failed to update organization {data.id}: {e}")
             raise
 
     def delete(self, data: ResourceMap) -> None:
@@ -89,10 +89,10 @@ class ResourceMapRepository(RepositoryBase):
 
         except DatabaseError as e:
             self.db_session.rollback()
-            logging.error(f"Failed to add organization {data.id}: {e}")
+            logging.error(f"Failed to delete organization {data.id}: {e}")
             raise
 
-    def resoure_map_exists(
+    def resource_map_exists(
         self, supplier_resource_id: str, consumer_resource_id: str
     ) -> bool:
         stmt = (

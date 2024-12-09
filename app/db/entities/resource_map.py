@@ -40,6 +40,7 @@ class ResourceMap(Base):
         TIMESTAMP(timezone=True),
         nullable=False,
         default=func.now(),
+        onupdate=datetime.now(),
     )
     created_at: Mapped[datetime] = mapped_column(
         "created_at", TIMESTAMP, nullable=False, default=datetime.now()

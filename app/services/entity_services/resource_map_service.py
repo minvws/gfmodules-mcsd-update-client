@@ -1,5 +1,4 @@
 from collections.abc import Sequence
-from datetime import datetime
 from fastapi.exceptions import HTTPException
 from app.db.db import Database
 from app.db.entities.resource_map import ResourceMap
@@ -35,9 +34,7 @@ class ResourceMapService:
         consumer_resource_id: str | None = None,
         supplier_id: str | None = None,
     ) -> ResourceMap:
-        resource_map = self.get_one(
-            supplier_resource_id, consumer_resource_id, supplier_id
-        )
+        resource_map = self.get(supplier_resource_id, consumer_resource_id, supplier_id)
         if resource_map is None:
             raise HTTPException(status_code=404, detail="Not Found")
 
@@ -64,7 +61,7 @@ class ResourceMapService:
     def add_one(self, dto: ResourceMapDto) -> ResourceMap:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
-            if repository.resoure_map_exists(
+            if repository.resource_map_exists(
                 supplier_resource_id=dto.supplier_resource_id,
                 consumer_resource_id=dto.consumer_resource_id,
             ):
@@ -73,16 +70,14 @@ class ResourceMapService:
                 )
 
             new_map = ResourceMap(**dto.model_dump())
-            new_map.last_update = datetime.now()
             return repository.create(new_map)
 
     def update_one(self, dto: ResourceMapUpdateDto) -> ResourceMap:
         target = self.get_one(dto.supplier_resource_id)
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
-            target.supplier_resource_version = dto.consumer_resource_version
+            target.supplier_resource_version = dto.supplier_resource_version
             target.consumer_resource_version = dto.consumer_resource_version
-            target.last_update = datetime.now()
 
             return repository.update(target)
 
