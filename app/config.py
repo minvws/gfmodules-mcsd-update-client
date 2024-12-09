@@ -49,10 +49,15 @@ class ConfigUvicorn(BaseModel):
     ssl_key_file: str | None
 
 
+class ConfigMcsd(BaseModel):
+    consumer_url: str = Field(default="http://localhost:8502")
+
+
 class Config(BaseModel):
     app: ConfigApp
     database: ConfigDatabase
     uvicorn: ConfigUvicorn
+    mcsd: ConfigMcsd
 
 
 def read_ini_file(path: str) -> Any:

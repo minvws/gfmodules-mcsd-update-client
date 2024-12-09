@@ -18,6 +18,7 @@ inject = "^5.2.0"
 sqlalchemy = "^2.0.25"
 psycopg = { extras = ["binary", "pool"], version = "^3.1.17" }
 requests = "^2.32.0"
+fhir-resources = "^7.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
@@ -26,6 +27,7 @@ httpx = "^0.26.0"
 ruff = "^0.1.13"
 safety = "^2.3.5"
 codespell = "^2.2.6"
+types-requests = "^2.3"
 
 [build-system]
 requires = ["poetry-core"]
