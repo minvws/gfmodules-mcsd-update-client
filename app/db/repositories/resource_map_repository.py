@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+from typing import Any
 import logging
 from uuid import UUID
 
@@ -18,6 +20,46 @@ class ResourceMapRepository(RepositoryBase):
         conditions = {k: v for k, v in kwargs.items() if v is not None}
         stmt = select(ResourceMap).filter_by(**conditions)
         return self.db_session.session.execute(stmt).scalars().first()
+
+    def find(
+        self, **conditions: bool | str | UUID | dict[str, Any] | None
+    ) -> Sequence[ResourceMap]:
+        conditions = {k: v for k, v in conditions.items() if v is not None}
+        filter_conditions = []
+        if "supplier_id" in conditions:
+            filter_conditions.append(
+                ResourceMap.supplier_id == conditions["supplier_id"]
+            )
+
+        if "supplier_resource_id" in conditions:
+            filter_conditions.append(
+                ResourceMap.supplier_resource_id == conditions["supplier_resource_id"]
+            )
+
+        if "supplier_resource_version" in conditions:
+            filter_conditions.append(
+                ResourceMap.supplier_resource_version
+                == conditions["supplier_resource_version"]
+            )
+
+        if "consumer_resource_id" in conditions:
+            filter_conditions.append(
+                ResourceMap.consumer_resource_id == conditions["consumer_resource_id"]
+            )
+
+        if "consumer_resource_version" in conditions:
+            filter_conditions.append(
+                ResourceMap.consumer_resource_version
+                == conditions["consumer_resource_version"]
+            )
+
+        return (
+            self.db_session.session.execute(
+                select(ResourceMap).where(*filter_conditions)
+            )
+            .scalars()
+            .all()
+        )
 
     def create(self, data: ResourceMap) -> ResourceMap:
         try:

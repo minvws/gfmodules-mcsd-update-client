@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from datetime import datetime
 from fastapi.exceptions import HTTPException
 from app.db.db import Database
@@ -41,6 +42,24 @@ class ResourceMapService:
             raise HTTPException(status_code=404, detail="Not Found")
 
         return resource_map
+
+    def find(
+        self,
+        supplier_id: str | None = None,
+        supplier_resource_id: str | None = None,
+        supplier_resource_version: str | None = None,
+        consumer_resource_id: str | None = None,
+        consumer_resource_version: str | None = None,
+    ) -> Sequence[ResourceMap]:
+        with self.__database.get_db_session() as session:
+            repository = session.get_repository(ResourceMapRepository)
+            return repository.find(
+                supplier_id=supplier_id,
+                supplier_resource_id=supplier_resource_id,
+                supplier_resource_version=supplier_resource_version,
+                consumer_resource_id=consumer_resource_id,
+                consumer_resource_version=consumer_resource_version,
+            )
 
     def add_one(self, dto: ResourceMapDto) -> ResourceMap:
         with self.__database.get_db_session() as session:
