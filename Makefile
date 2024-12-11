@@ -43,6 +43,9 @@ test: ## Runs automated tests
 check: lint type-check safety-check spelling-check test ## Runs all checks
 fix: lint-fix spelling-fix ## Runs all fixers
 
+seed: ## Seeds the supplier
+	$(RUN_PREFIX) python seeds/seed_hapi.py
+
 help: ## Display available commands
 	echo "Available make commands:"
 	echo

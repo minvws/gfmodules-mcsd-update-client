@@ -27,3 +27,6 @@ ssl_key_file = server.key
 
 [mcsd]
 consumer_url = http://localhost:8502
+
+[mock_seeder]
+mock_supplier_url = # For a local test HAPI it can be: http://host.docker.internal:8081/fhir/
