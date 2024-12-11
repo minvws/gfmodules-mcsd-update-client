@@ -52,12 +52,15 @@ class ConfigUvicorn(BaseModel):
 class ConfigMcsd(BaseModel):
     consumer_url: str = Field(default="http://localhost:8502")
 
+class ConfigMockSeeder(BaseModel):
+    mock_supplier_url: str|None
 
 class Config(BaseModel):
     app: ConfigApp
     database: ConfigDatabase
     uvicorn: ConfigUvicorn
     mcsd: ConfigMcsd
+    mock_seeder: ConfigMockSeeder
 
 
 def read_ini_file(path: str) -> Any:

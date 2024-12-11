@@ -1,10 +1,14 @@
 import requests
 from fastapi.encoders import jsonable_encoder
 from seeds.generate_data import DataGenerator
+from app.config import get_config
 
 generator = DataGenerator()
 
-SUPPLIER_URL = "http://host.docker.internal:8081/fhir/"
+SUPPLIER_URL = get_config().mock_seeder.mock_supplier_url
+
+if SUPPLIER_URL is None:
+    raise ValueError("No mock supplier URL provided, set one in the config file")
 
 for x in range(10):
     print(f"Generating data set {x+1}")
