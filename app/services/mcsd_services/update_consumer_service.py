@@ -22,7 +22,6 @@ from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.request_services.consumer_request_service import (
     ConsumerRequestService,
 )
-from app.services.entity_services.supplier_service import SupplierService
 
 IDENTIFIER_SYSTEM_NAME: Final[str] = "my_own_system_name"
 
@@ -30,23 +29,15 @@ IDENTIFIER_SYSTEM_NAME: Final[str] = "my_own_system_name"
 class UpdateConsumerService:
     def __init__(
         self,
-        supplier_service: SupplierService,
         supplier_request_service: SupplierRequestsService,
         consumer_request_service: ConsumerRequestService,
         resource_map_service: ResourceMapService,
     ):
-        self.__supplier_service = supplier_service
         self.__supplier_request_service = supplier_request_service
         self.__consumer_request_service = consumer_request_service
         self.__resource_map_service = resource_map_service
 
-    def update_organizations(self, supplier_id: str|None=None, resource_type: str|None=None) -> Dict[str, Any]:
-
-        if supplier_id is None:
-            for supplier in list(self.__supplier_service.get_all()):
-                self.update_organizations(supplier_id=supplier.id)
-            return
-
+    def update_organizations(self, supplier_id: str) -> Dict[str, Any]:
         # TODO: optimize the supplier map check
         # handle first update from supplier
         supplier_history = self.__supplier_request_service.get_org_history(supplier_id)
