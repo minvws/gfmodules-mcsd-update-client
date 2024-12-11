@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict
 
 import requests
@@ -50,14 +51,17 @@ class FhirRequestService:
         return results
 
     def get_resource_history(
-        self, resource_type: str, url: str, resource_id: str | None = None
+        self, resource_type: str, url: str, resource_id: str | None = None, _since: datetime|None=None
     ) -> Dict[str, Any]:
         url = (
             f"{url}/{resource_type}/{resource_id}/_history"
             if resource_id is not None
             else f"{url}/{resource_type}/_history"
         )
-        response = requests.get(url, timeout=self.timeout)
+        response = requests.get(
+            url, timeout=self.timeout,
+            params= { "_since": _since.isoformat() } if _since else {}
+        )
         if response.status_code > 300:
             raise Exception(response.json())
 
