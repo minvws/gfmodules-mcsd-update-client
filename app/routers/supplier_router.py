@@ -2,7 +2,9 @@ from collections.abc import Sequence
 from fastapi import APIRouter, Depends
 
 from app.db.entities.supplier import Supplier
-from app.container import get_supplier_service
+from app.container import (
+    get_supplier_service,
+)
 from app.services.entity_services.supplier_service import SupplierService
 from app.models.supplier.dto import SupplierDto, SupplierUpdateDto
 
