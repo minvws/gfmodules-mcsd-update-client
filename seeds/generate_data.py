@@ -256,7 +256,7 @@ class DataGenerator:
             healthcareService=[Reference.construct(reference="HealthcareService/" + str(healthcare_service_id))] if healthcare_service_id is not None else None,
             endpoint=[Reference.construct(reference="Endpoint/" + str(endpoint_id))] if endpoint_id is not None else None,
         )
-    
+
     def generate_practioner(self,
                             organization_id: UUID | None = None,
     ) -> Practitioner:
@@ -284,7 +284,7 @@ class DataGenerator:
             address=[self.generate_address()],
             qualification=[self.generate_practitioner_qualification(organization_id)],
         )
-    
+
     def generate_practitioner_qualification(self, organization_id: UUID|None=None) -> PractitionerQualification:
         return PractitionerQualification(
             code=CodeableConcept(
@@ -292,10 +292,10 @@ class DataGenerator:
                     Coding(
                         system="http://example.org/practitioner-qualification",
                         code=self.fake.random_element(
-                            elements=("MD", "DO", "NP", "PA", "RN", "LPN", "CNA")
+                            elements=("MD", "DO", "NP", "PA", "RN", "LPN")
                         ),
                         display=self.fake.random_element(
-                            elements=("Doctor of Medicine", "Doctor of Osteopathy", "Nurse Practitioner", "Physician Assistant", "Registered Nurse", "Licensed Practical Nurse", "Certified Nursing Assistant")
+                            elements=("Doctor of Medicine", "Doctor of Osteopathy", "Nurse Practitioner", "Physician Assistant", "Registered Nurse", "Licensed Practical Nurse")
                         ),
                     )
                 ]
@@ -309,7 +309,7 @@ class DataGenerator:
                 Identifier(system="http://example.org/practitioner-qualification", value=str(uuid4()))
             ],
         )
-    
+
     def generate_practitioner_role(
             self,
             practitioner_id: UUID | None = None,
