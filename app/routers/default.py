@@ -24,9 +24,9 @@ def index() -> Response:
     content = LOGO
 
     try:
-        with open(Path(__file__).parent.parent.parent / 'version.json', 'r') as file:
+        with open(Path(__file__).parent.parent.parent / "version.json", "r") as file:
             data = json.load(file)
-            content += "\nVersion: %s\nCommit: %s" % (data['version'], data['git_ref'])
+            content += "\nVersion: %s\nCommit: %s" % (data["version"], data["git_ref"])
     except BaseException as e:
         content += "\nNo version information found"
         logger.info("Version info could not be loaded: %s" % e)

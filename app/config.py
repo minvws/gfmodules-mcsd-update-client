@@ -52,8 +52,10 @@ class ConfigUvicorn(BaseModel):
 class ConfigMcsd(BaseModel):
     consumer_url: str = Field(default="http://localhost:8502")
 
+
 class ConfigMockSeeder(BaseModel):
-    mock_supplier_url: str|None
+    mock_supplier_url: str | None
+
 
 class Config(BaseModel):
     app: ConfigApp
