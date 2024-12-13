@@ -70,6 +70,7 @@ class Entry(BaseModel):
     request: Request = Field(alias="request")
     response: Response = Field(alias="response")
     resource: Resource | None = Field(alias="resource", default=None)
+    fullUrl: str = Field(alias="fullUrl")
 
 
 class Bundle(BaseModel):

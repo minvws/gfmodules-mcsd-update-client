@@ -1,11 +1,21 @@
 from datetime import datetime
-from typing import Dict
+from enum import Enum
+from typing import Dict, List
 
 from app.models.fhir.r4.types import Entry, Bundle
-# from fhir.resources.R4B.bundle import Bundle, BundleEntry
 
 from app.services.entity_services.supplier_service import SupplierService
 from app.services.request_services.fhir_request_service import FhirRequestService
+
+
+class McsdResources(Enum):
+    ORGANIZATION_AFFILIATION = "OrganizationAffiliation"
+    PRACTITIONER_ROLE = "PractitionerRole"
+    HEALTH_CARE_SERVICE = "HealthcareService"
+    LOCATION = "Location"
+    PRACTITIONER = "Practitioner"
+    ENDPOINT = "Endpoint"
+    ORGANIZATION = "Organization"
 
 
 class SupplierRequestsService:
@@ -16,19 +26,40 @@ class SupplierRequestsService:
     def get_resource_history(
         self,
         supplier_id: str,
-        resource_type: str,
+        resource_type: str | None = None,
         resource_id: str | None = None,
         _since: datetime | None = None,
     ) -> Bundle:
         supplier = self.__supplier_service.get_one(supplier_id)
 
-        history = self.__fhir_request_service.get_resource_history(
-            resource_type=resource_type,
-            url=supplier.endpoint,
-            resource_id=resource_id,
-            _since=_since,
-        )
-        return Bundle(**history)
+        histories: List[Bundle] = []
+        if resource_type is None:
+            for res_type in McsdResources:
+                histories.append(
+                    self.__fhir_request_service.get_resource_history(
+                        resource_type=res_type.value,
+                        url=supplier.endpoint,
+                        resource_id=resource_id,
+                        params={"_since": _since.isoformat()} if _since else None,
+                    )
+                )
+        else:
+            histories.append(
+                self.__fhir_request_service.get_resource_history(
+                    resource_type=resource_type,
+                    url=supplier.endpoint,
+                    resource_id=resource_id,
+                    params={"_since": _since.isoformat()} if _since else None,
+                )
+            )
+        extended_history = histories.pop(0)
+        if extended_history.entry is None or len(extended_history.entry) == 0:
+            raise Exception("HISTORY IS EMPTY")
+        for history in histories:
+            if history.entry is None or len(history.entry) == 0:
+                raise Exception("HISTORY IS EMPTY")
+            extended_history.entry.extend(history.entry)
+        return extended_history
 
     def get_latest_entry_from_reference(
         self, supplier_id: str, reference: Dict[str, str]
@@ -44,15 +75,14 @@ class SupplierRequestsService:
             url=supplier.endpoint,
             resource_id=res_id,
         )
-        history_bundle = Bundle(**res_history)
+
+        if res_history.entry is None or len(res_history.entry) == 0:
+            raise Exception("HISTORY IS EMPTY")
 
         # Get latest (which is the first) from history Bundle
-        entries = history_bundle.entry
-        if entries is None:
-            raise ValueError("Entry not found")
+        latest = res_history.entry[0]
 
-        latest: Entry = entries[0]
-        if latest.request and latest.request.method == "DELETE":
-            raise RuntimeError("REFERENCED RESOURCE WAS DELETED")
+        if latest.request.method == "DELETE":
+            raise Exception("REFERENCED RESOURCE WAS DELETED")
 
         return latest

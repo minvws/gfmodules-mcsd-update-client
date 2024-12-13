@@ -53,6 +53,11 @@ class ResourceMapRepository(RepositoryBase):
                 == conditions["consumer_resource_version"]
             )
 
+        if "resource_type" in conditions:
+            filter_conditions.append(
+                ResourceMap.resource_type == conditions["resource_type"]
+            )
+
         return (
             self.db_session.session.execute(
                 select(ResourceMap).where(*filter_conditions)

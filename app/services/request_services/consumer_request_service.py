@@ -8,7 +8,6 @@ class ConsumerRequestService:
         self.__fhir_request_service = FhirRequestService(timeout=10, backoff=0.1)
 
     def post_resource(self, resource: Resource) -> Resource:
-        print(resource)
         response = self.__fhir_request_service.post_resource(
             resource_type=resource.resource_type,
             url=self.__url,
@@ -48,4 +47,4 @@ class ConsumerRequestService:
         response = self.__fhir_request_service.get_resource_history(
             resource_type=resource_type, url=self.__url, resource_id=resource_id
         )
-        return Bundle(**response)
+        return response

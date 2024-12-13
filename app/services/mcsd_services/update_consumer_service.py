@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Any, List, Tuple, TYPE_CHECKING
-
+from datetime import datetime
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
@@ -23,26 +23,40 @@ class UpdateConsumerService:
         self.__consumer_request_service = consumer_request_service
         self.__resource_map_service = resource_map_service
 
-    def update_supplier(self, supplier_id: str, resource_type: str) -> Dict[str, Any]:
+    def update_supplier(
+        self,
+        supplier_id: str,
+        resource_type: str | None = None,
+        _since: datetime | None = None,
+    ) -> Dict[str, Any]:
         supplier_history = self.__supplier_request_service.get_resource_history(
-            supplier_id, resource_type
+            supplier_id=supplier_id, resource_type=resource_type, _since=_since
         )
         entries = supplier_history.entry if supplier_history.entry else []
 
-        org_ids: set[str] = set()
+        resource_ids: set[Tuple[str, str]] = set()  # Resource type & ID
         for entry in entries:
-            if entry.resource:
-                org_ids.add(entry.resource.id)  # type: ignore
-        for org_id in org_ids:
+            # Get ID from full URL since resource might have been deleted
+            if entry.fullUrl is None:
+                raise TypeError("entry has no fullUrl")
+            splitted = entry.fullUrl.split("/")
+            resource_ids.add((splitted[-2], splitted[-1]))
+
+        for resource_type, resource_id in resource_ids:
             org_history = self.__supplier_request_service.get_resource_history(
-                supplier_id, resource_type, org_id
+                supplier_id, resource_type, resource_id, _since
             )
-            latest_entry: Entry = org_history.entry[0]  # type: ignore
+            if org_history.entry is None or len(org_history.entry) == 0:
+                raise Exception("HISTORY IS EMPTY")
+            latest_entry = org_history.entry[0]
+
             self.update(supplier_id, latest_entry)
 
         return {
             "message": "organizations and endpoints are updated",
-            "data": self.__resource_map_service.find(supplier_id=supplier_id),
+            "data": self.__resource_map_service.find(
+                supplier_id=supplier_id, resource_type=resource_type
+            ),
         }
 
     def update(
@@ -79,7 +93,7 @@ class UpdateConsumerService:
 
         if resource_already_up_to_date:
             consumer_resource = self.__consumer_request_service.get_resource(
-                resource=entry_resource,
+                resource=entry_resource,  # type: ignore
                 resource_id=resource_map.consumer_resource_id,  # type: ignore
             )
             return consumer_resource
@@ -109,7 +123,21 @@ class UpdateConsumerService:
         references = self._get_references(entry_resource.model_dump())  # type: ignore
 
         for key, ref in references:
-            if isinstance(ref, List):
+            if key == "qualification":
+                for index, qualification in enumerate(ref):
+                    issuer = qualification["issuer"]  # type: ignore
+                    latest = (
+                        self.__supplier_request_service.get_latest_entry_from_reference(
+                            supplier_id, issuer
+                        )
+                    )
+                    ref_resource = self.update(supplier_id, latest)
+                    dicty_type = entry_resource.model_dump()  # type: ignore
+                    dicty_type[key][index]["issuer"] = {
+                        "reference": f"{ref_resource.resource_type}/{ref_resource.id}"
+                    }  # type: ignore
+                    entry_resource = Resource(**dicty_type)
+            elif isinstance(ref, List):
                 refs_list = []
                 for i in ref:
                     latest = (
@@ -182,6 +210,10 @@ class UpdateConsumerService:
             except TypeError:
                 continue
 
+            if k == "qualification":  # Special practitioners case
+                refs.append((k, v))  # List[dict[str, Dict]]
+                continue
+
             if isinstance(v, List):
                 refs_list: List[dict[str, str]] = []
                 checker = False
@@ -221,14 +253,6 @@ class UpdateConsumerService:
 
     @staticmethod
     def _get_latest_etag_version(first_entry: Entry) -> int:
-        # response = first_entry.response
-        # if response is None:
-        #     raise ValueError("response is not of type BundleEntryResponse")
-
-        # etag = first_entry.response.etag
-        # if etag is None:
-        #     raise ValueError("etag in response is None")
-
         results = re.search(r"(?<=\")\d*(?=\")", first_entry.response.etag)
         if results is None:
             raise ValueError("Did not find etag")

@@ -1,7 +1,9 @@
-from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, List
 from fastapi.encoders import jsonable_encoder
 import requests
+from urllib.parse import urlparse, parse_qs
+
+from app.models.fhir.r4.types import Bundle
 
 
 class FhirRequestService:
@@ -57,23 +59,42 @@ class FhirRequestService:
         resource_type: str,
         url: str,
         resource_id: str | None = None,
-        _since: datetime | None = None,
-    ) -> Dict[str, Any]:
-        url = (
+        params: dict[str, str] | None = None,
+    ) -> Bundle:
+        new_url = (
             f"{url}/{resource_type}/{resource_id}/_history"
             if resource_id is not None
             else f"{url}/{resource_type}/_history"
         )
-        response = requests.get(
-            url,
-            timeout=self.timeout,
-            params={"_since": _since} if _since is not None else None,  # type: ignore
-        )
+
+        response = requests.get(new_url, timeout=self.timeout, params=params)
         if response.status_code > 300:
             raise Exception(response.json())
 
-        results: Dict[str, Any] = response.json()
-        return results
+        bundle: Bundle = Bundle(**response.json())
+
+        if bundle.entry is None or len(bundle.entry) == 0:
+            raise Exception(response.json())
+
+        if bundle.link is not None and len(bundle.link) > 0:
+            bundles: List[Bundle] = []
+            for link in bundle.link:
+                if link.relation == "next":
+                    parsed_url = urlparse(str(link.url))
+                    query_params = parse_qs(parsed_url.query)
+                    params = query_params  # type: ignore
+                    bundles.append(
+                        self.get_resource_history(
+                            resource_type, url, resource_id, params
+                        )
+                    )
+
+            for extr_bundle in bundles:
+                if extr_bundle.entry is None or len(extr_bundle.entry) == 0:
+                    raise Exception(response.json())
+                bundle.entry.extend(extr_bundle.entry)
+
+        return bundle
 
     def put_resource(
         self, resource_type: str, url: str, resource_id: str, resource: dict[str, Any]
