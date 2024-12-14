@@ -134,8 +134,8 @@ class UpdateConsumerService:
                     ref_resource = self.update(supplier_id, latest)
                     dicty_type = entry_resource.model_dump()  # type: ignore
                     dicty_type[key][index]["issuer"] = {
-                        "reference": f"{ref_resource.resource_type}/{ref_resource.id}"
-                    }  # type: ignore
+                        "reference": f"{ref_resource.resource_type}/{ref_resource.id}" # type: ignore
+                    }
                     entry_resource = Resource(**dicty_type)
             elif isinstance(ref, List):
                 refs_list = []

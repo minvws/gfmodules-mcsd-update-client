@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -31,13 +31,14 @@ def update_supplier_resources(
     service: UpdateConsumerService = Depends(get_update_consumer_service),
     supplier_service: SupplierService = Depends(get_supplier_service),
 ) -> Any:
+    since = query_params.since.astimezone(timezone.utc) if query_params.since else None
     if supplier_id is None:
         all_suppliers = supplier_service.get_all()
         data: list[dict[str, Any]] = []
         for supplier in all_suppliers:
             data.append(
-                service.update_supplier(supplier.id, resource_type, query_params.since)
+                service.update_supplier(supplier.id, resource_type, since)
             )
         return data
     else:
-        return service.update_supplier(supplier_id, resource_type, query_params.since)
+        return service.update_supplier(supplier_id, resource_type, since)
