@@ -54,10 +54,10 @@ class SupplierRequestsService:
             )
         extended_history = histories.pop(0)
         if extended_history.entry is None or len(extended_history.entry) == 0:
-            raise Exception("HISTORY IS EMPTY")
+            raise Exception("History is empty")
         for history in histories:
             if history.entry is None or len(history.entry) == 0:
-                raise Exception("HISTORY IS EMPTY")
+                raise Exception("History is empty")
             extended_history.entry.extend(history.entry)
         return extended_history
 
@@ -83,6 +83,6 @@ class SupplierRequestsService:
         latest = res_history.entry[0]
 
         if latest.request.method == "DELETE":
-            raise Exception("REFERENCED RESOURCE WAS DELETED")
+            raise Exception("Referenced resource was deleted")
 
         return latest

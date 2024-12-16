@@ -39,15 +39,15 @@ class UpdateConsumerService:
             # Get ID from full URL since resource might have been deleted
             if entry.fullUrl is None:
                 raise TypeError("entry has no fullUrl")
-            splitted = entry.fullUrl.split("/")
-            resource_ids.add((splitted[-2], splitted[-1]))
+            split_url = entry.fullUrl.split("/")
+            resource_ids.add((split_url[-2], split_url[-1]))
 
         for resource_type, resource_id in resource_ids:
             org_history = self.__supplier_request_service.get_resource_history(
                 supplier_id, resource_type, resource_id, _since
             )
             if org_history.entry is None or len(org_history.entry) == 0:
-                raise Exception("HISTORY IS EMPTY")
+                raise Exception("History is empty")
             latest_entry = org_history.entry[0]
 
             self.update(supplier_id, latest_entry)
