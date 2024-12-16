@@ -7,9 +7,7 @@ from app.services.entity_services.supplier_service import SupplierService
 
 @pytest.fixture
 def mock_dto() -> SupplierDto:
-    return SupplierDto(
-        id="12345657", name="name", endpoint="http://some.endpoint"
-    )
+    return SupplierDto(id="12345657", name="name", endpoint="http://some.endpoint")
 
 
 def test_add_one_should_succeed_when_supplier_is_new(

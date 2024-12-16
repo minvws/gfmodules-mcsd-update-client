@@ -47,6 +47,7 @@ class ResourceMapService:
         supplier_resource_version: str | None = None,
         consumer_resource_id: str | None = None,
         consumer_resource_version: str | None = None,
+        resource_type: str | None = None,
     ) -> Sequence[ResourceMap]:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
@@ -56,6 +57,7 @@ class ResourceMapService:
                 supplier_resource_version=supplier_resource_version,
                 consumer_resource_id=consumer_resource_id,
                 consumer_resource_version=consumer_resource_version,
+                resource_type=resource_type,
             )
 
     def add_one(self, dto: ResourceMapDto) -> ResourceMap:

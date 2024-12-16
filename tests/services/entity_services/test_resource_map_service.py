@@ -123,7 +123,6 @@ def test_update_one_should_raise_exception_when_resource_map_does_not_exist(
 def test_delete_one_should_succeed_when_resource_map_exist(
     resource_map_service: ResourceMapService, mock_dto: ResourceMapDto
 ) -> None:
-
     resource_map_service.add_one(mock_dto)
     resource_map_service.delete_one(mock_dto.supplier_resource_id)
     with pytest.raises(HTTPException):

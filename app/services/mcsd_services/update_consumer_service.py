@@ -1,19 +1,6 @@
 import re
-from typing import Dict, Any, Final, List
-
-from fastapi.encoders import jsonable_encoder
-from fhir.resources.R4B.bundle import (
-    BundleEntry,
-    BundleEntryRequest,
-    BundleEntryResponse,
-)
-from fhir.resources.R4B.domainresource import DomainResource
-from fhir.resources.R4B.endpoint import Endpoint
-from fhir.resources.R4B.fhirtypes import ReferenceType, BundleEntryType, Id
-from fhir.resources.R4B.organization import Organization
-from fhir.resources.R4B.reference import Reference
-from fhir.resources.R4B.resource import Resource
-
+from typing import Dict, Any, List, Tuple, TYPE_CHECKING
+from datetime import datetime
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
@@ -22,8 +9,7 @@ from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.request_services.consumer_request_service import (
     ConsumerRequestService,
 )
-
-IDENTIFIER_SYSTEM_NAME: Final[str] = "my_own_system_name"
+from app.models.fhir.r4.types import Resource, Entry
 
 
 class UpdateConsumerService:
@@ -37,297 +23,237 @@ class UpdateConsumerService:
         self.__consumer_request_service = consumer_request_service
         self.__resource_map_service = resource_map_service
 
-    def update_organizations(self, supplier_id: str) -> Dict[str, Any]:
-        # TODO: optimize the supplier map check
-        # handle first update from supplier
-        supplier_history = self.__supplier_request_service.get_org_history(supplier_id)
-        entries = supplier_history.entry
+    def update_supplier(
+        self,
+        supplier_id: str,
+        resource_type: str | None = None,
+        _since: datetime | None = None,
+    ) -> Dict[str, Any]:
+        supplier_history = self.__supplier_request_service.get_resource_history(
+            supplier_id=supplier_id, resource_type=resource_type, _since=_since
+        )
+        entries = supplier_history.entry if supplier_history.entry else []
 
-        org_ids: set[Id] = set()
+        resource_ids: set[Tuple[str, str]] = set()  # Resource type & ID
         for entry in entries:
-            if not isinstance(entry, BundleEntry):
-                raise TypeError("entry is not of type BundleEntry")
-            if isinstance(entry.resource, DomainResource):
-                org_ids.add(entry.resource.id)
+            # Get ID from full URL since resource might have been deleted
+            if entry.fullUrl is None:
+                raise TypeError("entry has no fullUrl")
+            split_url = entry.fullUrl.split("/")
+            resource_ids.add((split_url[-2], split_url[-1]))
 
-        for org_id in org_ids:
-            org_history = self.__supplier_request_service.get_org_history(
-                supplier_id, org_id
+        for resource_type, resource_id in resource_ids:
+            org_history = self.__supplier_request_service.get_resource_history(
+                supplier_id, resource_type, resource_id, _since
             )
+            if org_history.entry is None or len(org_history.entry) == 0:
+                raise Exception("History is empty")
             latest_entry = org_history.entry[0]
 
-            if not isinstance(latest_entry, BundleEntry):
-                raise TypeError("entry is not of type BundleEntry")
-
-            self.update_org(supplier_id=supplier_id, resource_id=org_id)
+            self.update(supplier_id, latest_entry)
 
         return {
             "message": "organizations and endpoints are updated",
-            "data": self.__resource_map_service.find(supplier_id=supplier_id),
+            "data": self.__resource_map_service.find(
+                supplier_id=supplier_id, resource_type=resource_type
+            ),
         }
 
-    def update_org(self, supplier_id: str, resource_id: str) -> None:
+    def update(
+        self, supplier_id: str, entry: Entry
+    ) -> Resource | None:  # Returns CONSUMER resource
+        resource_type, resource_id = self._get_resource_type_and_id_from_bundle_entry(
+            entry
+        )
         resource_map = self.__resource_map_service.get(supplier_resource_id=resource_id)
-        supplier_org_history = self.__supplier_request_service.get_org_history(
-            supplier_id, resource_id
+        request_type = self._get_request_method(entry)
+        entry_resource = entry.resource
+        resource_is_not_needed = (
+            True if resource_map is None and request_type == "DELETE" else False
         )
-        entry = supplier_org_history.entry[0]
-        if not isinstance(entry, BundleEntry):
-            raise TypeError("entry is not of type BundleEntry")
-        entry_request = entry.request
-        if not isinstance(entry_request, BundleEntryRequest):
-            raise TypeError("entry is not of type BundleEntryRequest")
+        resource_needs_deletion = (
+            True if resource_map is not None and request_type == "DELETE" else False
+        )
+        resource_needs_update = (
+            True if resource_map is not None and request_type == "PUT" else False
+        )
+        resource_already_up_to_date = (
+            True
+            if resource_map is not None
+            and resource_map.supplier_resource_version
+            == self._get_latest_etag_version(entry)
+            else False
+        )
+        resource_already_deleted = (
+            True if resource_already_up_to_date and request_type == "DELETE" else False
+        )
 
-        if (
-            resource_map
-            and supplier_org_history.total == resource_map.supplier_resource_version
-        ):
-            return
+        if resource_is_not_needed or resource_already_deleted:
+            return None
 
-        if resource_map is None:
-            # no map then post
-            if entry_request.method == "DELETE":
-                return
-
-            if not isinstance(entry.resource, Resource):
-                raise TypeError("Entry is not of type resource")
-
-            supplier_org = Organization(**entry.resource.dict())
-            supplier_org.id = None
-            parent_org = supplier_org.partOf
-            if parent_org is not None:
-                if not isinstance(parent_org, Reference):
-                    raise TypeError("parent is not of type Reference")
-
-                parent_id = str(parent_org.reference.replace("Organization/", ""))
-                self.update_org(
-                    supplier_id=supplier_id,
-                    resource_id=parent_id,
-                )
-                parent_resource_map = self.__resource_map_service.get(
-                    supplier_resource_id=parent_id
-                )
-                supplier_org.partOf = Reference.construct(
-                    reference=f"Organization/{parent_resource_map.consumer_resource_id}"
-                )
-
-            supplier_endpoints = supplier_org.endpoint
-            if supplier_endpoints is not None:
-                supplier_org.endpoint = self._handle_endpoints(
-                    supplier_endpoints, supplier_id
-                )
-
-            consumer_org = self.__consumer_request_service.post_organization(
-                jsonable_encoder(supplier_org.dict())
+        if resource_already_up_to_date:
+            consumer_resource = self.__consumer_request_service.get_resource(
+                resource=entry_resource,  # type: ignore
+                resource_id=resource_map.consumer_resource_id,  # type: ignore
             )
-            resource_map_dto = ResourceMapDto(
-                supplier_resource_id=resource_id,
-                supplier_resource_version=supplier_org.meta.versionId,
-                consumer_resource_id=consumer_org.id,
-                consumer_resource_version=consumer_org.meta.versionId,
-                resource_type="Organization",
-                supplier_id=supplier_id,
+            return consumer_resource
+
+        if resource_needs_deletion:
+            self.__consumer_request_service.delete_resource(
+                resource_type,
+                resource_map.consumer_resource_id,  # type: ignore
             )
-            self.__resource_map_service.add_one(resource_map_dto)
-            return
-
-        if entry_request.method == "DELETE":
-            endpoints = self.__consumer_request_service.get_organization(
-                organization_id=resource_map.consumer_resource_id
-            ).endpoint
-            endpoint_ids = []
-            if endpoints is not None:
-                for endpoint in endpoints:
-                    endpoint_id = endpoint.reference.replace("Endpoint/", "")
-                    referenced_org = self.__consumer_request_service.find_organization(
-                        {"endpoint": endpoint_id}
-                    )
-                    if referenced_org.total == 1:
-                        endpoint_ids.append(endpoint_id)
-
-            self.__consumer_request_service.delete_organization(
-                organization_id=resource_map.consumer_resource_id
+            consumer_resource_history = (
+                self.__consumer_request_service.resource_history(
+                    resource_type,
+                    resource_map.consumer_resource_id,  # type: ignore
+                )
             )
-
-            for endpoint_id in endpoint_ids:
-                endpoint_resource_map = self.__resource_map_service.get(
-                    consumer_resource_id=endpoint_id
-                )
-                supplier_endpoint = self.__supplier_request_service.get_endpoint(
-                    supplier_id, endpoint_resource_map.supplier_resource_id
-                )
-                self.__consumer_request_service.delete_endpoint(endpoint_id=endpoint_id)
-                consumer_endpoint_history = (
-                    self.__consumer_request_service.get_endpoint_history(endpoint_id)
-                )
-                latest_consumer_version = self._get_latest_etag_version(
-                    consumer_endpoint_history.entry[0]
-                )
-                update_dto = ResourceMapUpdateDto(
-                    supplier_resource_id=endpoint_resource_map.supplier_resource_id,
-                    supplier_resource_version=supplier_endpoint.meta.versionId,
-                    consumer_resource_version=latest_consumer_version,
-                )
-                self.__resource_map_service.update_one(update_dto)
-
             self.__resource_map_service.update_one(
                 ResourceMapUpdateDto(
-                    supplier_resource_id=resource_map.supplier_resource_id,
-                    supplier_resource_version=self._get_latest_etag_version(
-                        supplier_org_history.entry[0]
-                    ),
-                    consumer_resource_version=resource_map.consumer_resource_version
-                    + 1,
-                )
-            )
-            return
-
-        supplier_org = Organization(**entry.resource.dict())
-        supplier_org.id = resource_map.consumer_resource_id
-        parent_org = supplier_org.partOf
-        if parent_org is not None:
-            if not isinstance(parent_org, Reference):
-                raise TypeError("parent is not of type Reference")
-
-            parent_id = str(parent_org.reference.replace("Organization/", ""))
-            self.update_org(
-                supplier_id=supplier_id,
-                resource_id=parent_id,
-            )
-            parent_resource_map = self.__resource_map_service.get(
-                supplier_resource_id=parent_id
-            )
-            supplier_org.partOf = Reference.construct(
-                reference=f"Organization/{parent_resource_map.consumer_resource_id}"
-            )
-
-        supplier_endpoints = supplier_org.endpoint
-        if supplier_endpoints is not None:
-            supplier_org.endpoint = self._handle_endpoints(
-                supplier_endpoints, supplier_id
-            )
-
-        self.__consumer_request_service.put_organization(
-            organization=jsonable_encoder(supplier_org.dict()),
-            resource_id=resource_map.consumer_resource_id,
-        )
-        self.__resource_map_service.update_one(
-            ResourceMapUpdateDto(
-                supplier_resource_id=resource_map.supplier_resource_id,
-                supplier_resource_version=supplier_org.meta.versionId,
-                consumer_resource_version=resource_map.consumer_resource_version + 1,
-            )
-        )
-
-    def update_endpoint(
-        self, entry: BundleEntry, supplier_id: str, resource_id: str
-    ) -> Endpoint | None:
-        resource_map = self.__resource_map_service.get(
-            supplier_resource_id=resource_id,
-            supplier_id=supplier_id,
-        )
-        entry_request = entry.request
-        if not isinstance(entry_request, BundleEntryRequest):
-            raise TypeError("entry is not of type BundleEntryRequest")
-
-        if resource_map is None:
-            if entry_request.method == "DELETE":
-                return
-
-            supplier_endpoint = Endpoint(**entry.resource.dict())
-            supplier_endpoint.managingOrganization = None
-            supplier_endpoint.id = None
-            consumer_endpoint = self.__consumer_request_service.post_endpoint(
-                endpoint=jsonable_encoder(supplier_endpoint.dict())
-            )
-            self.__resource_map_service.add_one(
-                ResourceMapDto(
                     supplier_resource_id=resource_id,
-                    supplier_resource_version=supplier_endpoint.meta.versionId,
-                    consumer_resource_id=consumer_endpoint.id,
-                    consumer_resource_version=consumer_endpoint.meta.versionId,
-                    resource_type="Endpoint",
-                    supplier_id=supplier_id,
+                    supplier_resource_version=self._get_latest_etag_version(entry),
+                    consumer_resource_version=self._get_latest_etag_version(
+                        consumer_resource_history.entry[0]  # type: ignore
+                    ),
                 )
             )
-            return consumer_endpoint
+            return None
 
-        supplier_endpoint_history = (
-            self.__supplier_request_service.get_endpoint_history(
-                supplier_id=supplier_id, endpoint_id=resource_id
-            )
-        )
-        latest_supplier_version = self._get_latest_etag_version(
-            supplier_endpoint_history.entry[0]
-        )
+        references = self._get_references(entry_resource.model_dump())  # type: ignore
 
-        if entry_request.method == "DELETE":
-            self.__consumer_request_service.delete_endpoint(
-                endpoint_id=resource_map.consumer_resource_id
+        for key, ref in references:
+            if key == "qualification":
+                for index, qualification in enumerate(ref):
+                    issuer = qualification["issuer"]  # type: ignore
+                    latest = (
+                        self.__supplier_request_service.get_latest_entry_from_reference(
+                            supplier_id, issuer
+                        )
+                    )
+                    ref_resource = self.update(supplier_id, latest)
+                    dicty_type = entry_resource.model_dump()  # type: ignore
+                    dicty_type[key][index]["issuer"] = {
+                        "reference": f"{ref_resource.resource_type}/{ref_resource.id}" # type: ignore
+                    }
+                    entry_resource = Resource(**dicty_type)
+            elif isinstance(ref, List):
+                refs_list = []
+                for i in ref:
+                    latest = (
+                        self.__supplier_request_service.get_latest_entry_from_reference(
+                            supplier_id, i
+                        )
+                    )
+                    ref_resource = self.update(supplier_id, latest)
+                    refs_list.append(
+                        {"reference": f"{ref_resource.resource_type}/{ref_resource.id}"}  # type: ignore
+                    )
+                if not isinstance(key, str):
+                    raise TypeError("key is not of type str")
+                entry_resource.__setattr__(key, refs_list)
+            else:
+                latest = (
+                    self.__supplier_request_service.get_latest_entry_from_reference(
+                        supplier_id, ref
+                    )
+                )
+                ref_resource = self.update(supplier_id, latest)
+                entry_resource.__setattr__(
+                    key,
+                    {"reference": f"{ref_resource.resource_type}/{ref_resource.id}"},  # type: ignore
+                )
+
+        # put
+        if resource_needs_update:
+            if TYPE_CHECKING:
+                if entry_resource is None or resource_map is None:
+                    raise ValueError("Resource cannot be None")
+
+            entry_resource.id = resource_map.consumer_resource_id
+            updated_resource = self.__consumer_request_service.put_resource(
+                entry_resource, resource_map.consumer_resource_id
             )
             self.__resource_map_service.update_one(
                 ResourceMapUpdateDto(
-                    supplier_resource_id=resource_map.supplier_resource_id,
-                    supplier_resource_version=latest_supplier_version,
-                    consumer_resource_version=resource_map.consumer_resource_version
-                    + 1,
+                    supplier_resource_id=resource_id,
+                    supplier_resource_version=self._get_latest_etag_version(entry),
+                    consumer_resource_version=int(updated_resource.meta.versionId),
                 )
             )
-            return
-        else:
-            supplier_endpoint = Endpoint(**entry.resource.dict())
-            supplier_endpoint.id = resource_map.consumer_resource_id
-            supplier_endpoint.managingOrganization = None
-            updated_endpoint = self.__consumer_request_service.put_endpoint(
-                endpoint=jsonable_encoder(supplier_endpoint.dict()),
-                resource_id=resource_map.consumer_resource_id,
-            )
-            # if resource_map.supplier_resource_version != latest_supplier_version:
+            return updated_resource
 
-            self.__resource_map_service.update_one(
-                ResourceMapUpdateDto(
-                    supplier_resource_id=resource_map.supplier_resource_id,
-                    supplier_resource_version=supplier_endpoint.meta.versionId,
-                    consumer_resource_version=updated_endpoint.meta.versionId,
-                )
+        # default post
+        entry_resource.id = None  # type: ignore
+        new_resource = self.__consumer_request_service.post_resource(entry_resource)  # type: ignore
+        self.__resource_map_service.add_one(
+            ResourceMapDto(
+                supplier_id=supplier_id,
+                supplier_resource_id=resource_id,
+                supplier_resource_version=self._get_latest_etag_version(entry),
+                consumer_resource_id=new_resource.id,  # type: ignore
+                consumer_resource_version=int(new_resource.meta.versionId),
+                resource_type=resource_type,
             )
-            return updated_endpoint
-
-    # Endpoint is reference by 2 organization, remove the reference of the deleted org
-    # Endpoint has a managing org <Maybe>
-    # Delete Endpoints for orgs that do not exist anymore
-
-    def _handle_endpoints(
-        self, endpoints: List[ReferenceType], supplier_id: str
-    ) -> list[Reference]:
-        endpoints_refs: list[Reference] = []
-        for endpoint_ref in endpoints:
-            if not isinstance(endpoint_ref, Reference):
-                raise TypeError("endpoint is not of type Reference")
-            supplier_endpoint_id = endpoint_ref.reference.replace("Endpoint/", "")
-            supplier_endpoint_history = (
-                self.__supplier_request_service.get_endpoint_history(
-                    supplier_id, supplier_endpoint_id
-                )
-            )
-            latest_entry = supplier_endpoint_history.entry[0]
-            updated_endpoint = self.update_endpoint(
-                latest_entry, supplier_id, supplier_endpoint_id
-            )
-            endpoints_refs.append(
-                Reference.construct(reference=f"Endpoint/{updated_endpoint.id}")
-            )
-        return endpoints_refs
+        )
+        return new_resource
 
     @staticmethod
-    def _get_latest_etag_version(first_entry: BundleEntry | BundleEntryType) -> int:
-        if not isinstance(first_entry, BundleEntry):
-            raise TypeError("first entry is not of type BundleEntry")
-        response = first_entry.response
-        if not isinstance(response, BundleEntryResponse):
-            raise TypeError("response is not of type BundleEntryResponse")
+    def _get_references(
+        data: dict[str, Any],
+    ) -> List[Tuple[str, Dict[str, str] | List[Dict[str, str]]]]:
+        refs: List[Tuple[str, Dict[str, str] | List[Dict[str, str]]]] = []
+        for k, v in data.items():
+            try:
+                if "reference" in v:
+                    refs.append((k, v))  # Tuple[str, dict[str, str]]
+            except TypeError:
+                continue
 
-        etag = re.search(r"(?<=\")\d*(?=\")", response.etag)
-        if etag is None:
+            if k == "qualification":  # Special practitioners case
+                refs.append((k, v))  # List[dict[str, Dict]]
+                continue
+
+            if isinstance(v, List):
+                refs_list: List[dict[str, str]] = []
+                checker = False
+                for i in v:
+                    try:
+                        if "reference" in i:
+                            checker = True
+                            refs_list.append(i)  # List[dict[str, str]]
+                    except TypeError:
+                        continue
+
+                if checker:
+                    refs.append((k, refs_list))
+        return refs
+
+    @staticmethod
+    def _get_resource_type_and_id_from_bundle_entry(entry: Entry) -> tuple[str, str]:
+        request = entry.request
+        if request is None:
+            raise ValueError("request is None")
+        url = request.url
+        if url is None:
+            raise ValueError("url is None")
+
+        split = url.split("/")
+        return split[0], split[1]
+
+    @staticmethod
+    def _get_request_method(entry: Entry) -> str:
+        entry_request = entry.request
+        if entry_request is None:
+            raise ValueError("entry_request is None")
+        method = entry_request.method
+        if method is None:
+            raise ValueError("method is None")
+        return method
+
+    @staticmethod
+    def _get_latest_etag_version(first_entry: Entry) -> int:
+        results = re.search(r"(?<=\")\d*(?=\")", first_entry.response.etag)
+        if results is None:
             raise ValueError("Did not find etag")
-        return int(etag.group())
+        return int(results.group())
