@@ -52,14 +52,13 @@ class SupplierRequestsService:
                     params={"_since": _since.isoformat()} if _since else None,
                 )
             )
-        extended_history = histories.pop(0)
-        if extended_history.entry is None or len(extended_history.entry) == 0:
-            raise Exception("History is empty")
+        new_bundle = Bundle(type="history")
+        new_bundle.entry = []
         for history in histories:
             if history.entry is None or len(history.entry) == 0:
-                raise Exception("History is empty")
-            extended_history.entry.extend(history.entry)
-        return extended_history
+                continue
+            new_bundle.entry.extend(history.entry)
+        return new_bundle
 
     def get_latest_entry_from_reference(
         self, supplier_id: str, reference: Dict[str, str]
@@ -83,6 +82,6 @@ class SupplierRequestsService:
         latest = res_history.entry[0]
 
         if latest.request.method == "DELETE":
-            raise Exception("Referenced resource was deleted")
+            raise Exception("REFERENCED RESOURCE WAS DELETED")
 
         return latest

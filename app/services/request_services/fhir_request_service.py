@@ -74,7 +74,7 @@ class FhirRequestService:
         bundle: Bundle = Bundle(**response.json())
 
         if bundle.entry is None or len(bundle.entry) == 0:
-            raise Exception(response.json())
+            return bundle
 
         if bundle.link is not None and len(bundle.link) > 0:
             bundles: List[Bundle] = []
@@ -91,7 +91,7 @@ class FhirRequestService:
 
             for extr_bundle in bundles:
                 if extr_bundle.entry is None or len(extr_bundle.entry) == 0:
-                    raise Exception(response.json())
+                    continue
                 bundle.entry.extend(extr_bundle.entry)
 
         return bundle

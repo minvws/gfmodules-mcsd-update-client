@@ -14,7 +14,7 @@ router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"
 
 
 class UpdateQueryParams(BaseModel):
-    since: datetime | None = Field(default=None, alias="_since")
+    since: datetime | None = Field(default=None)
 
 
 @router.post(
