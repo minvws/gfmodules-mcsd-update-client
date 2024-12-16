@@ -55,9 +55,8 @@ class SupplierRequestsService:
         new_bundle = Bundle(type="history")
         new_bundle.entry = []
         for history in histories:
-            if history.entry is None or len(history.entry) == 0:
-                continue
-            new_bundle.entry.extend(history.entry)
+            if history.entry is not None:
+                new_bundle.entry.extend(history.entry)
         return new_bundle
 
     def get_latest_entry_from_reference(

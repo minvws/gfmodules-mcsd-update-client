@@ -90,9 +90,8 @@ class FhirRequestService:
                     )
 
             for extr_bundle in bundles:
-                if extr_bundle.entry is None or len(extr_bundle.entry) == 0:
-                    continue
-                bundle.entry.extend(extr_bundle.entry)
+                if extr_bundle.entry is not None:
+                    bundle.entry.extend(extr_bundle.entry)
 
         return bundle
 
