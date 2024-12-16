@@ -82,6 +82,6 @@ class SupplierRequestsService:
         latest = res_history.entry[0]
 
         if latest.request.method == "DELETE":
-            raise Exception("REFERENCED RESOURCE WAS DELETED")
+            raise Exception("Referenced Resource was deleted")
 
         return latest
