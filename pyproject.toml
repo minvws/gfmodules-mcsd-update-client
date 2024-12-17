@@ -10,7 +10,7 @@ packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-uvicorn = "^0.26.0"
+uvicorn = "^0.34.0"
 fastapi = "^0.115.1"
 mypy = "^1.8.0"
 pydantic-settings = "^2.1.0"
@@ -19,6 +19,12 @@ sqlalchemy = "^2.0.25"
 psycopg = { extras = ["binary", "pool"], version = "^3.1.17" }
 requests = "^2.32.0"
 fhir-resources = "^7.1.0"
+opentelemetry-sdk = "^1.29.0"
+opentelemetry-exporter-otlp-proto-grpc = "^1.29.0"
+opentelemetry-instrumentation = "^0.50b0"
+opentelemetry-instrumentation-fastapi = "^0.50b0"
+opentelemetry-instrumentation-requests = "^0.50b0"
+statsd = "^4.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"
