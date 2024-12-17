@@ -11,6 +11,18 @@ max_overflow=10
 pool_pre_ping=False
 pool_recycle=1800
 
+[telemetry]
+enabled = True
+endpoint = http://tracing:4317
+service_name = Mcsd Update service
+tracer_name = zmodules.service.mscd_update
+
+[stats]
+enabled = True
+host = graphite
+port = 8125
+module_name = mcsd
+
 [uvicorn]
 swagger_enabled = True
 docs_url = /docs

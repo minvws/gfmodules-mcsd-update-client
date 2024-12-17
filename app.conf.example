@@ -12,6 +12,26 @@ max_overflow=10
 pool_pre_ping=False
 pool_recycle=1800
 
+[telemetry]
+# Telemetry is enabled or not
+enabled = True
+# Endpoint to GRPC server for telemetry
+endpoint = http://tracing:4317
+# Service name to use
+service_name = Lokalisatie Metadata Register
+# Tracer name to use
+tracer_name = zmodules.service.localisation_metadata_register
+
+[stats]
+# Statsd is enabled or not
+enabled = True
+# Host for statsd server
+host = 127.0.0.1
+# Port for statsd server
+port = 8125
+# Module name to use
+module_name = metadata
+
 [uvicorn]
 swagger_enabled = True
 docs_url = /docs

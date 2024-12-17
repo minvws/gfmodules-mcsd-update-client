@@ -12,6 +12,8 @@ from app.routers.supplier_router import router as supplier_router
 from app.routers.resource_map_router import router as resource_map_router
 from app.routers.update_router import router as update_router
 from app.config import get_config
+from app.stats import setup_stats
+from app.telemetry import setup_telemetry
 
 
 def get_uvicorn_params() -> dict[str, Any]:
@@ -45,6 +47,12 @@ def run() -> None:
 def create_fastapi_app() -> FastAPI:
     application_init()
     fastapi = setup_fastapi()
+
+    if get_config().stats.enabled:
+        setup_stats()
+
+    if get_config().telemetry.enabled:
+        setup_telemetry(fastapi)
 
     return fastapi
 
