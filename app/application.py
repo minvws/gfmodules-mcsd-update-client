@@ -11,6 +11,7 @@ from app.routers.health import router as health_router
 from app.routers.supplier_router import router as supplier_router
 from app.routers.resource_map_router import router as resource_map_router
 from app.routers.update_router import router as update_router
+from app.routers.consumer import router as consumer_router
 from app.config import get_config
 from app.stats import setup_stats
 from app.telemetry import setup_telemetry
@@ -88,6 +89,7 @@ def setup_fastapi() -> FastAPI:
         supplier_router,
         resource_map_router,
         update_router,
+        consumer_router,
     ]
     for router in routers:
         fastapi.include_router(router)

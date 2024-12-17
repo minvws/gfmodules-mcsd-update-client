@@ -14,6 +14,7 @@ class ResourceMapDto(ResourceMapBase):
 
 
 class ResourceMapUpdateDto(BaseModel):
+    supplier_id: str
     supplier_resource_id: str
     supplier_resource_version: int
     consumer_resource_version: int

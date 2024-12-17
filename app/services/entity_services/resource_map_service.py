@@ -75,7 +75,7 @@ class ResourceMapService:
             return repository.create(new_map)
 
     def update_one(self, dto: ResourceMapUpdateDto) -> ResourceMap:
-        target = self.get_one(dto.supplier_resource_id)
+        target = self.get_one(supplier_resource_id=dto.supplier_resource_id, supplier_id=dto.supplier_id)
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
             target.supplier_resource_version = dto.supplier_resource_version
