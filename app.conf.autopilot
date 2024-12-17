@@ -21,7 +21,7 @@ tracer_name = zmodules.service.mscd_update
 enabled = True
 host = graphite
 port = 8125
-module_name = metadata
+module_name = mcsd
 
 [uvicorn]
 swagger_enabled = True
