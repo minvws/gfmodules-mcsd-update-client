@@ -17,16 +17,10 @@ class UpdateQueryParams(BaseModel):
     since: datetime | None = Field(default=None)
 
 
-@router.post(
-    "/{supplier_id}/{resource_type}",
-    response_model=None,
-    summary="Update by supplier ID and resource type",
-)
 @router.post("/{supplier_id}", response_model=None, summary="Update by supplier ID")
 @router.post("", response_model=None, summary="Update all suppliers")
 def update_supplier_resources(
     supplier_id: str | None = None,
-    resource_type: str | None = None,
     query_params: UpdateQueryParams = Depends(),
     service: UpdateConsumerService = Depends(get_update_consumer_service),
     supplier_service: SupplierService = Depends(get_supplier_service),
@@ -37,8 +31,8 @@ def update_supplier_resources(
         data: list[dict[str, Any]] = []
         for supplier in all_suppliers:
             data.append(
-                service.update_supplier(supplier.id, resource_type, since)
+                service.update_supplier(supplier.id, since)
             )
         return data
     else:
-        return service.update_supplier(supplier_id, resource_type, since)
+        return service.update_supplier(supplier_id, since)

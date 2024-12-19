@@ -1,7 +1,14 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import types, String, TIMESTAMP, func, PrimaryKeyConstraint, Integer
+from sqlalchemy import (
+    String,
+    TIMESTAMP,
+    func,
+    PrimaryKeyConstraint,
+    Integer,
+    types, UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.entities.base import Base
@@ -9,7 +16,10 @@ from app.db.entities.base import Base
 
 class ResourceMap(Base):
     __tablename__ = "resource_maps"
-    __table_args__ = (PrimaryKeyConstraint("id"),)
+    __table_args__ = (
+        PrimaryKeyConstraint("id"),
+        UniqueConstraint("supplier_id", "supplier_resource_id"),
+    )
 
     id: Mapped[UUID] = mapped_column(
         "id",
@@ -24,7 +34,7 @@ class ResourceMap(Base):
     )
     resource_type: Mapped[str] = mapped_column("resource_type", String, nullable=False)
     supplier_resource_id: Mapped[str] = mapped_column(
-        "supplier_resource_id", String, nullable=False, unique=True
+        "supplier_resource_id", String, nullable=False
     )
     supplier_resource_version: Mapped[int] = mapped_column(
         "supplier_resource_version", Integer, nullable=False

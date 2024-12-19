@@ -1,5 +1,7 @@
 from fastapi import HTTPException
 import pytest
+from sqlalchemy.exc import IntegrityError
+
 from app.services.entity_services.resource_map_service import ResourceMapService
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 
@@ -91,6 +93,7 @@ def test_update_one_should_succeed_when_resource_map_exist(
 ) -> None:
     original = resource_map_service.add_one(mock_dto)
     update_dto = ResourceMapUpdateDto(
+        supplier_id=mock_dto.supplier_id,
         supplier_resource_id=mock_dto.supplier_resource_id,
         supplier_resource_version=2,
         consumer_resource_version=2,
@@ -111,6 +114,7 @@ def test_update_one_should_raise_exception_when_resource_map_does_not_exist(
 ) -> None:
     resource_map_service.add_one(mock_dto)
     update_dto = ResourceMapUpdateDto(
+        supplier_id="123",
         supplier_resource_id="wrong_id",
         supplier_resource_version=2,
         consumer_resource_version=2,
@@ -127,3 +131,19 @@ def test_delete_one_should_succeed_when_resource_map_exist(
     resource_map_service.delete_one(mock_dto.supplier_resource_id)
     with pytest.raises(HTTPException):
         resource_map_service.get_one(supplier_resource_id=mock_dto.supplier_resource_id)
+
+
+def test_unique_constraint_on_supplier_id_and_supplier_resource_id(
+    resource_map_service: ResourceMapService, mock_dto: ResourceMapDto
+) -> None:
+    resource_map_service.add_one(mock_dto)
+    duplicate_dto = ResourceMapDto(
+        supplier_id=mock_dto.supplier_id,
+        supplier_resource_id=mock_dto.supplier_resource_id,
+        supplier_resource_version=2,
+        resource_type="Organization",
+        consumer_resource_id="another_consumer_resource_id",
+        consumer_resource_version=2,
+    )
+    with pytest.raises(IntegrityError):
+        resource_map_service.add_one(duplicate_dto)

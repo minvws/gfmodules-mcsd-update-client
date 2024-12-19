@@ -26,11 +26,10 @@ class UpdateConsumerService:
     def update_supplier(
         self,
         supplier_id: str,
-        resource_type: str | None = None,
         _since: datetime | None = None,
     ) -> Dict[str, Any]:
         supplier_history = self.__supplier_request_service.get_resource_history(
-            supplier_id=supplier_id, resource_type=resource_type, _since=_since
+            supplier_id=supplier_id, _since=_since
         )
         entries = supplier_history.entry if supplier_history.entry else []
 
@@ -55,7 +54,7 @@ class UpdateConsumerService:
         return {
             "message": "organizations and endpoints are updated",
             "data": self.__resource_map_service.find(
-                supplier_id=supplier_id, resource_type=resource_type
+                supplier_id=supplier_id
             ),
         }
 
@@ -65,7 +64,7 @@ class UpdateConsumerService:
         resource_type, resource_id = self._get_resource_type_and_id_from_bundle_entry(
             entry
         )
-        resource_map = self.__resource_map_service.get(supplier_resource_id=resource_id)
+        resource_map = self.__resource_map_service.get(supplier_id=supplier_id, supplier_resource_id=resource_id)
         request_type = self._get_request_method(entry)
         entry_resource = entry.resource
         resource_is_not_needed = (
@@ -111,6 +110,7 @@ class UpdateConsumerService:
             )
             self.__resource_map_service.update_one(
                 ResourceMapUpdateDto(
+                    supplier_id=supplier_id,
                     supplier_resource_id=resource_id,
                     supplier_resource_version=self._get_latest_etag_version(entry),
                     consumer_resource_version=self._get_latest_etag_version(
@@ -176,6 +176,7 @@ class UpdateConsumerService:
             )
             self.__resource_map_service.update_one(
                 ResourceMapUpdateDto(
+                    supplier_id=supplier_id,
                     supplier_resource_id=resource_id,
                     supplier_resource_version=self._get_latest_etag_version(entry),
                     consumer_resource_version=int(updated_resource.meta.versionId),
