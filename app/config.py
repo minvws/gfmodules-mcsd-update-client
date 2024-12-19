@@ -64,7 +64,7 @@ class ConfigStats(BaseModel):
 
 
 class ConfigMcsd(BaseModel):
-    consumer_url: str = Field(default="http://localhost:8502")
+    consumer_url: str = Field(default="http://addressing-app:8502")
 
 
 class ConfigMockSeeder(BaseModel):
