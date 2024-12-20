@@ -138,8 +138,8 @@ def test_unique_constraint_on_supplier_id_and_supplier_resource_id(
 ) -> None:
     resource_map_service.add_one(mock_dto)
     duplicate_dto = ResourceMapDto(
-        supplier_id=mock_dto.supplier_id, # Same
-        supplier_resource_id=mock_dto.supplier_resource_id, # Same
+        supplier_id=mock_dto.supplier_id,
+        supplier_resource_id=mock_dto.supplier_resource_id,
         supplier_resource_version=2,
         resource_type="Organization",
         consumer_resource_id="another_consumer_resource_id",
