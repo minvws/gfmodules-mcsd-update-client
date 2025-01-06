@@ -22,7 +22,7 @@ def test_add_one_should_raise_exception_when_supplier_exists(
 ) -> None:
     supplier_service.add_one(mock_dto)
     new_dto = SupplierDto(
-        id=mock_dto.id, name="some new name", endpoint="http://example.nl"
+        id=mock_dto.id, name="some new name", endpoint="http://example.org"
     )
     with pytest.raises(HTTPException):
         supplier_service.add_one(new_dto)

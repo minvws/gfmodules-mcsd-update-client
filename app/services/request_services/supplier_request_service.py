@@ -5,6 +5,7 @@ from typing import Dict, List
 from app.models.fhir.r4.types import Entry, Bundle
 
 from app.services.entity_services.supplier_service import SupplierService
+from app.services.request_services.Authenticators import Authenticator
 from app.services.request_services.fhir_request_service import FhirRequestService
 
 
@@ -19,9 +20,9 @@ class McsdResources(Enum):
 
 
 class SupplierRequestsService:
-    def __init__(self, supplier_service: SupplierService) -> None:
+    def __init__(self, supplier_service: SupplierService, auth: Authenticator) -> None:
         self.__supplier_service = supplier_service
-        self.__fhir_request_service = FhirRequestService(timeout=10, backoff=0.1)
+        self.__fhir_request_service = FhirRequestService(timeout=10, backoff=0.1, auth=auth)
 
     def get_resource_history(
         self,

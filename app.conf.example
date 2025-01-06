@@ -47,6 +47,19 @@ ssl_key_file = server.key
 
 [mcsd]
 consumer_url = http://addressing-app:8502
+# authentication can be either "off", or "azure_oauth2" in case of azure oauth2 authentication
+authentication = off
+
+[azure_oauth2]
+# Token url is the url of the oauth2 endpoint of the microsoft services
+token_url =
+# Given client ID of the application
+client_id =
+# Given client secret of the application
+client_secret =
+# Resource of the application. Most likely the consumer url
+resource =
+
 
 [mock_seeder]
 mock_supplier_url = # For a local test HAPI it can be: http://host.docker.internal:8081/fhir/

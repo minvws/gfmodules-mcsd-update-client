@@ -1,17 +1,18 @@
 from app.models.fhir.r4.types import Resource, Bundle
+from app.services.request_services.Authenticators import Authenticator
 from app.services.request_services.fhir_request_service import FhirRequestService
 
 
 class ConsumerRequestService:
-    def __init__(self, url: str):
+    def __init__(self, url: str, auth: Authenticator) -> None:
         self.__url = url
-        self.__fhir_request_service = FhirRequestService(timeout=10, backoff=0.1)
+        self.__fhir_request_service = FhirRequestService(timeout=10, backoff=0.1, auth = auth)
 
     def post_resource(self, resource: Resource) -> Resource:
         response = self.__fhir_request_service.post_resource(
             resource_type=resource.resource_type,
             url=self.__url,
-            resource=resource.model_dump(),
+            resource=resource.model_dump(by_alias=True),
         )
         return Resource(**response)
 
@@ -20,7 +21,7 @@ class ConsumerRequestService:
             resource_type=resource.resource_type,
             url=self.__url,
             resource_id=resource_id,
-            resource=resource.model_dump(),
+            resource=resource.model_dump(by_alias=True),
         )
         return Resource(**response)
 

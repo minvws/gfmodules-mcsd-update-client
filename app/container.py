@@ -4,6 +4,7 @@ from app.db.db import Database
 from app.config import get_config
 from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.entity_services.supplier_service import SupplierService
+from app.services.request_services.Authenticators import AzureOAuth2Authenticator, NullAuthenticator
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
 )
@@ -25,8 +26,21 @@ def container_config(binder: inject.Binder) -> None:
     resource_map_service = ResourceMapService(db)
     binder.bind(ResourceMapService, resource_map_service)
 
-    consumer_request_service = ConsumerRequestService(config.mcsd.consumer_url)
-    supplier_request_service = SupplierRequestsService(supplier_service)
+    if config.mcsd.authentication == "off":
+        auth = NullAuthenticator()
+    elif config.mcsd.authentication == "azure_oauth2":
+        auth = AzureOAuth2Authenticator(
+            token_url=config.azure_oauth2.token_url,        # type: ignore
+            client_id=config.azure_oauth2.client_id,        # type: ignore
+            client_secret=config.azure_oauth2.client_secret,   # type: ignore
+            resource=config.azure_oauth2.resource,       # type: ignore
+        )
+    else:
+        raise ValueError(
+            "authentication must be either False, or 'azure_oauth2'"
+        )
+    consumer_request_service = ConsumerRequestService(config.mcsd.consumer_url, auth)
+    supplier_request_service = SupplierRequestsService(supplier_service, auth)
 
     update_consumer_service = UpdateConsumerService(
         consumer_request_service=consumer_request_service,
