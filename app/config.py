@@ -1,8 +1,8 @@
 from enum import Enum
 import configparser
-from typing import Any
+from typing import Any, Union
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
 from pydantic import Field
 
 _PATH = "app.conf"
@@ -65,11 +65,27 @@ class ConfigStats(BaseModel):
 
 class ConfigMcsd(BaseModel):
     consumer_url: str = Field(default="http://addressing-app:8502")
+    authentication: Union[str] = Field(
+        default="off",
+        description="Enable authentication, can be 'off', 'oauth2', or 'azure_oauth2'"
+    )
+
+    @field_validator("authentication")
+    def validate_authentication(cls, value: Any) -> str|bool:
+        if value not in {"off", "oauth2", "azure_oauth2"}:
+            raise ValueError("authentication must be either 'off', 'oauth2', or 'azure_oauth2'")
+        return str(value)
 
 
 class ConfigMockSeeder(BaseModel):
     mock_supplier_url: str | None
 
+
+class ConfigAzureOauth2(BaseModel):
+    token_url: str
+    client_id: str
+    client_secret: str
+    resource: str
 
 class Config(BaseModel):
     app: ConfigApp
@@ -79,6 +95,7 @@ class Config(BaseModel):
     mock_seeder: ConfigMockSeeder
     telemetry: ConfigTelemetry
     stats: ConfigStats
+    azure_oauth2: ConfigAzureOauth2 | None
 
 
 def read_ini_file(path: str) -> Any:
@@ -125,6 +142,9 @@ def get_config(path: str | None = None) -> Config:
             ini_data["database"]["retry_backoff"] = [
                 float(i) for i in ini_data["database"]["retry_backoff"].split(",")
             ]
+
+            if "azure_oauth2" not in ini_data:
+                ini_data["azure_oauth2"] = None
 
         _CONFIG = Config(**ini_data)
     except ValidationError as e:

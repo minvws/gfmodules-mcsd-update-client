@@ -4,18 +4,28 @@ import requests
 from urllib.parse import urlparse, parse_qs
 
 from app.models.fhir.r4.types import Bundle
+from app.services.request_services.Authenticators import Authenticator
 
 
 class FhirRequestService:
-    def __init__(self, timeout: int, backoff: float):
+    def __init__(self, timeout: int, backoff: float, auth: Authenticator) -> None:
         self.timeout = timeout
         self.backoff = backoff
+        self.auth = auth
 
     def get_resource(
         self, resource_type: str, url: str, resource_id: str
     ) -> Dict[str, Any]:
+        headers = {"Content-Type": "application/json"}
+        auth_header = self.auth.get_authentication_header()
+
+        if auth_header:
+            headers["Authorization"] = auth_header
+
         response = requests.get(
-            f"{url}/{resource_type}/{resource_id}", timeout=self.timeout
+            f"{url}/{resource_type}/{resource_id}",
+            timeout=self.timeout,
+            headers=headers,
         )
         if response.status_code > 300:
             raise Exception(response.json())
@@ -29,10 +39,17 @@ class FhirRequestService:
         url: str,
         resource_params: dict[str, str] | None = None,
     ) -> Dict[str, Any]:
+        headers = {"Content-Type": "application/json"}
+        auth_header = self.auth.get_authentication_header()
+
+        if auth_header:
+            headers["Authorization"] = auth_header
+
         response = requests.get(
             f"{url}/{resource_type}/_search",
             params=resource_params,
             timeout=self.timeout,
+            headers=headers,
         )
         if response.status_code > 300:
             raise Exception(response.json())
@@ -43,10 +60,17 @@ class FhirRequestService:
     def post_resource(
         self, resource_type: str, url: str, resource: dict[str, Any]
     ) -> Dict[str, Any]:
+        headers = {"Content-Type": "application/json"}
+        auth_header = self.auth.get_authentication_header()
+
+        if auth_header:
+            headers["Authorization"] = auth_header
+
         response = requests.post(
             f"{url}/{resource_type}",
             json=jsonable_encoder(resource),
             timeout=self.timeout,
+            headers=headers,
         )
         if response.status_code > 300:
             raise Exception(response.json())
@@ -67,7 +91,18 @@ class FhirRequestService:
             else f"{url}/{resource_type}/_history"
         )
 
-        response = requests.get(new_url, timeout=self.timeout, params=params)
+        headers = {"Content-Type": "application/json"}
+        auth_header = self.auth.get_authentication_header()
+
+        if auth_header:
+            headers["Authorization"] = auth_header
+
+        response = requests.get(
+            new_url,
+            timeout=self.timeout,
+            params=params,
+            headers=headers,
+        )
         if response.status_code > 300:
             raise Exception(response.json())
 
@@ -98,10 +133,17 @@ class FhirRequestService:
     def put_resource(
         self, resource_type: str, url: str, resource_id: str, resource: dict[str, Any]
     ) -> Dict[str, Any]:
+        headers = {"Content-Type": "application/json"}
+        auth_header = self.auth.get_authentication_header()
+
+        if auth_header:
+            headers["Authorization"] = auth_header
+
         response = requests.put(
             f"{url}/{resource_type}/{resource_id}",
             json=jsonable_encoder(resource),
             timeout=self.timeout,
+            headers=headers,
         )
         if response.status_code > 300:
             raise Exception(response.json())
@@ -110,9 +152,16 @@ class FhirRequestService:
         return results
 
     def delete_resource(self, resource_type: str, url: str, resource_id: str) -> None:
+        headers = {"Content-Type": "application/json"}
+        auth_header = self.auth.get_authentication_header()
+
+        if auth_header:
+            headers["Authorization"] = auth_header
+
         response = requests.delete(
             f"{url}/{resource_type}/{resource_id}",
             timeout=self.timeout,
+            headers=headers,
         )
         if response.status_code > 300:
             raise Exception(response.json())
