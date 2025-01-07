@@ -34,7 +34,7 @@ ruff = "^0.1.13"
 safety = "^2.3.5"
 codespell = "^2.2.6"
 types-requests = "^2.3"
-faker = "^25.9.1"
+faker = "^33.3.0"
 
 [build-system]
 requires = ["poetry-core"]
