@@ -305,26 +305,6 @@ wrapt = ">=1.10,<2"
 dev = ["PyTest", "PyTest-Cov", "bump2version (<1)", "jinja2 (>=3.0.3,<3.1.0)", "setuptools", "sphinx (<2)", "tox"]
 
 [[package]]
-name = "dnspython"
-version = "2.7.0"
-description = "DNS toolkit"
-optional = false
-python-versions = ">=3.9"
-files = [
-    {file = "dnspython-2.7.0-py3-none-any.whl", hash = "sha256:b4c34b7d10b51bcc3a5071e7b8dee77939f1e878477eeecc965e9835f63c6c86"},
-    {file = "dnspython-2.7.0.tar.gz", hash = "sha256:ce9c432eda0dc91cf618a5cedf1a4e142651196bbcd2c80e89ed5a907e5cfaf1"},
-]
-
-[package.extras]
-dev = ["black (>=23.1.0)", "coverage (>=7.0)", "flake8 (>=7)", "hypercorn (>=0.16.0)", "mypy (>=1.8)", "pylint (>=3)", "pytest (>=7.4)", "pytest-cov (>=4.1.0)", "quart-trio (>=0.11.0)", "sphinx (>=7.2.0)", "sphinx-rtd-theme (>=2.0.0)", "twine (>=4.0.0)", "wheel (>=0.42.0)"]
-dnssec = ["cryptography (>=43)"]
-doh = ["h2 (>=4.1.0)", "httpcore (>=1.0.0)", "httpx (>=0.26.0)"]
-doq = ["aioquic (>=1.0.0)"]
-idna = ["idna (>=3.7)"]
-trio = ["trio (>=0.23)"]
-wmi = ["wmi (>=1.5.1)"]
-
-[[package]]
 name = "dparse"
 version = "0.6.4"
 description = "A parser for Python dependency files"
@@ -343,21 +323,6 @@ all = ["pipenv", "poetry", "pyyaml"]
 conda = ["pyyaml"]
 pipenv = ["pipenv"]
 poetry = ["poetry"]
-
-[[package]]
-name = "email-validator"
-version = "2.2.0"
-description = "A robust email address syntax and deliverability validation library."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "email_validator-2.2.0-py3-none-any.whl", hash = "sha256:561977c2d73ce3611850a06fa56b414621e0c8faa9d66f2611407d87465da631"},
-    {file = "email_validator-2.2.0.tar.gz", hash = "sha256:cb690f344c617a714f22e66ae771445a1ceb46821152df8e165c5f9a364582b7"},
-]
-
-[package.dependencies]
-dnspython = ">=2.0.0"
-idna = ">=2.0.0"
 
 [[package]]
 name = "faker"
@@ -394,24 +359,41 @@ all = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.5)", "httpx (>
 standard = ["email-validator (>=2.0.0)", "fastapi-cli[standard] (>=0.0.5)", "httpx (>=0.23.0)", "jinja2 (>=2.11.2)", "python-multipart (>=0.0.7)", "uvicorn[standard] (>=0.12.0)"]
 
 [[package]]
-name = "fhir-resources"
-version = "7.1.0"
-description = "FHIR Resources as Model Class"
+name = "fhir-core"
+version = "1.0.0"
+description = "FHIR Core library"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "fhir.resources-7.1.0-py2.py3-none-any.whl", hash = "sha256:4d37c3aadb3afbabad28ca7701b87323680468a13f6a6426bb6c282d4efd5c62"},
-    {file = "fhir.resources-7.1.0.tar.gz", hash = "sha256:fae2d43c03dacf85a9f9fbce3b62148f3166fe297471cd43b74d91abbf69f818"},
+    {file = "fhir_core-1.0.0-py2.py3-none-any.whl", hash = "sha256:8f58015563dd1ebc2dcc2185197ed269b1a2d68f098d0fd617e2dd4e16cb2376"},
+    {file = "fhir_core-1.0.0.tar.gz", hash = "sha256:654cd30eeffcd49212097e6a2abb590f0b9d33dac36bf39b1518bbd0841c0f2c"},
 ]
 
 [package.dependencies]
-pydantic = {version = ">=2.0.1,<3.0", extras = ["email"]}
+pydantic = ">=2.7.4,<3.0"
 
 [package.extras]
-all = ["PyYAML (>=5.4.1)", "lxml", "orjson (>=3.4.3)"]
+dev = ["Jinja2 (==2.11.1)", "MarkupSafe (==1.1.1)", "PyYAML (>=6.0.1)", "black", "certifi", "colorlog (==2.10.0)", "coverage", "fhirspec", "flake8 (==6.0)", "flake8-bugbear (>=22.12.6)", "flake8-isort (>=6.0.0)", "importlib-metadata (>=5.2.0)", "isort (>=5.11.4)", "lxml", "mypy", "pytest (>5.4.0)", "pytest-cov (>=2.10.0)", "requests (==2.23.0)", "setuptools (==65.6.3)", "types-PyYAML", "types-requests", "types-simplejson", "zest-releaser[recommended]"]
+test = ["PyYAML (>=6.0.1)", "black", "coverage", "flake8 (==6.0)", "flake8-bugbear (>=22.12.6)", "flake8-isort (>=6.0.0)", "importlib-metadata (>=5.2.0)", "isort (>=5.11.4)", "lxml", "mypy", "pytest (>5.4.0)", "pytest-cov (>=2.10.0)", "pytest-runner", "requests (==2.23.0)", "setuptools (==65.6.3)", "types-PyYAML", "types-requests", "types-simplejson"]
+
+[[package]]
+name = "fhir-resources"
+version = "8.0.0"
+description = "FHIR Resources as Model Class"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "fhir.resources-8.0.0-py2.py3-none-any.whl", hash = "sha256:9c46d6d79c6d6629c3bea6f244bcc6e8e0e4d15757a675f19d9d1c05c9ab2199"},
+    {file = "fhir.resources-8.0.0.tar.gz", hash = "sha256:84dac3af31eaf90d5b0386cac21d26c50e6fb1526d68b88a2c42d112978e9cf9"},
+]
+
+[package.dependencies]
+fhir-core = ">=1.0.0"
+
+[package.extras]
+all = ["PyYAML (>=5.4.1)", "lxml"]
 dev = ["Jinja2 (==2.11.1)", "MarkupSafe (==1.1.1)", "black", "certifi", "colorlog (==2.10.0)", "coverage", "fhirspec", "flake8 (==6.0)", "flake8-bugbear (>=22.12.6)", "flake8-isort (>=6.0.0)", "importlib-metadata (>=5.2.0)", "isort (>=5.11.4)", "mypy", "pytest (>5.4.0)", "pytest-cov (>=2.10.0)", "requests (==2.23.0)", "setuptools (==65.6.3)", "typed-ast (>=1.5.4)", "types-PyYAML", "types-requests", "types-simplejson", "zest-releaser[recommended]"]
-orjson = ["orjson (>=3.4.3)"]
-test = ["PyYAML (>=5.4.1)", "black", "coverage", "flake8 (==6.0)", "flake8-bugbear (>=22.12.6)", "flake8-isort (>=6.0.0)", "importlib-metadata (>=5.2.0)", "isort (>=5.11.4)", "lxml", "mypy", "orjson (>=3.4.3)", "pytest (>5.4.0)", "pytest-cov (>=2.10.0)", "pytest-runner", "requests (==2.23.0)", "setuptools (==65.6.3)", "typed-ast (>=1.5.4)", "types-PyYAML", "types-requests", "types-simplejson"]
+test = ["PyYAML (>=5.4.1)", "black", "coverage", "flake8 (==6.0)", "flake8-bugbear (>=22.12.6)", "flake8-isort (>=6.0.0)", "importlib-metadata (>=5.2.0)", "isort (>=5.11.4)", "lxml", "mypy", "pytest (>5.4.0)", "pytest-cov (>=2.10.0)", "pytest-runner", "requests (==2.23.0)", "setuptools (==65.6.3)", "typed-ast (>=1.5.4)", "types-PyYAML", "types-requests", "types-simplejson"]
 xml = ["lxml"]
 yaml = ["PyYAML (>=5.4.1)"]
 
@@ -1121,7 +1103,6 @@ files = [
 
 [package.dependencies]
 annotated-types = ">=0.6.0"
-email-validator = {version = ">=2.0.0", optional = true, markers = "extra == \"email\""}
 pydantic-core = "2.27.1"
 typing-extensions = ">=4.12.2"
 
@@ -1816,4 +1797,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "99f7751ea442a17437dc357886b06b83c333ad2a32b590d471fd4521ed5d15a2"
+content-hash = "701698a5154c5fd4be835177224f50b01e4f0601b426b3e40875b4ddd82adf98"

@@ -18,7 +18,7 @@ inject = "^5.2.0"
 sqlalchemy = "^2.0.25"
 psycopg = { extras = ["binary", "pool"], version = "^3.1.17" }
 requests = "^2.32.0"
-fhir-resources = "^7.1.0"
+fhir-resources = "^8.0.0"
 opentelemetry-sdk = "^1.29.0"
 opentelemetry-exporter-otlp-proto-grpc = "^1.29.0"
 opentelemetry-instrumentation = "^0.50b0"
