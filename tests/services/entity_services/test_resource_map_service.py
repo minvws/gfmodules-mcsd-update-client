@@ -3,18 +3,17 @@ import pytest
 from sqlalchemy.exc import IntegrityError
 
 from app.services.entity_services.resource_map_service import ResourceMapService
-from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
+from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto, ResourceMapDeleteDto
 
 
 @pytest.fixture
 def mock_dto() -> ResourceMapDto:
     return ResourceMapDto(
         supplier_id="example id",
-        supplier_resource_id="some_resource_id",
-        supplier_resource_version=1,
         resource_type="Organization",
+        supplier_resource_id="some_resource_id",
         consumer_resource_id="some_consumer_resource_id",
-        consumer_resource_version=1,
+        history_size=1,
     )
 
 
@@ -94,9 +93,9 @@ def test_update_one_should_succeed_when_resource_map_exist(
     original = resource_map_service.add_one(mock_dto)
     update_dto = ResourceMapUpdateDto(
         supplier_id=mock_dto.supplier_id,
+        resource_type=mock_dto.resource_type,
         supplier_resource_id=mock_dto.supplier_resource_id,
-        supplier_resource_version=2,
-        consumer_resource_version=2,
+        history_size=2,
     )
     expected = resource_map_service.update_one(update_dto)
     actual = resource_map_service.get_one(
@@ -114,10 +113,10 @@ def test_update_one_should_raise_exception_when_resource_map_does_not_exist(
 ) -> None:
     resource_map_service.add_one(mock_dto)
     update_dto = ResourceMapUpdateDto(
+        resource_type=mock_dto.resource_type,
         supplier_id="123",
         supplier_resource_id="wrong_id",
-        supplier_resource_version=2,
-        consumer_resource_version=2,
+        history_size=2,
     )
 
     with pytest.raises(HTTPException):
@@ -128,7 +127,13 @@ def test_delete_one_should_succeed_when_resource_map_exist(
     resource_map_service: ResourceMapService, mock_dto: ResourceMapDto
 ) -> None:
     resource_map_service.add_one(mock_dto)
-    resource_map_service.delete_one(mock_dto.supplier_resource_id)
+
+    delete_dto = ResourceMapDeleteDto(
+        supplier_id=mock_dto.supplier_id,
+        resource_type=mock_dto.resource_type,
+        supplier_resource_id=mock_dto.supplier_resource_id,
+    )
+    resource_map_service.delete_one(delete_dto)
     with pytest.raises(HTTPException):
         resource_map_service.get_one(supplier_resource_id=mock_dto.supplier_resource_id)
 
@@ -139,11 +144,10 @@ def test_unique_constraint_on_supplier_id_and_supplier_resource_id(
     resource_map_service.add_one(mock_dto)
     duplicate_dto = ResourceMapDto(
         supplier_id=mock_dto.supplier_id,
-        supplier_resource_id=mock_dto.supplier_resource_id,
-        supplier_resource_version=2,
         resource_type="Organization",
+        supplier_resource_id=mock_dto.supplier_resource_id,
         consumer_resource_id="another_consumer_resource_id",
-        consumer_resource_version=2,
+        history_size=2,
     )
     with pytest.raises(IntegrityError):
         resource_map_service.add_one(duplicate_dto)

@@ -1,32 +1,57 @@
-from typing import Any, Dict, List
+import logging
+import time
+from typing import Any, Dict
 from fastapi.encoders import jsonable_encoder
 import requests
-from urllib.parse import urlparse, parse_qs
+from yarl import URL
 
 from app.models.fhir.r4.types import Bundle
 from app.services.request_services.Authenticators import Authenticator
 
+logger = logging.getLogger(__name__)
 
 class FhirRequestService:
     def __init__(self, timeout: int, backoff: float, auth: Authenticator) -> None:
+        # Maximum timeout for a complete request in seconds
         self.timeout = timeout
+        # Backoff base time in seconds when a request fails
         self.backoff = backoff
+        # Authentication system if required
         self.auth = auth
+        # Number of retries for a request
+        self.retry_count = 5
 
-    def get_resource(
-        self, resource_type: str, url: str, resource_id: str
-    ) -> Dict[str, Any]:
+    def _do_request(self, method: str, url: URL, json: Dict[str, Any]|None = None) -> requests.Response:
         headers = {"Content-Type": "application/json"}
         auth_header = self.auth.get_authentication_header()
-
         if auth_header:
             headers["Authorization"] = auth_header
 
-        response = requests.get(
-            f"{url}/{resource_type}/{resource_id}",
-            timeout=self.timeout,
-            headers=headers,
-        )
+        for attempt in range(self.retry_count):
+            try:
+                logger.info(f"Making HTTP {method} request to {url}")
+                response = requests.request(
+                    method=method,
+                    url=str(url.with_query(None)),
+                    params=url.query,
+                    headers=headers,
+                    json=json,
+                    timeout=self.timeout,
+                    auth=self.auth.get_auth(),
+                )
+                return response
+            except (ConnectionError, TimeoutError, requests.exceptions.RequestException):
+                logger.warning(f"Failed to make request to {url} on attempt {attempt}")
+                if attempt < self.retry_count - 1:
+                    logger.info(f"Retrying in {self.backoff * (2 ** attempt)} seconds")
+                    time.sleep(self.backoff * (2 ** attempt))
+
+        logger.error(f"Failed to make request to {url} after {self.retry_count} attempts")
+        raise Exception("Failed to make request after too many retries")
+
+    def get_resource(self, resource_type: str, base_url: str, resource_id: str) -> Dict[str, Any]:
+        url = URL(f"{base_url}/{resource_type}/{resource_id}")
+        response = self._do_request("GET", url)
         if response.status_code > 300:
             raise Exception(response.json())
 
@@ -36,20 +61,13 @@ class FhirRequestService:
     def search_for_resource(
         self,
         resource_type: str,
-        url: str,
+        base_url: str,
         resource_params: dict[str, str] | None = None,
     ) -> Dict[str, Any]:
-        headers = {"Content-Type": "application/json"}
-        auth_header = self.auth.get_authentication_header()
-
-        if auth_header:
-            headers["Authorization"] = auth_header
-
         response = requests.get(
-            f"{url}/{resource_type}/_search",
+            f"{base_url}/{resource_type}/_search",
             params=resource_params,
             timeout=self.timeout,
-            headers=headers,
         )
         if response.status_code > 300:
             raise Exception(response.json())
@@ -57,21 +75,9 @@ class FhirRequestService:
         results: Dict[str, Any] = response.json()
         return results
 
-    def post_resource(
-        self, resource_type: str, url: str, resource: dict[str, Any]
-    ) -> Dict[str, Any]:
-        headers = {"Content-Type": "application/json"}
-        auth_header = self.auth.get_authentication_header()
-
-        if auth_header:
-            headers["Authorization"] = auth_header
-
-        response = requests.post(
-            f"{url}/{resource_type}",
-            json=jsonable_encoder(resource),
-            timeout=self.timeout,
-            headers=headers,
-        )
+    def post_resource(self, resource_type: str, base_url: str, resource: dict[str, Any]) -> Dict[str, Any]:
+        url = URL(f"{base_url}/{resource_type}")
+        response = self._do_request("POST", url, json=jsonable_encoder(resource))
         if response.status_code > 300:
             raise Exception(response.json())
 
@@ -80,88 +86,57 @@ class FhirRequestService:
 
     def get_resource_history(
         self,
+        base_url: str,
         resource_type: str,
-        url: str,
         resource_id: str | None = None,
         params: dict[str, str] | None = None,
     ) -> Bundle:
-        new_url = (
-            f"{url}/{resource_type}/{resource_id}/_history"
+        history_bundle = Bundle(type="history", entry=[])
+
+        next_url: URL|None = (
+            URL(f"{base_url}/{resource_type}/{resource_id}/_history").with_query(params)
             if resource_id is not None
-            else f"{url}/{resource_type}/_history"
+            else URL(f"{base_url}/{resource_type}/_history").with_query(params)
         )
 
-        headers = {"Content-Type": "application/json"}
-        auth_header = self.auth.get_authentication_header()
+        # Repeat until we have all the history
+        while next_url is not None:
+            response = self._do_request("GET", next_url)
+            if response.status_code > 300:
+                logger.warning(f"Failed to get resource history: {response.status_code}")
+                break
 
-        if auth_header:
-            headers["Authorization"] = auth_header
+            # Convert the page result into a page-bundle
+            page_bundle: Bundle = Bundle(**jsonable_encoder(response.json()))
 
-        response = requests.get(
-            new_url,
-            timeout=self.timeout,
-            params=params,
-            headers=headers,
-        )
-        if response.status_code > 300:
-            raise Exception(response.json())
+            # Add all the entries to the main bundle
+            if page_bundle.entry is not None:
+                history_bundle.entry.extend(page_bundle.entry)  # type: ignore
 
-        bundle: Bundle = Bundle(**response.json())
+            # Try and extract the next page URL
+            next_url = None
+            if page_bundle.link is not None and len(page_bundle.link) > 0:
+                for link in page_bundle.link:
+                    if link.relation == "next":
+                        next_url = URL(link.url)    # type: ignore
 
-        if bundle.entry is None or len(bundle.entry) == 0:
-            return bundle
+        return history_bundle
 
-        if bundle.link is not None and len(bundle.link) > 0:
-            bundles: List[Bundle] = []
-            for link in bundle.link:
-                if link.relation == "next":
-                    parsed_url = urlparse(str(link.url))
-                    query_params = parse_qs(parsed_url.query)
-                    params = query_params  # type: ignore
-                    bundles.append(
-                        self.get_resource_history(
-                            resource_type, url, resource_id, params
-                        )
-                    )
+    def put_resource(self, resource_type: str, base_url: str, resource_id: str, resource: dict[str, Any]) -> Dict[str, Any]:
+        url = URL(f"{base_url}/{resource_type}/{resource_id}")
 
-            for extr_bundle in bundles:
-                if extr_bundle.entry is not None:
-                    bundle.entry.extend(extr_bundle.entry)
+        response = self._do_request("PUT", url, json=jsonable_encoder(resource))
 
-        return bundle
-
-    def put_resource(
-        self, resource_type: str, url: str, resource_id: str, resource: dict[str, Any]
-    ) -> Dict[str, Any]:
-        headers = {"Content-Type": "application/json"}
-        auth_header = self.auth.get_authentication_header()
-
-        if auth_header:
-            headers["Authorization"] = auth_header
-
-        response = requests.put(
-            f"{url}/{resource_type}/{resource_id}",
-            json=jsonable_encoder(resource),
-            timeout=self.timeout,
-            headers=headers,
-        )
         if response.status_code > 300:
             raise Exception(response.json())
 
         results: Dict[str, Any] = response.json()
         return results
 
-    def delete_resource(self, resource_type: str, url: str, resource_id: str) -> None:
-        headers = {"Content-Type": "application/json"}
-        auth_header = self.auth.get_authentication_header()
+    def delete_resource(self, resource_type: str, base_url: str, resource_id: str) -> None:
+        url = URL(f"{base_url}/{resource_type}/{resource_id}")
 
-        if auth_header:
-            headers["Authorization"] = auth_header
+        response = self._do_request("DELETE", url)
 
-        response = requests.delete(
-            f"{url}/{resource_type}/{resource_id}",
-            timeout=self.timeout,
-            headers=headers,
-        )
         if response.status_code > 300:
             raise Exception(response.json())

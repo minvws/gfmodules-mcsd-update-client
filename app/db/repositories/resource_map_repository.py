@@ -22,7 +22,7 @@ class ResourceMapRepository(RepositoryBase):
         return self.db_session.session.execute(stmt).scalars().first()
 
     def find(
-        self, **conditions: bool | str | UUID | dict[str, Any] | None
+        self, **conditions: bool | str | int | UUID | dict[str, Any] | None
     ) -> Sequence[ResourceMap]:
         conditions = {k: v for k, v in conditions.items() if v is not None}
         filter_conditions = []
@@ -36,21 +36,15 @@ class ResourceMapRepository(RepositoryBase):
                 ResourceMap.supplier_resource_id == conditions["supplier_resource_id"]
             )
 
-        if "supplier_resource_version" in conditions:
+        if "history_size" in conditions:
             filter_conditions.append(
-                ResourceMap.supplier_resource_version
-                == conditions["supplier_resource_version"]
+                ResourceMap.history_size
+                == conditions["history_size"]
             )
 
         if "consumer_resource_id" in conditions:
             filter_conditions.append(
                 ResourceMap.consumer_resource_id == conditions["consumer_resource_id"]
-            )
-
-        if "consumer_resource_version" in conditions:
-            filter_conditions.append(
-                ResourceMap.consumer_resource_version
-                == conditions["consumer_resource_version"]
             )
 
         if "resource_type" in conditions:

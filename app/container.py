@@ -4,7 +4,7 @@ from app.db.db import Database
 from app.config import get_config
 from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.entity_services.supplier_service import SupplierService
-from app.services.request_services.Authenticators import AzureOAuth2Authenticator, NullAuthenticator
+from app.services.request_services.Authenticators import AzureOAuth2Authenticator, NullAuthenticator, AwsV4Authenticator
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
 )
@@ -28,6 +28,11 @@ def container_config(binder: inject.Binder) -> None:
 
     if config.mcsd.authentication == "off":
         auth = NullAuthenticator()
+    elif config.mcsd.authentication == "aws":
+        auth = AwsV4Authenticator(
+            profile=config.aws.profile,        # type: ignore
+            region=config.aws.region,            # type: ignore
+        )
     elif config.mcsd.authentication == "azure_oauth2":
         auth = AzureOAuth2Authenticator(
             token_url=config.azure_oauth2.token_url,        # type: ignore
@@ -40,7 +45,7 @@ def container_config(binder: inject.Binder) -> None:
             "authentication must be either False, or 'azure_oauth2'"
         )
     consumer_request_service = ConsumerRequestService(config.mcsd.consumer_url, auth)
-    supplier_request_service = SupplierRequestsService(supplier_service, auth)
+    supplier_request_service = SupplierRequestsService(supplier_service, NullAuthenticator())
 
     update_consumer_service = UpdateConsumerService(
         consumer_request_service=consumer_request_service,

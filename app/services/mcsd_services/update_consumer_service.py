@@ -1,7 +1,7 @@
-import re
 from typing import Dict, Any, List, Tuple, TYPE_CHECKING
 from datetime import datetime
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
+from app.services.bundle_tools import get_resource_type_and_id_from_entry, get_request_method_from_entry
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
 )
@@ -22,34 +22,40 @@ class UpdateConsumerService:
         self.__supplier_request_service = supplier_request_service
         self.__consumer_request_service = consumer_request_service
         self.__resource_map_service = resource_map_service
+        self.reference_seen_cache = set[str]()
 
     def update_supplier(
         self,
         supplier_id: str,
         _since: datetime | None = None,
     ) -> Dict[str, Any]:
+
+        # Fetch the history of all resources from this supplier (can take a while)
         supplier_history = self.__supplier_request_service.get_resource_history(
             supplier_id=supplier_id, _since=_since
         )
         entries = supplier_history.entry if supplier_history.entry else []
 
+        # Map all the resources into a set of tuples (resource_type, resource_id)
         resource_ids: set[Tuple[str, str]] = set()  # Resource type & ID
         for entry in entries:
-            # Get ID from full URL since resource might have been deleted
-            if entry.fullUrl is None:
-                raise TypeError("entry has no fullUrl")
-            split_url = entry.fullUrl.split("/")
-            resource_ids.add((split_url[-2], split_url[-1]))
+            (resource_type, resource_id) = get_resource_type_and_id_from_entry(entry)
+            if resource_type is not None and resource_id is not None:
+                resource_ids.add((resource_type, resource_id))
+
+        # Clear the reference seen cache so we don't update the same resource twice in this supplier run
+        self.reference_seen_cache = set[str]()
 
         for resource_type, resource_id in resource_ids:
-            org_history = self.__supplier_request_service.get_resource_history(
+            resource_history = self.__supplier_request_service.get_resource_history(
                 supplier_id, resource_type, resource_id, _since
             )
-            if org_history.entry is None or len(org_history.entry) == 0:
-                raise Exception("History is empty")
-            latest_entry = org_history.entry[0]
+            if resource_history.entry is None or len(resource_history.entry) == 0:
+                continue
 
-            self.update(supplier_id, latest_entry)
+            # Update this resource to the latest entry (if needed)
+            latest_entry = resource_history.entry[0]
+            self.update(supplier_id, len(resource_history.entry), latest_entry)
 
         return {
             "message": "organizations and endpoints are updated",
@@ -57,16 +63,30 @@ class UpdateConsumerService:
         }
 
     def update(
-        self, supplier_id: str, entry: Entry
+        self, supplier_id: str, history_size: int, latest_entry: Entry
     ) -> Resource | None:  # Returns CONSUMER resource
-        resource_type, resource_id = self._get_resource_type_and_id_from_bundle_entry(
-            entry
-        )
+        resource_type, resource_id = get_resource_type_and_id_from_entry(latest_entry)
+        request_type = get_request_method_from_entry(latest_entry)
+        entry_resource = latest_entry.resource
+
         resource_map = self.__resource_map_service.get(
-            supplier_id=supplier_id, supplier_resource_id=resource_id
+            supplier_id=supplier_id,
+            resource_type=resource_type,
+            supplier_resource_id=resource_id
         )
-        request_type = self._get_request_method(entry)
-        entry_resource = entry.resource
+
+        # Check if we already have updated this resource, if so, skip it
+        cache_key = f"{supplier_id}:{resource_type}/{resource_id}"
+        if cache_key in self.reference_seen_cache:
+            if resource_map is None:
+                return None
+            consumer_resource = self.__consumer_request_service.get_resource(
+                resource=entry_resource,  # type: ignore
+                resource_id=resource_map.consumer_resource_id,
+            )
+            return consumer_resource
+        self.reference_seen_cache.add(cache_key)
+
         resource_is_not_needed = (
             True if resource_map is None and request_type == "DELETE" else False
         )
@@ -78,9 +98,7 @@ class UpdateConsumerService:
         )
         resource_already_up_to_date = (
             True
-            if resource_map is not None
-            and resource_map.supplier_resource_version
-            == self._get_latest_etag_version(entry)
+            if resource_map is not None and resource_map.history_size == history_size
             else False
         )
         resource_already_deleted = (
@@ -99,70 +117,82 @@ class UpdateConsumerService:
 
         if resource_needs_deletion:
             self.__consumer_request_service.delete_resource(
-                resource_type,
+                resource_type,   # type: ignore
                 resource_map.consumer_resource_id,  # type: ignore
-            )
-            consumer_resource_history = (
-                self.__consumer_request_service.resource_history(
-                    resource_type,
-                    resource_map.consumer_resource_id,  # type: ignore
-                )
             )
             self.__resource_map_service.update_one(
                 ResourceMapUpdateDto(
                     supplier_id=supplier_id,
-                    supplier_resource_id=resource_id,
-                    supplier_resource_version=self._get_latest_etag_version(entry),
-                    consumer_resource_version=self._get_latest_etag_version(
-                        consumer_resource_history.entry[0]  # type: ignore
-                    ),
+                    resource_type=resource_type,     # type: ignore
+                    supplier_resource_id=resource_id,    # type: ignore
+                    history_size=history_size,
                 )
             )
             return None
 
         references = self._get_references(entry_resource.model_dump())  # type: ignore
-
         for key, ref in references:
             if key == "qualification":
                 for index, qualification in enumerate(ref):
+                    if "issuer" not in qualification:
+                        continue
+
                     issuer = qualification["issuer"]  # type: ignore
-                    latest = (
-                        self.__supplier_request_service.get_latest_entry_from_reference(
-                            supplier_id, issuer
-                        )
+
+                    (entry_history_size, latest) = (
+                        self.__supplier_request_service.get_latest_entry_and_length_from_reference(supplier_id, issuer)
                     )
-                    ref_resource = self.update(supplier_id, latest)
-                    dicty_type = entry_resource.model_dump()  # type: ignore
-                    dicty_type[key][index]["issuer"] = {
-                        "reference": f"{ref_resource.resource_type}/{ref_resource.id}"  # type: ignore
-                    }
-                    entry_resource = Resource(**dicty_type)
+                    if entry_history_size == 0:
+                        continue
+
+                    if latest is None:
+                        continue
+
+                    ref_resource = self.update(supplier_id, entry_history_size, latest)
+                    if ref_resource is not None:
+                        dicty_type = entry_resource.model_dump()  # type: ignore
+                        dicty_type[key][index]["issuer"] = {
+                            "reference": f"{ref_resource.resource_type}/{ref_resource.id}"
+                        }
+                        entry_resource = Resource(**dicty_type)
             elif isinstance(ref, List):
                 refs_list = []
                 for i in ref:
-                    latest = (
-                        self.__supplier_request_service.get_latest_entry_from_reference(
-                            supplier_id, i
+                    (entry_history_size, latest) = (
+                        self.__supplier_request_service.get_latest_entry_and_length_from_reference(supplier_id, i)
+                    )
+                    if entry_history_size == 0:
+                        continue
+
+                    if latest is None:
+                        continue
+
+                    ref_resource = self.update(supplier_id, entry_history_size, latest)
+                    if ref_resource is not None:
+                        refs_list.append(
+                            {"reference": f"{ref_resource.resource_type}/{ref_resource.id}"}
                         )
-                    )
-                    ref_resource = self.update(supplier_id, latest)
-                    refs_list.append(
-                        {"reference": f"{ref_resource.resource_type}/{ref_resource.id}"}  # type: ignore
-                    )
                 if not isinstance(key, str):
                     raise TypeError("key is not of type str")
-                entry_resource.__setattr__(key, refs_list)
+                if len(refs_list) > 0:
+                    entry_resource.__setattr__(key, refs_list)
             else:
-                latest = (
-                    self.__supplier_request_service.get_latest_entry_from_reference(
-                        supplier_id, ref
+                # Check if we already have seen this reference, if so, skip it
+                (entry_history_size, latest) = (
+                    self.__supplier_request_service.get_latest_entry_and_length_from_reference(supplier_id, ref)
+                )
+                if entry_history_size == 0:
+                    continue
+
+                if latest is None:
+                    continue
+
+                ref_resource = self.update(supplier_id, entry_history_size, latest)
+                if ref_resource is not None:
+                    entry_resource.__setattr__(
+                        key,
+                        {"reference": f"{ref_resource.resource_type}/{ref_resource.id}"},
                     )
-                )
-                ref_resource = self.update(supplier_id, latest)
-                entry_resource.__setattr__(
-                    key,
-                    {"reference": f"{ref_resource.resource_type}/{ref_resource.id}"},  # type: ignore
-                )
 
         # put
         if resource_needs_update:
@@ -177,24 +207,33 @@ class UpdateConsumerService:
             self.__resource_map_service.update_one(
                 ResourceMapUpdateDto(
                     supplier_id=supplier_id,
-                    supplier_resource_id=resource_id,
-                    supplier_resource_version=self._get_latest_etag_version(entry),
-                    consumer_resource_version=int(updated_resource.meta.versionId),
+                    resource_type=resource_type,     # type: ignore
+                    supplier_resource_id=resource_id,    # type: ignore
+                    history_size=history_size,
                 )
             )
             return updated_resource
 
         # default post
+        tmp = self.__resource_map_service.find(
+            supplier_id=supplier_id,
+            resource_type=resource_type,
+            supplier_resource_id=resource_id,
+        )
+
+        if tmp is not None and len(tmp) > 0 and history_size < tmp[0].history_size:
+            raise(ValueError("History size is less than the current history size"))
+
+
         entry_resource.id = None  # type: ignore
         new_resource = self.__consumer_request_service.post_resource(entry_resource)  # type: ignore
         self.__resource_map_service.add_one(
             ResourceMapDto(
                 supplier_id=supplier_id,
-                supplier_resource_id=resource_id,
-                supplier_resource_version=self._get_latest_etag_version(entry),
+                resource_type=resource_type,  # type: ignore
+                supplier_resource_id=resource_id,  # type: ignore
                 consumer_resource_id=new_resource.id,  # type: ignore
-                consumer_resource_version=int(new_resource.meta.versionId),
-                resource_type=resource_type,
+                history_size=history_size,
             )
         )
         return new_resource
@@ -230,31 +269,3 @@ class UpdateConsumerService:
                     refs.append((k, refs_list))
         return refs
 
-    @staticmethod
-    def _get_resource_type_and_id_from_bundle_entry(entry: Entry) -> tuple[str, str]:
-        request = entry.request
-        if request is None:
-            raise ValueError("request is None")
-        url = request.url
-        if url is None:
-            raise ValueError("url is None")
-
-        split = url.split("/")
-        return split[0], split[1]
-
-    @staticmethod
-    def _get_request_method(entry: Entry) -> str:
-        entry_request = entry.request
-        if entry_request is None:
-            raise ValueError("entry_request is None")
-        method = entry_request.method
-        if method is None:
-            raise ValueError("method is None")
-        return method
-
-    @staticmethod
-    def _get_latest_etag_version(first_entry: Entry) -> int:
-        results = re.search(r"(?<=\")\d*(?=\")", first_entry.response.etag)
-        if results is None:
-            raise ValueError("Did not find etag")
-        return int(results.group())

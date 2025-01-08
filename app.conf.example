@@ -60,6 +60,11 @@ client_secret =
 # Resource of the application. Most likely the consumer url
 resource =
 
+[aws]
+# Profile to use for aws authentication
+profile =
+# Region of the healthlake
+region = eu-west-2
 
 [mock_seeder]
 mock_supplier_url = # For a local test HAPI it can be: http://host.docker.internal:8081/fhir/
