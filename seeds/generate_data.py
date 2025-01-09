@@ -5,7 +5,7 @@ from fhir.resources.R4B.address import Address
 from fhir.resources.R4B.codeableconcept import CodeableConcept
 from fhir.resources.R4B.coding import Coding
 from fhir.resources.R4B.endpoint import Endpoint
-from fhir.resources.R4B.fhirtypes import Id
+
 from fhir.resources.R4B.humanname import HumanName
 from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.organization import Organization
@@ -16,6 +16,7 @@ from fhir.resources.R4B.healthcareservice import HealthcareService
 from fhir.resources.R4B.organizationaffiliation import OrganizationAffiliation
 from fhir.resources.R4B.practitioner import Practitioner, PractitionerQualification
 from fhir.resources.R4B.practitionerrole import PractitionerRole
+
 
 class DataGenerator:
     fake: Faker
@@ -105,7 +106,7 @@ class DataGenerator:
 
     def generate_endpoint(
         self,
-        org_fhir_id: Id | None = None,
+        org_fhir_id: str | None = None,
     ) -> Endpoint:
         return Endpoint(
             identifier=[
@@ -191,7 +192,11 @@ class DataGenerator:
                 else None
             ),
             address=self.generate_address(),
-            endpoint=[Reference.construct(reference="Endpoint/" + str(endpoint_id))] if endpoint_id is not None else None,
+            endpoint=(
+                [Reference.construct(reference="Endpoint/" + str(endpoint_id))]
+                if endpoint_id is not None
+                else None
+            ),
         )
 
     def generate_healthcare_service(
@@ -203,30 +208,34 @@ class DataGenerator:
     ) -> HealthcareService:
         return HealthcareService(
             identifier=[
-                Identifier(system="http://example.org/healthcare-service", value=str(uuid4()))
+                Identifier(
+                    system="http://example.org/healthcare-service", value=str(uuid4())
+                )
             ],
             providedBy=(
                 Reference.construct(reference="Organization/" + str(provided_by))
                 if provided_by is not None
                 else None
             ),
-            location=
+            location=(
                 [Reference.construct(reference="Location/" + str(location_id))]
                 if location_id is not None
-                else None,
+                else None
+            ),
             name=self.fake.company(),
             comment=self.fake.sentence(),
             extraDetails=self.fake.sentence(),
-            coverageArea=
+            coverageArea=(
                 [Reference.construct(reference="Location/" + str(coverage_area))]
                 if coverage_area is not None
-                else None,
+                else None
+            ),
             appointmentRequired=self.fake.boolean(),
-            endpoint=
+            endpoint=(
                 [Reference.construct(reference="Endpoint/" + str(endpoint_id))]
                 if endpoint_id is not None
                 else None
-            ,
+            ),
         )
 
     def generate_organization_affiliation(
@@ -242,50 +251,85 @@ class DataGenerator:
             network_id = []
         return OrganizationAffiliation(
             identifier=[
-                Identifier(system="http://example.org/organization-affiliation", value=str(uuid4()))
+                Identifier(
+                    system="http://example.org/organization-affiliation",
+                    value=str(uuid4()),
+                )
             ],
             active=self.fake.boolean(),
             organization=(
-                Reference.construct(reference="Organization/" + str(organization_id))
-            ) if organization_id is not None else None,
+                (Reference.construct(reference="Organization/" + str(organization_id)))
+                if organization_id is not None
+                else None
+            ),
             participatingOrganization=(
-                Reference.construct(reference="Organization/" + str(participating_organization_id))
-            ) if participating_organization_id is not None else None,
-            network=[Reference.construct(reference="Organization/" + str(network)) for network in network_id],
-            location=[Reference.construct(reference="Location/" + str(location_id))] if location_id is not None else None,
-            healthcareService=[Reference.construct(reference="HealthcareService/" + str(healthcare_service_id))] if healthcare_service_id is not None else None,
-            endpoint=[Reference.construct(reference="Endpoint/" + str(endpoint_id))] if endpoint_id is not None else None,
+                (
+                    Reference.construct(
+                        reference="Organization/" + str(participating_organization_id)
+                    )
+                )
+                if participating_organization_id is not None
+                else None
+            ),
+            network=[
+                Reference.construct(reference="Organization/" + str(network))
+                for network in network_id
+            ],
+            location=(
+                [Reference.construct(reference="Location/" + str(location_id))]
+                if location_id is not None
+                else None
+            ),
+            healthcareService=(
+                [
+                    Reference.construct(
+                        reference="HealthcareService/" + str(healthcare_service_id)
+                    )
+                ]
+                if healthcare_service_id is not None
+                else None
+            ),
+            endpoint=(
+                [Reference.construct(reference="Endpoint/" + str(endpoint_id))]
+                if endpoint_id is not None
+                else None
+            ),
         )
 
-    def generate_practioner(self,
-                            organization_id: UUID | None = None,
+    def generate_practioner(
+        self,
+        organization_id: UUID | None = None,
     ) -> Practitioner:
         return Practitioner(
             identifier=[
                 Identifier(system="http://example.org/practitioner", value=str(uuid4()))
             ],
             active=self.fake.boolean(),
-            name=[HumanName(
-                use=self.fake.random_element(
-                    elements=(
-                        "usual",
-                        "official",
-                        "temp",
-                        "nickname",
-                        "anonymous",
-                        "old",
-                        "maiden",
-                    )
-                ),
-                text=self.fake.name(),
-                family=self.fake.last_name(),
-                given=[self.fake.first_name()],
-            )],
+            name=[
+                HumanName(
+                    use=self.fake.random_element(
+                        elements=(
+                            "usual",
+                            "official",
+                            "temp",
+                            "nickname",
+                            "anonymous",
+                            "old",
+                            "maiden",
+                        )
+                    ),
+                    text=self.fake.name(),
+                    family=self.fake.last_name(),
+                    given=[self.fake.first_name()],
+                )
+            ],
             address=[self.generate_address()],
             qualification=[self.generate_practitioner_qualification(organization_id)],
         )
 
-    def generate_practitioner_qualification(self, organization_id: UUID|None=None) -> PractitionerQualification:
+    def generate_practitioner_qualification(
+        self, organization_id: UUID | None = None
+    ) -> PractitionerQualification:
         return PractitionerQualification(
             code=CodeableConcept(
                 coding=[
@@ -295,7 +339,14 @@ class DataGenerator:
                             elements=("MD", "DO", "NP", "PA", "RN", "LPN")
                         ),
                         display=self.fake.random_element(
-                            elements=("Doctor of Medicine", "Doctor of Osteopathy", "Nurse Practitioner", "Physician Assistant", "Registered Nurse", "Licensed Practical Nurse")
+                            elements=(
+                                "Doctor of Medicine",
+                                "Doctor of Osteopathy",
+                                "Nurse Practitioner",
+                                "Physician Assistant",
+                                "Registered Nurse",
+                                "Licensed Practical Nurse",
+                            )
                         ),
                     )
                 ]
@@ -306,21 +357,26 @@ class DataGenerator:
                 else None
             ),
             identifier=[
-                Identifier(system="http://example.org/practitioner-qualification", value=str(uuid4()))
+                Identifier(
+                    system="http://example.org/practitioner-qualification",
+                    value=str(uuid4()),
+                )
             ],
         )
 
     def generate_practitioner_role(
-            self,
-            practitioner_id: UUID | None = None,
-            organization_id: UUID | None = None,
-            location_id: UUID | None = None,
-            healthcare_service_id: UUID | None = None,
-            endpoint_id: UUID | None = None,
+        self,
+        practitioner_id: UUID | None = None,
+        organization_id: UUID | None = None,
+        location_id: UUID | None = None,
+        healthcare_service_id: UUID | None = None,
+        endpoint_id: UUID | None = None,
     ) -> PractitionerRole:
         return PractitionerRole(
             identifier=[
-                Identifier(system="http://example.org/practitioner-role", value=str(uuid4()))
+                Identifier(
+                    system="http://example.org/practitioner-role", value=str(uuid4())
+                )
             ],
             active=self.fake.boolean(),
             practitioner=(
@@ -333,20 +389,38 @@ class DataGenerator:
                 if organization_id is not None
                 else None
             ),
-            code=[CodeableConcept(
-                coding=[
-                    Coding(
-                        system="http://example.org/practitioner-role",
-                        code=self.fake.random_element(
-                            elements=("doctor", "nurse", "pharmacist", "researcher")
-                        ),
-                        display=self.fake.random_element(
-                            elements=("Doctor", "Nurse", "Pharmacist", "Researcher")
-                        ),
+            code=[
+                CodeableConcept(
+                    coding=[
+                        Coding(
+                            system="http://example.org/practitioner-role",
+                            code=self.fake.random_element(
+                                elements=("doctor", "nurse", "pharmacist", "researcher")
+                            ),
+                            display=self.fake.random_element(
+                                elements=("Doctor", "Nurse", "Pharmacist", "Researcher")
+                            ),
+                        )
+                    ]
+                )
+            ],
+            location=(
+                [Reference.construct(reference="Location/" + str(location_id))]
+                if location_id is not None
+                else None
+            ),
+            healthcareService=(
+                [
+                    Reference.construct(
+                        reference="HealthcareService/" + str(healthcare_service_id)
                     )
                 ]
-            )],
-            location=[Reference.construct(reference="Location/" + str(location_id))] if location_id is not None else None,
-            healthcareService=[Reference.construct(reference="HealthcareService/" + str(healthcare_service_id))] if healthcare_service_id is not None else None,
-            endpoint=[Reference.construct(reference="Endpoint/" + str(endpoint_id))] if endpoint_id is not None else None,
+                if healthcare_service_id is not None
+                else None
+            ),
+            endpoint=(
+                [Reference.construct(reference="Endpoint/" + str(endpoint_id))]
+                if endpoint_id is not None
+                else None
+            ),
         )

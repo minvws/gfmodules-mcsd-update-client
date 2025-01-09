@@ -53,9 +53,7 @@ class UpdateConsumerService:
 
         return {
             "message": "organizations and endpoints are updated",
-            "data": self.__resource_map_service.find(
-                supplier_id=supplier_id
-            ),
+            "data": self.__resource_map_service.find(supplier_id=supplier_id),
         }
 
     def update(
@@ -64,7 +62,9 @@ class UpdateConsumerService:
         resource_type, resource_id = self._get_resource_type_and_id_from_bundle_entry(
             entry
         )
-        resource_map = self.__resource_map_service.get(supplier_id=supplier_id, supplier_resource_id=resource_id)
+        resource_map = self.__resource_map_service.get(
+            supplier_id=supplier_id, supplier_resource_id=resource_id
+        )
         request_type = self._get_request_method(entry)
         entry_resource = entry.resource
         resource_is_not_needed = (
@@ -134,7 +134,7 @@ class UpdateConsumerService:
                     ref_resource = self.update(supplier_id, latest)
                     dicty_type = entry_resource.model_dump()  # type: ignore
                     dicty_type[key][index]["issuer"] = {
-                        "reference": f"{ref_resource.resource_type}/{ref_resource.id}" # type: ignore
+                        "reference": f"{ref_resource.resource_type}/{ref_resource.id}"  # type: ignore
                     }
                     entry_resource = Resource(**dicty_type)
             elif isinstance(ref, List):
