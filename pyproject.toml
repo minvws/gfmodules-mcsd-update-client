@@ -29,7 +29,7 @@ statsd = "^4.0.1"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
-httpx = "^0.26.0"
+httpx = "^0.28.1"
 ruff = "^0.9.1"
 safety = "^3.2.14"
 codespell = "^2.2.6"
