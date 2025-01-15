@@ -18,6 +18,7 @@ for x in range(10):
     endpoint_response = requests.post(
         url=SUPPLIER_URL+"Endpoint",
         json=jsonable_encoder(endpoint.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     endpoint_id = endpoint_response.json().get("id")
@@ -28,6 +29,7 @@ for x in range(10):
     org_response = requests.post(
         url=SUPPLIER_URL+"Organization",
         json=jsonable_encoder(org.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     org_id = org_response.json().get("id")
@@ -41,6 +43,7 @@ for x in range(10):
     child_response = requests.post(
         url=SUPPLIER_URL+"Organization",
         json=jsonable_encoder(child_org.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     child_org_id = child_response.json().get("id")
@@ -54,6 +57,7 @@ for x in range(10):
     loc_repsonse = requests.post(
         url=SUPPLIER_URL+"Location",
         json=jsonable_encoder(loc.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     loc_id = loc_repsonse.json().get("id")
@@ -68,6 +72,7 @@ for x in range(10):
     child_loc_resp = requests.post(
         url=SUPPLIER_URL+"Location",
         json=jsonable_encoder(child_loc.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     child_loc_response_id = child_loc_resp.json().get("id")
@@ -83,6 +88,7 @@ for x in range(10):
     health_serv_response = requests.post(
         url=SUPPLIER_URL+"HealthcareService",
         json=jsonable_encoder(health_serv.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     health_serv_id = health_serv_response.json().get("id")
@@ -95,6 +101,7 @@ for x in range(10):
     practitioner_response = requests.post(
         url=SUPPLIER_URL+"Practitioner",
         json=jsonable_encoder(practitioner.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     practitioner_id = practitioner_response.json().get("id")
@@ -111,6 +118,7 @@ for x in range(10):
     practitioner_role_response = requests.post(
         url=SUPPLIER_URL+"PractitionerRole",
         json=jsonable_encoder(practitioner_role.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     practitioner_role_response_id = practitioner_role_response.json().get("id")
@@ -122,6 +130,7 @@ for x in range(10):
     org2_response = requests.post(
         url=SUPPLIER_URL+"Organization",
         json=jsonable_encoder(org2.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     org2_id = org2_response.json().get("id")
@@ -139,6 +148,7 @@ for x in range(10):
     org_afil_response = requests.post(
         url=SUPPLIER_URL+"OrganizationAffiliation",
         json=jsonable_encoder(org_afil.dict()),
+        headers={"Content-Type": "application/json"},
         timeout=5,
     )
     org_afil_id = org_afil_response.json().get("id")

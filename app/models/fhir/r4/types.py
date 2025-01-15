@@ -3,23 +3,23 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
+class Coding(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    system: str | None = Field(alias="system", default=None)
+    version: str | None = Field(alias="version", default=None)
+    code: str | None = Field(alias="code", default=None)
+    display: str | None = Field(alias="display", default=None)
+    userSelected: bool | None = Field(alias="userSelected", default=None)
 
 class Meta(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    versionId: str | int = Field(alias="versionId")
-    lastUpdated: datetime | None = Field(
-        default=None,
-    )
-    source: str | None = Field(
-        alias="source",
-        default=None,
-    )
-    security: str | None = Field(
-        alias="security",
-        default=None,
-    )
-    tag: str | None = Field(alias="tag", default=None)
+    versionId: str | int  | None = Field(alias="versionId", default=None)
+    lastUpdated: datetime | None = Field(default=None)
+    source: str | None = Field(alias="source", default=None)
+    security: List[Coding] | None = Field(alias="security", default=None)
+    tag: List[Coding] | None = Field(alias="tag", default=None)
 
 
 class Resource(BaseModel):
@@ -33,8 +33,9 @@ class Resource(BaseModel):
     implicitRules: str | None = Field(
         default=None,
     )
-    meta: Meta = Field(
+    meta: Meta | None = Field(
         alias="meta",
+        default=None,
     )
 
 
@@ -60,7 +61,7 @@ class Response(BaseModel):
 
     status: str | None = Field(alias="status", default=None)
     uri: str | None = Field(alias="uri", default=None)
-    etag: str = Field(alias="etag")
+    etag: str | None = Field(alias="etag", default=None)
 
 
 class Entry(BaseModel):

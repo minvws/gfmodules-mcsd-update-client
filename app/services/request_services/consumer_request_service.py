@@ -11,15 +11,15 @@ class ConsumerRequestService:
     def post_resource(self, resource: Resource) -> Resource:
         response = self.__fhir_request_service.post_resource(
             resource_type=resource.resource_type,
-            url=self.__url,
-            resource=resource.model_dump(by_alias=True),
+            base_url=self.__url,
+            resource=resource.model_dump(by_alias=True, exclude_none=True),
         )
         return Resource(**response)
 
     def put_resource(self, resource: Resource, resource_id: str) -> Resource:
         response = self.__fhir_request_service.put_resource(
             resource_type=resource.resource_type,
-            url=self.__url,
+            base_url=self.__url,
             resource_id=resource_id,
             resource=resource.model_dump(by_alias=True),
         )
@@ -28,24 +28,26 @@ class ConsumerRequestService:
     def get_resource(self, resource: Resource, resource_id: str) -> Resource:
         response = self.__fhir_request_service.get_resource(
             resource_type=resource.resource_type,
-            url=self.__url,
+            base_url=self.__url,
             resource_id=resource_id,
         )
         return Resource(**response)
 
     def delete_resource(self, resource_type: str, resource_id: str) -> None:
         self.__fhir_request_service.delete_resource(
-            resource_type=resource_type, url=self.__url, resource_id=resource_id
+            resource_type=resource_type, base_url=self.__url, resource_id=resource_id
         )
 
     def find_resource(self, resource_type: str, params: dict[str, str]) -> Bundle:
         response = self.__fhir_request_service.search_for_resource(
-            resource_type=resource_type, url=self.__url, resource_params=params
+            resource_type=resource_type, base_url=self.__url, resource_params=params
         )
         return Bundle(**response)
 
     def resource_history(self, resource_type: str, resource_id: str) -> Bundle:
         response = self.__fhir_request_service.get_resource_history(
-            resource_type=resource_type, url=self.__url, resource_id=resource_id
+            base_url=self.__url,
+            resource_type=resource_type,
+            resource_id=resource_id
         )
         return response

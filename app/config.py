@@ -72,14 +72,18 @@ class ConfigMcsd(BaseModel):
 
     @field_validator("authentication")
     def validate_authentication(cls, value: Any) -> str|bool:
-        if value not in {"off", "oauth2", "azure_oauth2"}:
-            raise ValueError("authentication must be either 'off', 'oauth2', or 'azure_oauth2'")
+        if value not in {"off", "oauth2", "azure_oauth2", "aws"}:
+            raise ValueError("authentication must be either 'off', 'oauth2', 'azure_oauth2' or 'aws'")
         return str(value)
 
 
 class ConfigMockSeeder(BaseModel):
     mock_supplier_url: str | None
 
+
+class ConfigAws(BaseModel):
+    profile: str
+    region: str
 
 class ConfigAzureOauth2(BaseModel):
     token_url: str
@@ -96,6 +100,7 @@ class Config(BaseModel):
     telemetry: ConfigTelemetry
     stats: ConfigStats
     azure_oauth2: ConfigAzureOauth2 | None
+    aws: ConfigAws | None
 
 
 def read_ini_file(path: str) -> Any:
@@ -145,6 +150,8 @@ def get_config(path: str | None = None) -> Config:
 
             if "azure_oauth2" not in ini_data:
                 ini_data["azure_oauth2"] = None
+            if "aws" not in ini_data:
+                ini_data["aws"] = None
 
         _CONFIG = Config(**ini_data)
     except ValidationError as e:
