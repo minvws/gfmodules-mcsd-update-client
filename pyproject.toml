@@ -16,7 +16,7 @@ mypy = "^1.14.1"
 pydantic-settings = "^2.1.0"
 inject = "^5.2.0"
 sqlalchemy = "^2.0.37"
-psycopg = { extras = ["binary", "pool"], version = "^3.1.17" }
+psycopg = { extras = ["binary", "pool"], version = "^3.2.4" }
 requests = "^2.32.0"
 fhir-resources = "^8.0.0"
 opentelemetry-sdk = "^1.29.0"
