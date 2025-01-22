@@ -37,7 +37,7 @@ ssl_cert_file = server.cert
 ssl_key_file = server.key
 
 [mcsd]
-consumer_url = http://addressing-app:8502
+consumer_url = http://hapi-metadata-addressing:8513/fhir
 authentication = off
 
 [mock_seeder]
