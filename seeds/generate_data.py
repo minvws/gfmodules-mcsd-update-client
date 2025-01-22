@@ -2,20 +2,23 @@ from uuid import UUID, uuid4
 
 from faker import Faker
 from fhir.resources.R4B.address import Address
+from fhir.resources.R4B.careplan import CarePlan, CarePlanActivity
+from fhir.resources.R4B.careteam import CareTeam, CareTeamParticipant
 from fhir.resources.R4B.codeableconcept import CodeableConcept
 from fhir.resources.R4B.coding import Coding
 from fhir.resources.R4B.endpoint import Endpoint
-
+from fhir.resources.R4B.healthcareservice import HealthcareService
 from fhir.resources.R4B.humanname import HumanName
 from fhir.resources.R4B.identifier import Identifier
-from fhir.resources.R4B.organization import Organization
-from fhir.resources.R4B.organization import OrganizationContact
-from fhir.resources.R4B.reference import Reference
 from fhir.resources.R4B.location import Location
-from fhir.resources.R4B.healthcareservice import HealthcareService
+from fhir.resources.R4B.meta import Meta
+from fhir.resources.R4B.organization import Organization, OrganizationContact
 from fhir.resources.R4B.organizationaffiliation import OrganizationAffiliation
+from fhir.resources.R4B.patient import Patient
+from fhir.resources.R4B.period import Period
 from fhir.resources.R4B.practitioner import Practitioner, PractitionerQualification
 from fhir.resources.R4B.practitionerrole import PractitionerRole
+from fhir.resources.R4B.reference import Reference
 
 
 class DataGenerator:
@@ -29,11 +32,15 @@ class DataGenerator:
         endpoint_id: UUID | None = None,
         part_of: UUID | None = None,
     ) -> Organization:
-        return Organization(
+        return Organization.model_construct(
             identifier=[
-                (Identifier(system="http://example.org/org", value=str(uuid4()))),
                 (
-                    Identifier(
+                    Identifier.model_construct(
+                        system="http://example.org/org", value=str(uuid4())
+                    )
+                ),
+                (
+                    Identifier.model_construct(
                         system="http://fhir.nl/fhir/NamingSystem/ura",
                         value=str(self.fake.random_number(8, True)),
                     )
@@ -41,9 +48,9 @@ class DataGenerator:
             ],
             active=self.fake.boolean(),
             type=[
-                CodeableConcept(
+                CodeableConcept.model_construct(
                     coding=[
-                        Coding(
+                        Coding.model_construct(
                             system="http://example.org/org-type",
                             code=self.fake.random_element(
                                 elements=("hospital", "clinic", "pharmacy", "lab")
@@ -71,8 +78,8 @@ class DataGenerator:
         )
 
     def generate_fake_contact(self) -> OrganizationContact:
-        return OrganizationContact(
-            name=HumanName(
+        return OrganizationContact.model_construct(
+            name=HumanName.model_construct(
                 use=self.fake.random_element(
                     elements=(
                         "usual",
@@ -92,7 +99,7 @@ class DataGenerator:
         )
 
     def generate_address(self):
-        return Address(
+        return Address.model_construct(
             use=self.fake.random_element(
                 elements=("home", "work", "temp", "old", "billing")
             ),
@@ -108,11 +115,15 @@ class DataGenerator:
         self,
         org_fhir_id: str | None = None,
     ) -> Endpoint:
-        return Endpoint(
+        return Endpoint.model_construct(
             identifier=[
-                (Identifier(system="http://example.org/endpoint", value=str(uuid4()))),
+                (
+                    Identifier.model_construct(
+                        system="http://example.org/endpoint", value=str(uuid4())
+                    )
+                ),
             ],
-            connectionType=Coding(
+            connectionType=Coding.model_construct(
                 system="http://example.org/connection-type",
                 code=self.fake.random_element(
                     elements=("hl7-fhir-rest", "hl7-fhir-messaging")
@@ -123,9 +134,9 @@ class DataGenerator:
             ),
             name=self.fake.company(),
             payloadType=[
-                CodeableConcept(
+                CodeableConcept.model_construct(
                     coding=[
-                        Coding(
+                        Coding.model_construct(
                             system="http://example.org/payload-type",
                             code=self.fake.random_element(
                                 elements=(
@@ -141,7 +152,7 @@ class DataGenerator:
                 )
             ],
             managingOrganization=(
-                Reference.construct(reference="Organization/" + str(org_fhir_id))
+                Reference.model_construct(reference="Organization/" + str(org_fhir_id))
                 if org_fhir_id
                 else None
             ),
@@ -172,9 +183,11 @@ class DataGenerator:
         endpoint_id: UUID | None = None,
         organization_id: UUID | None = None,
     ) -> Location:
-        return Location(
+        return Location.model_construct(
             identifier=[
-                Identifier(system="http://example.org/location", value=str(uuid4()))
+                Identifier.model_construct(
+                    system="http://example.org/location", value=str(uuid4())
+                )
             ],
             status=self.fake.random_element(
                 elements=("active", "suspended", "inactive")
@@ -182,18 +195,20 @@ class DataGenerator:
             name=self.fake.company(),
             description=self.fake.sentence(),
             managingOrganization=(
-                Reference.construct(reference="Organization/" + str(organization_id))
+                Reference.model_construct(
+                    reference="Organization/" + str(organization_id)
+                )
                 if organization_id
                 else None
             ),
             partOf=(
-                Reference.construct(reference="Location/" + str(part_of))
+                Reference.model_construct(reference="Location/" + str(part_of))
                 if part_of is not None
                 else None
             ),
             address=self.generate_address(),
             endpoint=(
-                [Reference.construct(reference="Endpoint/" + str(endpoint_id))]
+                [Reference.model_construct(reference="Endpoint/" + str(endpoint_id))]
                 if endpoint_id is not None
                 else None
             ),
@@ -206,19 +221,19 @@ class DataGenerator:
         coverage_area: UUID | None = None,
         endpoint_id: UUID | None = None,
     ) -> HealthcareService:
-        return HealthcareService(
+        return HealthcareService.model_construct(
             identifier=[
-                Identifier(
+                Identifier.model_construct(
                     system="http://example.org/healthcare-service", value=str(uuid4())
                 )
             ],
             providedBy=(
-                Reference.construct(reference="Organization/" + str(provided_by))
+                Reference.model_construct(reference="Organization/" + str(provided_by))
                 if provided_by is not None
                 else None
             ),
             location=(
-                [Reference.construct(reference="Location/" + str(location_id))]
+                [Reference.model_construct(reference="Location/" + str(location_id))]
                 if location_id is not None
                 else None
             ),
@@ -226,13 +241,13 @@ class DataGenerator:
             comment=self.fake.sentence(),
             extraDetails=self.fake.sentence(),
             coverageArea=(
-                [Reference.construct(reference="Location/" + str(coverage_area))]
+                [Reference.model_construct(reference="Location/" + str(coverage_area))]
                 if coverage_area is not None
                 else None
             ),
             appointmentRequired=self.fake.boolean(),
             endpoint=(
-                [Reference.construct(reference="Endpoint/" + str(endpoint_id))]
+                [Reference.model_construct(reference="Endpoint/" + str(endpoint_id))]
                 if endpoint_id is not None
                 else None
             ),
@@ -242,29 +257,33 @@ class DataGenerator:
         self,
         organization_id: UUID | None = None,
         participating_organization_id: UUID | None = None,
-        network_id: list[UUID] = None,
+        network_id: list[UUID] | None = None,
         location_id: UUID | None = None,
         healthcare_service_id: UUID | None = None,
         endpoint_id: UUID | None = None,
     ) -> OrganizationAffiliation:
         if network_id is None:
             network_id = []
-        return OrganizationAffiliation(
+        return OrganizationAffiliation.model_construct(
             identifier=[
-                Identifier(
+                Identifier.model_construct(
                     system="http://example.org/organization-affiliation",
                     value=str(uuid4()),
                 )
             ],
             active=self.fake.boolean(),
             organization=(
-                (Reference.construct(reference="Organization/" + str(organization_id)))
+                (
+                    Reference.model_construct(
+                        reference="Organization/" + str(organization_id)
+                    )
+                )
                 if organization_id is not None
                 else None
             ),
             participatingOrganization=(
                 (
-                    Reference.construct(
+                    Reference.model_construct(
                         reference="Organization/" + str(participating_organization_id)
                     )
                 )
@@ -272,17 +291,17 @@ class DataGenerator:
                 else None
             ),
             network=[
-                Reference.construct(reference="Organization/" + str(network))
+                Reference.model_construct(reference="Organization/" + str(network))
                 for network in network_id
             ],
             location=(
-                [Reference.construct(reference="Location/" + str(location_id))]
+                [Reference.model_construct(reference="Location/" + str(location_id))]
                 if location_id is not None
                 else None
             ),
             healthcareService=(
                 [
-                    Reference.construct(
+                    Reference.model_construct(
                         reference="HealthcareService/" + str(healthcare_service_id)
                     )
                 ]
@@ -290,7 +309,7 @@ class DataGenerator:
                 else None
             ),
             endpoint=(
-                [Reference.construct(reference="Endpoint/" + str(endpoint_id))]
+                [Reference.model_construct(reference="Endpoint/" + str(endpoint_id))]
                 if endpoint_id is not None
                 else None
             ),
@@ -300,13 +319,15 @@ class DataGenerator:
         self,
         organization_id: UUID | None = None,
     ) -> Practitioner:
-        return Practitioner(
+        return Practitioner.model_construct(
             identifier=[
-                Identifier(system="http://example.org/practitioner", value=str(uuid4()))
+                Identifier.model_construct(
+                    system="http://example.org/practitioner", value=str(uuid4())
+                )
             ],
             active=self.fake.boolean(),
             name=[
-                HumanName(
+                HumanName.model_construct(
                     use=self.fake.random_element(
                         elements=(
                             "usual",
@@ -330,10 +351,10 @@ class DataGenerator:
     def generate_practitioner_qualification(
         self, organization_id: UUID | None = None
     ) -> PractitionerQualification:
-        return PractitionerQualification(
-            code=CodeableConcept(
+        return PractitionerQualification.model_construct(
+            code=CodeableConcept.model_construct(
                 coding=[
-                    Coding(
+                    Coding.model_construct(
                         system="http://example.org/practitioner-qualification",
                         code=self.fake.random_element(
                             elements=("MD", "DO", "NP", "PA", "RN", "LPN")
@@ -352,12 +373,14 @@ class DataGenerator:
                 ]
             ),
             issuer=(
-                Reference.construct(reference="Organization/" + str(organization_id))
+                Reference.model_construct(
+                    reference="Organization/" + str(organization_id)
+                )
                 if organization_id is not None
                 else None
             ),
             identifier=[
-                Identifier(
+                Identifier.model_construct(
                     system="http://example.org/practitioner-qualification",
                     value=str(uuid4()),
                 )
@@ -372,27 +395,31 @@ class DataGenerator:
         healthcare_service_id: UUID | None = None,
         endpoint_id: UUID | None = None,
     ) -> PractitionerRole:
-        return PractitionerRole(
+        return PractitionerRole.model_construct(
             identifier=[
-                Identifier(
+                Identifier.model_construct(
                     system="http://example.org/practitioner-role", value=str(uuid4())
                 )
             ],
             active=self.fake.boolean(),
             practitioner=(
-                Reference.construct(reference="Practitioner/" + str(practitioner_id))
+                Reference.model_construct(
+                    reference="Practitioner/" + str(practitioner_id)
+                )
                 if practitioner_id is not None
                 else None
             ),
             organization=(
-                Reference.construct(reference="Organization/" + str(organization_id))
+                Reference.model_construct(
+                    reference="Organization/" + str(organization_id)
+                )
                 if organization_id is not None
                 else None
             ),
             code=[
-                CodeableConcept(
+                CodeableConcept.model_construct(
                     coding=[
-                        Coding(
+                        Coding.model_construct(
                             system="http://example.org/practitioner-role",
                             code=self.fake.random_element(
                                 elements=("doctor", "nurse", "pharmacist", "researcher")
@@ -405,13 +432,13 @@ class DataGenerator:
                 )
             ],
             location=(
-                [Reference.construct(reference="Location/" + str(location_id))]
+                [Reference.model_construct(reference="Location/" + str(location_id))]
                 if location_id is not None
                 else None
             ),
             healthcareService=(
                 [
-                    Reference.construct(
+                    Reference.model_construct(
                         reference="HealthcareService/" + str(healthcare_service_id)
                     )
                 ]
@@ -419,8 +446,154 @@ class DataGenerator:
                 else None
             ),
             endpoint=(
-                [Reference.construct(reference="Endpoint/" + str(endpoint_id))]
+                [Reference.model_construct(reference="Endpoint/" + str(endpoint_id))]
                 if endpoint_id is not None
                 else None
             ),
+        )
+
+    def generate_patient(self) -> Patient:
+        return Patient.model_construct(
+            identifier=[
+                Identifier.model_construct(
+                    system="http://example.org/patient", value=str(uuid4())
+                )
+            ],
+            active=self.fake.boolean(),
+            name=[
+                HumanName.model_construct(
+                    use=self.fake.random_element(
+                        elements=(
+                            "usual",
+                            "official",
+                            "temp",
+                            "nickname",
+                            "anonymous",
+                            "old",
+                            "maiden",
+                        )
+                    ),
+                    text=self.fake.name(),
+                    family=self.fake.last_name(),
+                    given=[self.fake.first_name()],
+                )
+            ],
+            address=[self.generate_address()],
+        )
+
+    def generate_careplan(
+        self, practitioner_id: UUID, patient_id: UUID, organization_id: UUID
+    ) -> CarePlan:
+        subject = Reference.model_construct(
+            reference=f"http://example.org/org/Patient/{patient_id}",
+            type="Patient",
+            identifier=Identifier.model_construct(
+                system="http://fhir.nl/fhir/NamingSystem/bsn",
+                value=str(uuid4()),
+                assigner=Reference.model_construct(
+                    identifier=Identifier.model_construct(
+                        system="http://fhir.nl/fhir/NamingSystem/ura",
+                        value=str(self.fake.random_number(8, True)),
+                    )
+                ),
+            ),
+        )
+        organization_ura_value = str(self.fake.random_number(8, True))
+        care_team = CareTeam.model_construct(
+            subject=subject,
+            participant=[
+                CareTeamParticipant.model_construct(
+                    period=Period.model_construct(start="2024-08-27"), member=subject
+                ),
+                CareTeamParticipant.model_construct(
+                    period=Period.model_construct(start="2024-08-27"),
+                    member=Reference.model_construct(
+                        reference=f"http://example.org/org/Organization/{organization_id}",
+                        type="Organization",
+                        identifier=Identifier.model_construct(
+                            system="http://fhir.nl/fhir/NamingSystem/ura",
+                            value=organization_ura_value,
+                            assigner=Reference.model_construct(
+                                identifier=Identifier.model_construct(
+                                    system="http://fhir.nl/fhir/NamingSystem/ura",
+                                    value=organization_ura_value,
+                                )
+                            ),
+                        ),
+                    ),
+                ),
+            ],
+        )
+        return CarePlan.model_construct(
+            meta=Meta.model_construct(
+                versionId="1",
+                profile=[
+                    "http://santeonnl.github.io/shared-care-planning/StructureDefinition/SCPCareplan"
+                ],
+            ),
+            category=[
+                CodeableConcept.model_construct(
+                    coding=[
+                        Coding.model_construct(
+                            system="http://snomed.info/sct",
+                            # TODO: figure out code and display for careplan categories
+                            code=self.fake.random_element(
+                                elements=("doctor", "nurse", "pharmacist", "researcher")
+                            ),
+                            display=self.fake.random_element(
+                                elements=("Doctor", "Nurse", "Pharmacist", "Researcher")
+                            ),
+                        )
+                    ]
+                )
+            ],
+            contained=[care_team],
+            status=self.fake.random_element(
+                elements=(
+                    "draft",
+                    "active",
+                    "on-hold",
+                    "revoked",
+                    "completed",
+                    "entered-in-error",
+                    "unknown",
+                )
+            ),
+            intent=self.fake.random_element(
+                elements=("proposal", "plan", "order", "option")
+            ),
+            subject=subject,
+            careTeam=[Reference.model_construct(reference=f"CareTeam/{care_team.id}")],
+            author=Reference.model_construct(
+                reference=f"http://example.org/org/PractitionerRole/{practitioner_id}",
+                type="PractitionerRole",
+                identifier=Identifier.model_construct(
+                    system="http://fhir.nl/fhir/NamingSystem/uzi",
+                    value=str(uuid4()),
+                    assigner=Identifier.model_construct(
+                        system="http://fhir.nl/fhir/NamingSystem/ura",
+                        value=str(self.fake.random_number(8, True)),
+                    ),
+                ),
+            ),
+            activity=[
+                CarePlanActivity.model_construct(
+                    reference=Reference.model_construct(
+                        reference=self.fake.random_element(
+                            elements=(
+                                "Appointment",
+                                "CommunicationRequest",
+                                "DeviceRequest",
+                                "MedicationRequest",
+                                "NutritionOrder",
+                                "Task",
+                                "ServiceRequest",
+                                "VisionPrescription",
+                                "RequestGroup",
+                            )
+                        )
+                        + f"/{uuid4()}"
+                    )
+                )
+            ],
         )
