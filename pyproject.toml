@@ -35,7 +35,7 @@ pytest-cov = "^6.0.0"
 httpx = "^0.28.1"
 ruff = "^0.9.1"
 safety = "^3.2.14"
-codespell = "^2.2.6"
+codespell = "^2.4.1"
 types-requests = "^2.3"
 faker = "^33.3.1"
 
