@@ -42,3 +42,8 @@ authentication = off
 
 [mock_seeder]
 mock_supplier_url = # For a local test HAPI it can be: http://host.docker.internal:8081/fhir/
+
+[supplier_api]
+base_url = http://supplier_api:8080/
+timeout = 10
+backoff = 0.4
