@@ -68,3 +68,12 @@ region = eu-west-2
 
 [mock_seeder]
 mock_supplier_url = # For a local test HAPI it can be: http://host.docker.internal:8081/fhir/
+
+
+[supplier_api]
+# Base url to fetch supplier endpoints
+base_url = http://supplier_api:8080/
+# Timeout for the supplier api
+timeout = 10
+# Backoff time for the supplier api
+backoff = 0.4

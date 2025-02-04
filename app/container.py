@@ -2,6 +2,7 @@ import inject
 
 from app.db.db import Database
 from app.config import get_config
+from app.services.entity_services.http_api import HttpApi
 from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.entity_services.supplier_service import SupplierService
 from app.services.request_services.Authenticators import AzureOAuth2Authenticator, NullAuthenticator, AwsV4Authenticator
@@ -20,7 +21,14 @@ def container_config(binder: inject.Binder) -> None:
     db = Database(dsn=config.database.dsn)
     binder.bind(Database, db)
 
-    supplier_service = SupplierService(db)
+
+    supplier_service = SupplierService(
+        HttpApi(
+            config.supplier_api.base_url,
+            config.supplier_api.timeout,
+            config.supplier_api.backoff,
+        )
+    )
     binder.bind(SupplierService, supplier_service)
 
     resource_map_service = ResourceMapService(db)

@@ -118,7 +118,7 @@ class FhirRequestService:
             if page_bundle.link is not None and len(page_bundle.link) > 0:
                 for link in page_bundle.link:
                     if link.relation == "next":
-                        next_url = URL(link.url)    # type: ignore
+                        next_url = URL(link.url) # type: ignore
 
         return history_bundle
 

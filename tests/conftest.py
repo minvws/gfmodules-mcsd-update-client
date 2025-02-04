@@ -4,6 +4,7 @@ from collections.abc import Generator
 import pytest
 
 from app.db.db import Database
+from app.services.entity_services.mock_api import MockApi
 from app.services.entity_services.supplier_service import SupplierService
 from app.services.entity_services.resource_map_service import ResourceMapService
 
@@ -19,8 +20,8 @@ def database() -> Generator[Database, Any, None]:
 
 
 @pytest.fixture
-def supplier_service(database: Database) -> SupplierService:
-    return SupplierService(database=database)
+def supplier_service() -> SupplierService:
+    return SupplierService(MockApi())
 
 
 @pytest.fixture

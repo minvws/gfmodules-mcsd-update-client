@@ -34,6 +34,12 @@ class ConfigDatabase(BaseModel):
     pool_recycle: int = Field(default=3600, ge=0)
 
 
+class ConfigSupplierApi(BaseModel):
+    base_url: str
+    timeout: int
+    backoff: float
+
+
 class ConfigUvicorn(BaseModel):
     swagger_enabled: bool = Field(default=False)
     docs_url: str = Field(default="/docs")
@@ -101,6 +107,7 @@ class Config(BaseModel):
     stats: ConfigStats
     azure_oauth2: ConfigAzureOauth2 | None
     aws: ConfigAws | None
+    supplier_api: ConfigSupplierApi
 
 
 def read_ini_file(path: str) -> Any:
