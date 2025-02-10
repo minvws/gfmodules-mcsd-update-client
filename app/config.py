@@ -1,9 +1,9 @@
 from enum import Enum
 import configparser
+import re
 from typing import Any, Union
 
-from pydantic import BaseModel, ValidationError, field_validator
-from pydantic import Field
+from pydantic import BaseModel, Field, ValidationError, computed_field, field_validator
 
 _PATH = "app.conf"
 _CONFIG = None
@@ -20,6 +20,25 @@ class LogLevel(str, Enum):
 class ConfigApp(BaseModel):
     loglevel: LogLevel = Field(default=LogLevel.info)
     override_authentication_ura: str | None
+
+
+class Scheduler(BaseModel):
+    delay_input: str
+
+    @computed_field  # type: ignore
+    @property
+    def delay(self) -> int:
+        converstion_map = {"s": 1, "m": 60, "h": 3600}
+        match = re.match(r"^(\d+)([smh])$", self.delay_input)
+        if not match:
+            raise ValidationError(
+                f"Incorrect input, must be digits with {converstion_map.keys()}"
+            )
+
+        number = int(match.group(1))
+        unit = match.group(2)
+
+        return number * converstion_map[unit]
 
 
 class ConfigDatabase(BaseModel):
@@ -73,13 +92,15 @@ class ConfigMcsd(BaseModel):
     consumer_url: str = Field(default="http://addressing-app:8502")
     authentication: Union[str] = Field(
         default="off",
-        description="Enable authentication, can be 'off', 'oauth2', or 'azure_oauth2'"
+        description="Enable authentication, can be 'off', 'oauth2', or 'azure_oauth2'",
     )
 
     @field_validator("authentication")
-    def validate_authentication(cls, value: Any) -> str|bool:
+    def validate_authentication(cls, value: Any) -> str | bool:
         if value not in {"off", "oauth2", "azure_oauth2", "aws"}:
-            raise ValueError("authentication must be either 'off', 'oauth2', 'azure_oauth2' or 'aws'")
+            raise ValueError(
+                "authentication must be either 'off', 'oauth2', 'azure_oauth2' or 'aws'"
+            )
         return str(value)
 
 
@@ -91,11 +112,13 @@ class ConfigAws(BaseModel):
     profile: str
     region: str
 
+
 class ConfigAzureOauth2(BaseModel):
     token_url: str
     client_id: str
     client_secret: str
     resource: str
+
 
 class Config(BaseModel):
     app: ConfigApp
@@ -108,6 +131,7 @@ class Config(BaseModel):
     azure_oauth2: ConfigAzureOauth2 | None
     aws: ConfigAws | None
     supplier_api: ConfigSupplierApi
+    scheduler: Scheduler
 
 
 def read_ini_file(path: str) -> Any:

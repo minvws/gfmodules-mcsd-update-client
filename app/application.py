@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import FastAPI
 import uvicorn
 
-from app.container import setup_container
+from app.container import get_scheduler, setup_container
 from app.routers.default import router as default_router
 from app.routers.health import router as health_router
 from app.routers.supplier_router import router as supplier_router
@@ -38,6 +38,7 @@ def get_uvicorn_params() -> dict[str, Any]:
         kwargs["ssl_certfile"] = (
             config.uvicorn.ssl_base_dir + "/" + config.uvicorn.ssl_cert_file
         )
+
     return kwargs
 
 
@@ -59,8 +60,10 @@ def create_fastapi_app() -> FastAPI:
 
 
 def application_init() -> None:
-    setup_container()
     setup_logging()
+    setup_container()
+    scheduler = get_scheduler()
+    scheduler.start()
 
 
 def setup_logging() -> None:

@@ -12,6 +12,10 @@ max_overflow=10
 pool_pre_ping=False
 pool_recycle=1800
 
+[scheduler]
+# delay time for scheduled update to run, value should be number with a unit of time (only s, m, h)
+delay_input = 30s
+
 [telemetry]
 # Telemetry is enabled or not
 enabled = True

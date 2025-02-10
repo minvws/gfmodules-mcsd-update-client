@@ -11,6 +11,9 @@ max_overflow=10
 pool_pre_ping=False
 pool_recycle=1800
 
+[scheduler]
+delay_input = 30s
+
 [telemetry]
 enabled = True
 endpoint = http://tracing:4317
