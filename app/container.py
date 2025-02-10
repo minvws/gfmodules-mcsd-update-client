@@ -74,7 +74,9 @@ def container_config(binder: inject.Binder) -> None:
         supplier_service=supplier_service,
     )
     scheduler = Scheduler(
-        function=mass_update_service.update_all, delay=config.scheduler.delay
+        function=mass_update_service.update_all,
+        delay=config.scheduler.delay,
+        max_logs_entries=config.scheduler.max_logs_entries,
     )
     binder.bind(Scheduler, scheduler)
 

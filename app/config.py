@@ -24,6 +24,7 @@ class ConfigApp(BaseModel):
 
 class Scheduler(BaseModel):
     delay_input: str
+    max_logs_entries: int
 
     @computed_field  # type: ignore
     @property
