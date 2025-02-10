@@ -12,7 +12,7 @@ packages = [{ include = "app" }]
 python = "^3.11"
 uvicorn = "^0.34.0"
 fastapi = "^0.115.1"
-mypy = "^1.14.1"
+mypy = "^1.15.0"
 pydantic-settings = "^2.1.0"
 inject = "^5.2.0"
 sqlalchemy = "^2.0.37"
