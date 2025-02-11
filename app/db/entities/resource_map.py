@@ -28,9 +28,9 @@ class ResourceMap(Base):
         nullable=False,
         default=uuid4,
     )
-    supplier_id: Mapped[UUID] = mapped_column(
+    supplier_id: Mapped[str] = mapped_column(
         "supplier_id",
-        types.UUID,
+        String,
         nullable=False,
     )
     resource_type: Mapped[str] = mapped_column("resource_type", String, nullable=False)

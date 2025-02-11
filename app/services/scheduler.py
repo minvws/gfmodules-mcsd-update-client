@@ -9,7 +9,7 @@ class Scheduler:
         self, function: Callable[..., Any], delay: int, max_logs_entries: int
     ) -> None:
         self.__function = function
-        self.__delay = delay  # maybe consider a cap on the delay
+        self.__delay = delay
         self.__max_logs_entries = max_logs_entries
         self.__thread: Thread | None = None
         self.__stop_event = Event()
