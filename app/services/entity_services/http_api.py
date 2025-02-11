@@ -6,10 +6,11 @@ from typing import Dict, Any
 import requests
 from yarl import URL
 
-from app.db.entities.supplier import Supplier
 from app.services.entity_services.supplier_service import SupplierApi
+from app.models.supplier.dto import SupplierDto
 
 logger = logging.getLogger(__name__)
+
 
 class HttpApi(SupplierApi):
     def __init__(self, base_url: str, timeout: int, backoff: float) -> None:
@@ -18,22 +19,20 @@ class HttpApi(SupplierApi):
         self.backoff = backoff
         self.retry_count = 5
 
-    def get_one(self, supplier_id: str) -> Supplier:
+    def get_one(self, supplier_id: str) -> SupplierDto:
         url = URL(f"{self.base_url}/api/supplier/{supplier_id}")
         response = self._do_request("GET", url)
         if response.status_code > 300:
             raise Exception(response.json())
 
         results: Dict[str, Any] = response.json()
-        return Supplier(
+        return SupplierDto(
             id=results["id"],
             name=results["name"],
             endpoint=results["endpoint"],
-            created_at=results["created_at"],
-            modified_at=results["updated_at"],
         )
 
-    def get_all(self) -> Sequence[Supplier]:
+    def get_all(self) -> Sequence[SupplierDto]:
         suppliers = []
 
         url = URL(f"{self.base_url}/api/suppliers")
@@ -45,18 +44,18 @@ class HttpApi(SupplierApi):
             results: Dict[str, Any] = response.json()
 
             for result in results["data"]:
-                suppliers.append(Supplier(
-                    id=result["id"],
-                    name=result["name"],
-                    endpoint=result["endpoint"],
-                    created_at=result["created_at"],
-                    modified_at=result["updated_at"],
-                ))
+                suppliers.append(
+                    SupplierDto(
+                        id=result["id"],
+                        name=result["name"],
+                        endpoint=result["endpoint"],
+                    )
+                )
 
-            if results['next_page_url'] is None:
+            if results["next_page_url"] is None:
                 break
 
-            url = URL(results['next_page_url'])
+            url = URL(results["next_page_url"])
 
         return suppliers
 
@@ -74,11 +73,17 @@ class HttpApi(SupplierApi):
                     timeout=self.timeout,
                 )
                 return response
-            except (ConnectionError, TimeoutError, requests.exceptions.RequestException):
+            except (
+                ConnectionError,
+                TimeoutError,
+                requests.exceptions.RequestException,
+            ):
                 logger.warning(f"Failed to make request to {url} on attempt {attempt}")
                 if attempt < self.retry_count - 1:
                     logger.info(f"Retrying in {self.backoff * (2 ** attempt)} seconds")
-                    time.sleep(self.backoff * (2 ** attempt))
+                    time.sleep(self.backoff * (2**attempt))
 
-        logger.error(f"Failed to make request to {url} after {self.retry_count} attempts")
+        logger.error(
+            f"Failed to make request to {url} after {self.retry_count} attempts"
+        )
         raise Exception("Failed to make request after too many retries")

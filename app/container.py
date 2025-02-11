@@ -1,3 +1,7 @@
+from app.services.mcsd_services.mass_update_consumer_service import (
+    MassUpdateConsumerService,
+)
+from app.services.scheduler import Scheduler
 import inject
 
 from app.db.db import Database
@@ -5,7 +9,11 @@ from app.config import get_config
 from app.services.entity_services.http_api import HttpApi
 from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.entity_services.supplier_service import SupplierService
-from app.services.request_services.Authenticators import AzureOAuth2Authenticator, NullAuthenticator, AwsV4Authenticator
+from app.services.request_services.Authenticators import (
+    AzureOAuth2Authenticator,
+    NullAuthenticator,
+    AwsV4Authenticator,
+)
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
 )
@@ -20,7 +28,6 @@ def container_config(binder: inject.Binder) -> None:
 
     db = Database(dsn=config.database.dsn)
     binder.bind(Database, db)
-
 
     supplier_service = SupplierService(
         HttpApi(
@@ -38,22 +45,22 @@ def container_config(binder: inject.Binder) -> None:
         auth = NullAuthenticator()
     elif config.mcsd.authentication == "aws":
         auth = AwsV4Authenticator(
-            profile=config.aws.profile,        # type: ignore
-            region=config.aws.region,            # type: ignore
+            profile=config.aws.profile,  # type: ignore
+            region=config.aws.region,  # type: ignore
         )
     elif config.mcsd.authentication == "azure_oauth2":
         auth = AzureOAuth2Authenticator(
-            token_url=config.azure_oauth2.token_url,        # type: ignore
-            client_id=config.azure_oauth2.client_id,        # type: ignore
-            client_secret=config.azure_oauth2.client_secret,   # type: ignore
-            resource=config.azure_oauth2.resource,       # type: ignore
+            token_url=config.azure_oauth2.token_url,  # type: ignore
+            client_id=config.azure_oauth2.client_id,  # type: ignore
+            client_secret=config.azure_oauth2.client_secret,  # type: ignore
+            resource=config.azure_oauth2.resource,  # type: ignore
         )
     else:
-        raise ValueError(
-            "authentication must be either False, or 'azure_oauth2'"
-        )
+        raise ValueError("authentication must be either False, or 'azure_oauth2'")
     consumer_request_service = ConsumerRequestService(config.mcsd.consumer_url, auth)
-    supplier_request_service = SupplierRequestsService(supplier_service, NullAuthenticator())
+    supplier_request_service = SupplierRequestsService(
+        supplier_service, NullAuthenticator()
+    )
 
     update_consumer_service = UpdateConsumerService(
         consumer_request_service=consumer_request_service,
@@ -61,6 +68,17 @@ def container_config(binder: inject.Binder) -> None:
         resource_map_service=resource_map_service,
     )
     binder.bind(UpdateConsumerService, update_consumer_service)
+
+    mass_update_service = MassUpdateConsumerService(
+        update_consumer_service=update_consumer_service,
+        supplier_service=supplier_service,
+    )
+    scheduler = Scheduler(
+        function=mass_update_service.update_all,
+        delay=config.scheduler.delay,
+        max_logs_entries=config.scheduler.max_logs_entries,
+    )
+    binder.bind(Scheduler, scheduler)
 
 
 def get_database() -> Database:
@@ -77,6 +95,10 @@ def get_resource_map_service() -> ResourceMapService:
 
 def get_update_consumer_service() -> UpdateConsumerService:
     return inject.instance(UpdateConsumerService)
+
+
+def get_scheduler() -> Scheduler:
+    return inject.instance(Scheduler)
 
 
 def setup_container() -> None:

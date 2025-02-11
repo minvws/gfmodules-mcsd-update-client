@@ -7,7 +7,8 @@ from sqlalchemy import (
     func,
     PrimaryKeyConstraint,
     Integer,
-    types, UniqueConstraint,
+    types,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,7 +30,7 @@ class ResourceMap(Base):
     )
     supplier_id: Mapped[str] = mapped_column(
         "supplier_id",
-        String(8),
+        String,
         nullable=False,
     )
     resource_type: Mapped[str] = mapped_column("resource_type", String, nullable=False)
@@ -39,9 +40,7 @@ class ResourceMap(Base):
     consumer_resource_id: Mapped[str] = mapped_column(
         "consumer_resource_id", String, nullable=False, unique=True
     )
-    history_size: Mapped[int] = mapped_column(
-        "history_size", Integer, nullable=False
-    )
+    history_size: Mapped[int] = mapped_column("history_size", Integer, nullable=False)
     last_update: Mapped[datetime] = mapped_column(
         "last_update",
         TIMESTAMP(timezone=True),
