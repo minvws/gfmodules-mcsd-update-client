@@ -3,7 +3,7 @@
 
 ARG PYTHON_VERSION=3.11
 
-FROM python:${PYTHON_VERSION}-slim as base
+FROM python:${PYTHON_VERSION}-slim AS base
 
 ARG PROJECT_DIR="/src"
 ARG APP_USER="app"
@@ -40,14 +40,15 @@ RUN pip3 install --upgrade pip && \
 
 WORKDIR ${PROJECT_DIR}
 
-FROM base as builder
+FROM base AS builder
 
 COPY ./pyproject.toml ./poetry.lock ./
 RUN --mount=type=cache,target=${POETRY_CACHE_DIR} poetry install --no-root --no-interaction
 
-FROM base as final
+FROM base AS final
 
 COPY --chown=${APP_USER}:${APP_GROUP} --from=builder /usr/local /usr/local
+RUN chown -R ${APP_USER}:${APP_GROUP} /usr/local/lib/python3.11/site-packages
 
 USER ${APP_USER}
 
