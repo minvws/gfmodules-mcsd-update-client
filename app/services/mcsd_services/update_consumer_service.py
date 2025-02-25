@@ -1,7 +1,15 @@
-from typing import Dict, Any, List, Tuple, TYPE_CHECKING
+import logging
+from typing import Dict, Any, Tuple
 from datetime import datetime
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
-from app.services.bundle_tools import get_resource_type_and_id_from_entry, get_request_method_from_entry
+from app.models.supplier_update.dto import UpdateLookup, UpdateLookupEntry
+from app.services.bundle_tools import (
+    get_resource_from_reference,
+    get_resource_type_and_id_from_entry,
+    get_request_method_from_entry,
+    get_unique_references,
+    namespace_resource_refs,
+)
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
 )
@@ -9,7 +17,9 @@ from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.request_services.consumer_request_service import (
     ConsumerRequestService,
 )
-from app.models.fhir.r4.types import Resource, Entry
+from app.models.fhir.r4.types import Bundle, Request, Entry
+
+logger = logging.getLogger(__name__)
 
 
 class UpdateConsumerService:
@@ -45,7 +55,6 @@ class UpdateConsumerService:
 
         # Clear the reference seen cache so we don't update the same resource twice in this supplier run
         self.reference_seen_cache = set[str]()
-
         for resource_type, resource_id in resource_ids:
             resource_history = self.__supplier_request_service.get_resource_history(
                 supplier_id, resource_type, resource_id, _since
@@ -62,210 +71,172 @@ class UpdateConsumerService:
             "data": self.__resource_map_service.find(supplier_id=supplier_id),
         }
 
-    def update(
-        self, supplier_id: str, history_size: int, latest_entry: Entry
-    ) -> Resource | None:  # Returns CONSUMER resource
-        resource_type, resource_id = get_resource_type_and_id_from_entry(latest_entry)
-        request_type = get_request_method_from_entry(latest_entry)
+    def update(self, supplier_id: str, history_size: int, latest_entry: Entry) -> None:
+        _, main_resource_id = get_resource_type_and_id_from_entry(latest_entry)
+        request_method = get_request_method_from_entry(latest_entry)
         entry_resource = latest_entry.resource
 
-        resource_map = self.__resource_map_service.get(
-            supplier_id=supplier_id,
-            resource_type=resource_type,
-            supplier_resource_id=resource_id
+        unique_refs = (
+            get_unique_references(entry_resource.model_dump())
+            if entry_resource is not None
+            else []
         )
+        split_refs = [
+            get_resource_from_reference(ref["reference"])
+            for ref in unique_refs
+            if len(unique_refs) > 0
+        ]
 
-        # Check if we already have updated this resource, if so, skip it
-        cache_key = f"{supplier_id}:{resource_type}/{resource_id}"
-        if cache_key in self.reference_seen_cache:
-            if resource_map is None:
-                return None
-            consumer_resource = self.__consumer_request_service.get_resource(
-                resource=entry_resource,  # type: ignore
-                resource_id=resource_map.consumer_resource_id,
-            )
-            return consumer_resource
-        self.reference_seen_cache.add(cache_key)
-
-        resource_is_not_needed = (
-            True if resource_map is None and request_type == "DELETE" else False
-        )
-        resource_needs_deletion = (
-            True if resource_map is not None and request_type == "DELETE" else False
-        )
-        resource_needs_update = (
-            True if resource_map is not None and request_type == "PUT" else False
-        )
-        resource_already_up_to_date = (
-            True
-            if resource_map is not None and resource_map.history_size == history_size
-            else False
-        )
-        resource_already_deleted = (
-            True if resource_already_up_to_date and request_type == "DELETE" else False
-        )
-
-        if resource_is_not_needed or resource_already_deleted:
-            return None
-
-        if resource_already_up_to_date:
-            consumer_resource = self.__consumer_request_service.get_resource(
-                resource=entry_resource,  # type: ignore
-                resource_id=resource_map.consumer_resource_id,  # type: ignore
-            )
-            return consumer_resource
-
-        if resource_needs_deletion:
-            self.__consumer_request_service.delete_resource(
-                resource_type,   # type: ignore
-                resource_map.consumer_resource_id,  # type: ignore
-            )
-            self.__resource_map_service.update_one(
-                ResourceMapUpdateDto(
-                    supplier_id=supplier_id,
-                    resource_type=resource_type,     # type: ignore
-                    supplier_resource_id=resource_id,    # type: ignore
-                    history_size=history_size,
-                )
-            )
-            return None
-
-        references = self._get_references(entry_resource.model_dump())  # type: ignore
-        for key, ref in references:
-            if key == "qualification":
-                for index, qualification in enumerate(ref):
-                    if "issuer" not in qualification:
-                        continue
-
-                    issuer = qualification["issuer"]  # type: ignore
-
-                    (entry_history_size, latest) = (
-                        self.__supplier_request_service.get_latest_entry_and_length_from_reference(supplier_id, issuer)
+        update_lookup: UpdateLookup = {}
+        if main_resource_id:
+            update_lookup.update(
+                {
+                    main_resource_id: UpdateLookupEntry(
+                        history_size=history_size, entry=latest_entry
                     )
-                    if entry_history_size == 0:
-                        continue
+                }
+            )
 
-                    if latest is None:
-                        continue
-
-                    ref_resource = self.update(supplier_id, entry_history_size, latest)
-                    if ref_resource is not None:
-                        dicty_type = entry_resource.model_dump()  # type: ignore
-                        dicty_type[key][index]["issuer"] = {
-                            "reference": f"{ref_resource.resource_type}/{ref_resource.id}"
-                        }
-                        entry_resource = Resource(**dicty_type)
-            elif isinstance(ref, List):
-                refs_list = []
-                for i in ref:
-                    (entry_history_size, latest) = (
-                        self.__supplier_request_service.get_latest_entry_and_length_from_reference(supplier_id, i)
-                    )
-                    if entry_history_size == 0:
-                        continue
-
-                    if latest is None:
-                        continue
-
-                    ref_resource = self.update(supplier_id, entry_history_size, latest)
-                    if ref_resource is not None:
-                        refs_list.append(
-                            {"reference": f"{ref_resource.resource_type}/{ref_resource.id}"}
-                        )
-                if not isinstance(key, str):
-                    raise TypeError("key is not of type str")
-                if len(refs_list) > 0:
-                    entry_resource.__setattr__(key, refs_list)
-            else:
-                # Check if we already have seen this reference, if so, skip it
-                (entry_history_size, latest) = (
-                    self.__supplier_request_service.get_latest_entry_and_length_from_reference(supplier_id, ref)
+        for res_type, id in split_refs:
+            data = self.__supplier_request_service.get_resource_history(
+                resource_type=res_type, resource_id=id, supplier_id=supplier_id
+            )
+            entry = data.entry
+            if entry is not None and len(entry) > 0 and id is not None:
+                update_lookup.update(
+                    {id: UpdateLookupEntry(history_size=len(entry), entry=entry[0])}
                 )
-                if entry_history_size == 0:
-                    continue
 
-                if latest is None:
-                    continue
-
-                ref_resource = self.update(supplier_id, entry_history_size, latest)
-                if ref_resource is not None:
-                    entry_resource.__setattr__(
-                        key,
-                        {"reference": f"{ref_resource.resource_type}/{ref_resource.id}"},
-                    )
-
-        # put
-        if resource_needs_update:
-            if TYPE_CHECKING:
-                if entry_resource is None or resource_map is None:
-                    raise ValueError("Resource cannot be None")
-
-            entry_resource.id = resource_map.consumer_resource_id
-            updated_resource = self.__consumer_request_service.put_resource(
-                entry_resource, resource_map.consumer_resource_id
+        new_bundle = Bundle(type="transaction", entry=[])
+        for id, lookup_data in update_lookup.items():
+            resource_type, resource_id = get_resource_type_and_id_from_entry(
+                lookup_data.entry
             )
-            self.__resource_map_service.update_one(
-                ResourceMapUpdateDto(
-                    supplier_id=supplier_id,
-                    resource_type=resource_type,     # type: ignore
-                    supplier_resource_id=resource_id,    # type: ignore
-                    history_size=history_size,
+            resource_map = self.__resource_map_service.get(
+                supplier_id, resource_type, resource_id
+            )
+            request_method = get_request_method_from_entry(lookup_data.entry)
+            original_resource = lookup_data.entry.resource
+
+            # resource new and method is delete
+            if resource_map is None and request_method == "DELETE":
+                logger.info(
+                    f"resource is new and already DELETED from supplier {supplier_id} ...skipping"
                 )
-            )
-            return updated_resource
-
-        # default post
-        tmp = self.__resource_map_service.find(
-            supplier_id=supplier_id,
-            resource_type=resource_type,
-            supplier_resource_id=resource_id,
-        )
-
-        if tmp is not None and len(tmp) > 0 and history_size < tmp[0].history_size:
-            raise(ValueError("History size is less than the current history size"))
-
-
-        entry_resource.id = None  # type: ignore
-        new_resource = self.__consumer_request_service.post_resource(entry_resource)  # type: ignore
-        self.__resource_map_service.add_one(
-            ResourceMapDto(
-                supplier_id=supplier_id,
-                resource_type=resource_type,  # type: ignore
-                supplier_resource_id=resource_id,  # type: ignore
-                consumer_resource_id=new_resource.id,  # type: ignore
-                history_size=history_size,
-            )
-        )
-        return new_resource
-
-    @staticmethod
-    def _get_references(
-        data: dict[str, Any],
-    ) -> List[Tuple[str, Dict[str, str] | List[Dict[str, str]]]]:
-        refs: List[Tuple[str, Dict[str, str] | List[Dict[str, str]]]] = []
-        for k, v in data.items():
-            try:
-                if "reference" in v:
-                    refs.append((k, v))  # Tuple[str, dict[str, str]]
-            except TypeError:
                 continue
 
-            if k == "qualification":  # Special practitioners case
-                refs.append((k, v))  # List[dict[str, Dict]]
+            # resource up to date
+            if (
+                resource_map is not None
+                and resource_map.history_size == lookup_data.history_size
+            ):
+                logger.info(
+                    f"resource {resource_id} from {supplier_id} is up to date with consumer id: {resource_map.consumer_resource_id} ...skipping"
+                )
                 continue
 
-            if isinstance(v, List):
-                refs_list: List[dict[str, str]] = []
-                checker = False
-                for i in v:
-                    try:
-                        if "reference" in i:
-                            checker = True
-                            refs_list.append(i)  # List[dict[str, str]]
-                    except TypeError:
-                        continue
+            # resource is new
+            if (
+                resource_map is None
+                and request_method != "DELETE"
+                and original_resource is not None
+            ):
+                # replace references
 
-                if checker:
-                    refs.append((k, refs_list))
-        return refs
+                logger.info(
+                    f"resource {resource_id} from {supplier_id} is new ...processing"
+                )
+                new_id = f"{supplier_id}-{resource_id}"
+                new_resource = namespace_resource_refs(
+                    original_resource.model_dump(), supplier_id
+                )
+                new_resource.id = new_id
+                new_entry = Entry(
+                    resource=new_resource,
+                    request=Request(method="PUT", url=f"{resource_type}/{new_id}"),
+                )
+                new_bundle.entry.append(new_entry)
+                # self.__resource_map_service.add_one(
+                #     ResourceMapDto(
+                #         supplier_id=supplier_id,
+                #         supplier_resource_id=resource_id,  # type: ignore
+                #         resource_type=resource_type,  # type: ignore
+                #         consumer_resource_id=new_id,
+                #         history_size=lookup_data.history_size,
+                #     )
+                # )
+                lookup_data.resource_map = ResourceMapDto(
+                    supplier_id=supplier_id,
+                    supplier_resource_id=resource_id,  # type: ignore
+                    resource_type=resource_type,  # type: ignore
+                    consumer_resource_id=new_id,
+                    history_size=lookup_data.history_size,
+                )
 
+            # resource needs to be delete
+            if resource_map is not None and request_method == "DELETE":
+                logger.info(
+                    f"resource {resource_id} from {supplier_id} needs to be deleted with consumer id: {resource_map.consumer_resource_id} ...processing"
+                )
+                new_entry = Entry(
+                    request=Request(
+                        method="DELETE",
+                        url=f"{resource_type}/{resource_map.consumer_resource_id}",
+                    )
+                )
+                new_bundle.entry.append(new_entry)
+                lookup_data.resource_map = ResourceMapUpdateDto(
+                    supplier_id=supplier_id,
+                    resource_type=resource_map.resource_type,
+                    supplier_resource_id=resource_map.supplier_resource_id,
+                    history_size=lookup_data.history_size,
+                )
+
+            if (
+                resource_map is not None
+                and request_method != "DELETE"
+                and original_resource is not None
+            ):
+
+                logger.info(
+                    f"resource {resource_id} from {supplier_id} needs to be updated with consumer id: {resource_map.consumer_resource_id} ...processing"
+                )
+                # replace id with one from resource_map
+                original_resource.id = resource_map.consumer_resource_id
+                new_resource = namespace_resource_refs(
+                    original_resource.model_dump(), supplier_id
+                )
+                new_entry = Entry(
+                    resource=new_resource,
+                    request=Request(
+                        method="PUT",
+                        url=f"{resource_type}/{resource_map.consumer_resource_id}",
+                    ),
+                )
+                new_bundle.entry.append(new_entry)
+                lookup_data.resource_map = ResourceMapUpdateDto(
+                    supplier_id=supplier_id,
+                    resource_type=resource_map.resource_type,
+                    supplier_resource_id=resource_map.supplier_resource_id,
+                    history_size=lookup_data.history_size,
+                )
+
+        # only post when something has changed
+        if len(new_bundle.entry) > 0:
+            logger.info(f"detected changes from {supplier_id} ...updating data")
+            self.__consumer_request_service.post_bundle(new_bundle)
+            logger.info(f"data from {supplier_id} has been updated successfully!!")
+
+            for v in update_lookup.values():
+                if isinstance(v.resource_map, ResourceMapDto):
+                    logger.info(
+                        f"new resource map entry with {v.resource_map.__repr__()} ...creating"
+                    )
+                    self.__resource_map_service.add_one(v.resource_map)
+                if isinstance(v.resource_map, ResourceMapUpdateDto):
+                    self.__resource_map_service.update_one(v.resource_map)
+                    logger.info(
+                        f"new resource map entry with {v.resource_map.__repr__()} ...updating"
+                    )
+
+            logger.info("resource map has been updated successfully!!!")

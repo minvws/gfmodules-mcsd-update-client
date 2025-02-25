@@ -3,6 +3,7 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field, AliasChoices
 
+
 class Coding(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -12,10 +13,11 @@ class Coding(BaseModel):
     display: str | None = Field(alias="display", default=None)
     userSelected: bool | None = Field(alias="userSelected", default=None)
 
+
 class Meta(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    versionId: str | int  | None = Field(alias="versionId", default=None)
+    versionId: str | int | None = Field(alias="versionId", default=None)
     lastUpdated: datetime | None = Field(default=None)
     source: str | None = Field(alias="source", default=None)
     security: List[Coding] | None = Field(alias="security", default=None)
@@ -69,15 +71,16 @@ class Entry(BaseModel):
 
     link: Link | None = Field(alias="link", default=None)
     request: Request = Field(alias="request")
-    response: Response = Field(alias="response")
+    response: Response | None = Field(alias="response", default=None)
     resource: Resource | None = Field(alias="resource", default=None)
-    fullUrl: str = Field(alias="fullUrl")
+    fullUrl: str | None = Field(alias="fullUrl", default=None)
 
 
 class Bundle(BaseModel):
     model_config = ConfigDict(extra="allow")
 
+    resource_type: str = Field(alias="resourceType", default="Bundle")
     total: int | None = Field(alias="total", default=None)
     type: str = Field(alias="type")
     link: List[Link] | None = Field(alias="link", default=None)
-    entry: List[Entry] | None = None
+    entry: List[Entry] = Field(alias="entry", default=[])

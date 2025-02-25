@@ -10,6 +10,7 @@ from app.services.request_services.Authenticators import Authenticator
 
 logger = logging.getLogger(__name__)
 
+
 class FhirRequestService:
     def __init__(self, timeout: int, backoff: float, auth: Authenticator) -> None:
         # Maximum timeout for a complete request in seconds
@@ -21,7 +22,9 @@ class FhirRequestService:
         # Number of retries for a request
         self.retry_count = 5
 
-    def _do_request(self, method: str, url: URL, json: Dict[str, Any]|None = None) -> requests.Response:
+    def _do_request(
+        self, method: str, url: URL, json: Dict[str, Any] | None = None
+    ) -> requests.Response:
         headers = {"Content-Type": "application/json"}
         auth_header = self.auth.get_authentication_header()
         if auth_header:
@@ -40,16 +43,24 @@ class FhirRequestService:
                     auth=self.auth.get_auth(),
                 )
                 return response
-            except (ConnectionError, TimeoutError, requests.exceptions.RequestException):
+            except (
+                ConnectionError,
+                TimeoutError,
+                requests.exceptions.RequestException,
+            ):
                 logger.warning(f"Failed to make request to {url} on attempt {attempt}")
                 if attempt < self.retry_count - 1:
                     logger.info(f"Retrying in {self.backoff * (2 ** attempt)} seconds")
-                    time.sleep(self.backoff * (2 ** attempt))
+                    time.sleep(self.backoff * (2**attempt))
 
-        logger.error(f"Failed to make request to {url} after {self.retry_count} attempts")
+        logger.error(
+            f"Failed to make request to {url} after {self.retry_count} attempts"
+        )
         raise Exception("Failed to make request after too many retries")
 
-    def get_resource(self, resource_type: str, base_url: str, resource_id: str) -> Dict[str, Any]:
+    def get_resource(
+        self, resource_type: str, base_url: str, resource_id: str
+    ) -> Dict[str, Any]:
         url = URL(f"{base_url}/{resource_type}/{resource_id}")
         response = self._do_request("GET", url)
         if response.status_code > 300:
@@ -75,7 +86,9 @@ class FhirRequestService:
         results: Dict[str, Any] = response.json()
         return results
 
-    def post_resource(self, resource_type: str, base_url: str, resource: dict[str, Any]) -> Dict[str, Any]:
+    def post_resource(
+        self, resource_type: str, base_url: str, resource: dict[str, Any]
+    ) -> Dict[str, Any]:
         url = URL(f"{base_url}/{resource_type}")
         response = self._do_request("POST", url, json=jsonable_encoder(resource))
         if response.status_code > 300:
@@ -93,7 +106,7 @@ class FhirRequestService:
     ) -> Bundle:
         history_bundle = Bundle(type="history", entry=[])
 
-        next_url: URL|None = (
+        next_url: URL | None = (
             URL(f"{base_url}/{resource_type}/{resource_id}/_history").with_query(params)
             if resource_id is not None
             else URL(f"{base_url}/{resource_type}/_history").with_query(params)
@@ -103,7 +116,9 @@ class FhirRequestService:
         while next_url is not None:
             response = self._do_request("GET", next_url)
             if response.status_code > 300:
-                logger.warning(f"Failed to get resource history: {response.status_code}")
+                logger.warning(
+                    f"Failed to get resource history: {response.status_code}"
+                )
                 break
 
             # Convert the page result into a page-bundle
@@ -111,18 +126,24 @@ class FhirRequestService:
 
             # Add all the entries to the main bundle
             if page_bundle.entry is not None:
-                history_bundle.entry.extend(page_bundle.entry)  # type: ignore
+                history_bundle.entry.extend(page_bundle.entry)
 
             # Try and extract the next page URL
             next_url = None
             if page_bundle.link is not None and len(page_bundle.link) > 0:
                 for link in page_bundle.link:
                     if link.relation == "next":
-                        next_url = URL(link.url) # type: ignore
+                        next_url = URL(link.url)  # type: ignore
 
         return history_bundle
 
-    def put_resource(self, resource_type: str, base_url: str, resource_id: str, resource: dict[str, Any]) -> Dict[str, Any]:
+    def put_resource(
+        self,
+        resource_type: str,
+        base_url: str,
+        resource_id: str,
+        resource: dict[str, Any],
+    ) -> Dict[str, Any]:
         url = URL(f"{base_url}/{resource_type}/{resource_id}")
 
         response = self._do_request("PUT", url, json=jsonable_encoder(resource))
@@ -133,10 +154,19 @@ class FhirRequestService:
         results: Dict[str, Any] = response.json()
         return results
 
-    def delete_resource(self, resource_type: str, base_url: str, resource_id: str) -> None:
+    def delete_resource(
+        self, resource_type: str, base_url: str, resource_id: str
+    ) -> None:
         url = URL(f"{base_url}/{resource_type}/{resource_id}")
 
         response = self._do_request("DELETE", url)
 
         if response.status_code > 300:
             raise Exception(response.json())
+
+    def post_bundle(self, base_url: str, bundle: Dict[str, Any]) -> Dict[str, Any]:
+        url = URL(f"{base_url}")
+        response = self._do_request("POST", url, bundle)
+        data: Dict[str, Any] = response.json()
+
+        return data
