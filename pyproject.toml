@@ -36,7 +36,7 @@ httpx = "^0.28.1"
 ruff = "^0.9.7"
 safety = "^3.3.0"
 codespell = "^2.2.6"
-types-requests = "^2.3"
+types-requests = "^2.32"
 faker = "^36.1.1"
 
 [build-system]
