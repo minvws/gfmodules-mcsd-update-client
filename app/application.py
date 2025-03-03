@@ -64,7 +64,7 @@ def application_init() -> None:
     setup_logging()
     setup_container()
     scheduler = get_scheduler()
-    scheduler.start()
+    # scheduler.start()
 
 
 def setup_logging() -> None:

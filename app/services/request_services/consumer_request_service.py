@@ -1,6 +1,6 @@
 from typing import Any, Dict
 from fastapi.encoders import jsonable_encoder
-from app.models.fhir.r4.types import Resource, Bundle
+from app.models.fhir.r4.types import Bundle
 from app.services.request_services.Authenticators import Authenticator
 from app.services.request_services.fhir_request_service import FhirRequestService
 
@@ -12,30 +12,30 @@ class ConsumerRequestService:
             timeout=10, backoff=0.1, auth=auth
         )
 
-    def post_resource(self, resource: Resource) -> Resource:
-        response = self.__fhir_request_service.post_resource(
-            resource_type=resource.resource_type,
-            base_url=self.__url,
-            resource=resource.model_dump(by_alias=True, exclude_none=True),
-        )
-        return Resource(**response)
+    # def post_resource(self, resource: Resource) -> Resource:
+    #     response = self.__fhir_request_service.post_resource(
+    #         resource_type=resource.resource_type,
+    #         base_url=self.__url,
+    #         resource=resource.model_dump(by_alias=True, exclude_none=True),
+    #     )
+    # return Resource(**response)
 
-    def put_resource(self, resource: Resource, resource_id: str) -> Resource:
-        response = self.__fhir_request_service.put_resource(
-            resource_type=resource.resource_type,
-            base_url=self.__url,
-            resource_id=resource_id,
-            resource=resource.model_dump(by_alias=True),
-        )
-        return Resource(**response)
-
-    def get_resource(self, resource: Resource, resource_id: str) -> Resource:
-        response = self.__fhir_request_service.get_resource(
-            resource_type=resource.resource_type,
-            base_url=self.__url,
-            resource_id=resource_id,
-        )
-        return Resource(**response)
+    # def put_resource(self, resource: Resource, resource_id: str) -> Resource:
+    #     response = self.__fhir_request_service.put_resource(
+    #         resource_type=resource.resource_type,
+    #         base_url=self.__url,
+    #         resource_id=resource_id,
+    #         resource=resource.model_dump(by_alias=True),
+    #     )
+    #     return Resource(**response)
+    #
+    # def get_resource(self, resource: Resource, resource_id: str) -> Resource:
+    #     response = self.__fhir_request_service.get_resource(
+    #         resource_type=resource.resource_type,
+    #         base_url=self.__url,
+    #         resource_id=resource_id,
+    #     )
+    #     return Resource(**response)
 
     def delete_resource(self, resource_type: str, resource_id: str) -> None:
         self.__fhir_request_service.delete_resource(
