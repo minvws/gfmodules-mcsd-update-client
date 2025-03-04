@@ -24,10 +24,10 @@ def create_model(model: Type[T], data: Dict[str, Any], strict: bool) -> T:
     try:
         if strict:
             resource = model.model_validate(data)
-            return resource
+            return resource  # type: ignore
 
         resource = model.model_construct(**data)
-        return resource
+        return resource  # type: ignore
     except ValidationError as e:
         raise e
 
@@ -46,16 +46,10 @@ def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
     if "payload_type" not in data:
         data["payload_type"] = []
 
-        logger.warning(
-            warning_message("Endpoint", "payload_type", "empty array")
-            # "Endpoint does not contain 'payload_type' which is a required filled, adding empty array..."
-        )
+        logger.warning(warning_message("Endpoint", "payload_type", "empty array"))
     if "address" not in data:
         data["address"] = ""
-        logger.warning(
-            # "Endpoint does not contain 'address' which is a required field, adding empty string..."
-            warning_message("Endpoint", "address", "empty string")
-        )
+        logger.warning(warning_message("Endpoint", "address", "empty string"))
     return create_model(Endpoint, data, strict)
 
 

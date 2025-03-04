@@ -58,45 +58,6 @@ class FhirRequestService:
         )
         raise Exception("Failed to make request after too many retries")
 
-    def get_resource(
-        self, resource_type: str, base_url: str, resource_id: str
-    ) -> Dict[str, Any]:
-        url = URL(f"{base_url}/{resource_type}/{resource_id}")
-        response = self._do_request("GET", url)
-        if response.status_code > 300:
-            raise Exception(response.json())
-
-        results: Dict[str, Any] = response.json()
-        return results
-
-    def search_for_resource(
-        self,
-        resource_type: str,
-        base_url: str,
-        resource_params: dict[str, str] | None = None,
-    ) -> Dict[str, Any]:
-        response = requests.get(
-            f"{base_url}/{resource_type}/_search",
-            params=resource_params,
-            timeout=self.timeout,
-        )
-        if response.status_code > 300:
-            raise Exception(response.json())
-
-        results: Dict[str, Any] = response.json()
-        return results
-
-    def post_resource(
-        self, resource_type: str, base_url: str, resource: dict[str, Any]
-    ) -> Dict[str, Any]:
-        url = URL(f"{base_url}/{resource_type}")
-        response = self._do_request("POST", url, json=jsonable_encoder(resource))
-        if response.status_code > 300:
-            raise Exception(response.json())
-
-        results: Dict[str, Any] = response.json()
-        return results
-
     def get_resource_history(
         self,
         base_url: str,
@@ -136,33 +97,6 @@ class FhirRequestService:
                         next_url = URL(link.url)  # type: ignore
 
         return history_bundle
-
-    def put_resource(
-        self,
-        resource_type: str,
-        base_url: str,
-        resource_id: str,
-        resource: dict[str, Any],
-    ) -> Dict[str, Any]:
-        url = URL(f"{base_url}/{resource_type}/{resource_id}")
-
-        response = self._do_request("PUT", url, json=jsonable_encoder(resource))
-
-        if response.status_code > 300:
-            raise Exception(response.json())
-
-        results: Dict[str, Any] = response.json()
-        return results
-
-    def delete_resource(
-        self, resource_type: str, base_url: str, resource_id: str
-    ) -> None:
-        url = URL(f"{base_url}/{resource_type}/{resource_id}")
-
-        response = self._do_request("DELETE", url)
-
-        if response.status_code > 300:
-            raise Exception(response.json())
 
     def post_bundle(self, base_url: str, bundle: Dict[str, Any]) -> Dict[str, Any]:
         url = URL(f"{base_url}")
