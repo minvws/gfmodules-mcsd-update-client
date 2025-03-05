@@ -1,7 +1,11 @@
+import logging
 import time
 from datetime import datetime
 from threading import Thread, Event
 from typing import Callable, Any
+
+
+logger = logging.getLogger("Scheduler")
 
 
 class Scheduler:
@@ -34,14 +38,17 @@ class Scheduler:
 
     def __run(self) -> None:
         while self.__stop_event.is_set() is False:
-            start_time = time.time()
-            self.__function()
-            self.__stop_event.wait(self.__delay)
-            end_time = time.time()
-            self.update_runner(start_time, end_time)
+            try:
+                start_time = time.time()
+                self.__function()
+                self.__stop_event.wait(self.__delay)
+                end_time = time.time()
+                self.update_runner(start_time, end_time)
+            except Exception:
+                logger.exception("Got an error while scheduling task")
+                time.sleep(self.__delay)
 
     def update_runner(self, start_time: float, end_time: float) -> None:
-
         data = {
             "runner_id": self.__runner_id,
             "started_at": datetime.fromtimestamp(start_time).isoformat(),
