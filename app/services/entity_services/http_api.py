@@ -42,7 +42,6 @@ class HttpApi(SupplierApi):
                 raise Exception(response.json())
 
             results: Dict[str, Any] = response.json()
-
             for result in results["data"]:
                 suppliers.append(
                     SupplierDto(
@@ -80,7 +79,7 @@ class HttpApi(SupplierApi):
             ):
                 logger.warning(f"Failed to make request to {url} on attempt {attempt}")
                 if attempt < self.retry_count - 1:
-                    logger.info(f"Retrying in {self.backoff * (2 ** attempt)} seconds")
+                    logger.info(f"Retrying in {self.backoff * (2**attempt)} seconds")
                     time.sleep(self.backoff * (2**attempt))
 
         logger.error(
