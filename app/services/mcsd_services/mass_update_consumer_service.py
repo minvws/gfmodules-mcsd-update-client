@@ -1,5 +1,5 @@
-from datetime import datetime
-from typing import Any
+from datetime import datetime, timedelta
+from typing import Any, Dict
 
 from app.services.entity_services.supplier_service import SupplierService
 from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
@@ -13,17 +13,22 @@ class MassUpdateConsumerService:
     ) -> None:
         self.__supplier_service = supplier_service
         self.__update_consumer_service = update_consumer_service
-        self.__last_update: datetime | None = None
+        self.__last_update_dict: Dict[str, datetime] = {}
 
     def update_all(self) -> list[dict[str, Any]]:
         all_suppliers = self.__supplier_service.get_all()
         data: list[dict[str, Any]] = []
         for supplier in all_suppliers:
+            last_updated = (
+                self.__last_update_dict[supplier.id]
+                if supplier.id in self.__last_update_dict
+                else None
+            )
+            new_updated = datetime.now() - timedelta(seconds=60)
             data.append(
                 self.__update_consumer_service.update_supplier(
-                    supplier.id, self.__last_update
+                    supplier.id, last_updated
                 )
             )
-
-        self.__last_update = datetime.now()
+            self.__last_update_dict[supplier.id] = new_updated
         return data

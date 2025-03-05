@@ -39,7 +39,6 @@ class UpdateConsumerService:
         supplier_id: str,
         _since: datetime | None = None,
     ) -> Dict[str, Any]:
-
         # Fetch the history of all resources from this supplier (can take a while)
         supplier_history = self.__supplier_request_service.get_resource_history(
             supplier_id=supplier_id, _since=_since
@@ -197,7 +196,6 @@ class UpdateConsumerService:
                 and request_method != "DELETE"
                 and original_resource is not None
             ):
-
                 logger.info(
                     f"resource {resource_id} from {supplier_id} needs to be updated with consumer id: {resource_map.consumer_resource_id} ...processing"
                 )
