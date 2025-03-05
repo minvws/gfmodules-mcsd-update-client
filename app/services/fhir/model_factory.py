@@ -63,7 +63,7 @@ def create_practitioner(data: Dict[str, Any], strict: bool) -> Practitioner:
             if "code" not in q:
                 logger.warning(
                     warning_message(
-                        "Parctitioner", "code", "code system with warning text"
+                        "Practitioner", "code", "code system with warning text"
                     )
                 )
                 code = {

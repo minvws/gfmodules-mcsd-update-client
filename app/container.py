@@ -59,13 +59,14 @@ def container_config(binder: inject.Binder) -> None:
         raise ValueError("authentication must be either False, or 'azure_oauth2'")
     consumer_request_service = ConsumerRequestService(config.mcsd.consumer_url, auth)
     supplier_request_service = SupplierRequestsService(
-        supplier_service, NullAuthenticator()
+        supplier_service, NullAuthenticator(), request_count=config.mcsd.request_count
     )
 
     update_consumer_service = UpdateConsumerService(
         consumer_request_service=consumer_request_service,
         supplier_request_service=supplier_request_service,
         resource_map_service=resource_map_service,
+        strict_validation=config.mcsd.strict_validation,
     )
     binder.bind(UpdateConsumerService, update_consumer_service)
 

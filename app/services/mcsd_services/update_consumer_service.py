@@ -5,15 +5,10 @@ from datetime import datetime
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.models.supplier_update.dto import UpdateLookup, UpdateLookupEntry
 from app.services.bundle_tools import (
-    get_resource_from_reference,
     get_resource_type_and_id_from_entry,
     get_request_method_from_entry,
 )
-from app.services.fhir.model_factory import create_resource
-from app.services.fhir.references.reference_extractor import get_references
-from app.services.fhir.references.reference_namespacer import (
-    namespace_resource_reference,
-)
+from app.services.fhir.fhir_service import FhirService
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
 )
@@ -32,10 +27,12 @@ class UpdateConsumerService:
         supplier_request_service: SupplierRequestsService,
         consumer_request_service: ConsumerRequestService,
         resource_map_service: ResourceMapService,
+        strict_validation: bool,
     ):
         self.__supplier_request_service = supplier_request_service
         self.__consumer_request_service = consumer_request_service
         self.__resource_map_service = resource_map_service
+        self.__fhir_service = FhirService(strict_validation=strict_validation)
 
     def update_supplier(
         self,
@@ -58,7 +55,7 @@ class UpdateConsumerService:
 
         for resource_type, resource_id in resource_ids:
             resource_history = self.__supplier_request_service.get_resource_history(
-                supplier_id, resource_type, resource_id, _since
+                supplier_id, resource_type, resource_id, None
             )
             if resource_history.entry is None or len(resource_history.entry) == 0:
                 continue
@@ -77,11 +74,15 @@ class UpdateConsumerService:
         request_method = get_request_method_from_entry(latest_entry)
 
         main_resource = (
-            create_resource(latest_entry.resource.model_dump())
+            self.__fhir_service.create_resource(latest_entry.resource.model_dump())
             if latest_entry.resource
             else None
         )
-        unique_refs = get_references(main_resource) if main_resource is not None else []
+        unique_refs = (
+            self.__fhir_service.get_references(main_resource)
+            if main_resource is not None
+            else []
+        )
 
         update_lookup: UpdateLookup = {}
         if main_resource_id:
@@ -94,11 +95,7 @@ class UpdateConsumerService:
             )
 
         for ref in unique_refs:
-            res_type, id = (
-                get_resource_from_reference(ref.reference)
-                if ref.reference is not None
-                else (None, None)
-            )
+            res_type, id = self.__fhir_service.split_reference(ref)
             data = self.__supplier_request_service.get_resource_history(
                 resource_type=res_type, resource_id=id, supplier_id=supplier_id
             )
@@ -119,7 +116,9 @@ class UpdateConsumerService:
             )
             request_method = get_request_method_from_entry(lookup_data.entry)
             original_resource = (
-                create_resource(lookup_data.entry.resource.model_dump())
+                self.__fhir_service.create_resource(
+                    lookup_data.entry.resource.model_dump()
+                )
                 if lookup_data.entry.resource is not None
                 else None
             )
@@ -153,7 +152,7 @@ class UpdateConsumerService:
                     f"resource {resource_id} from {supplier_id} is new ...processing"
                 )
                 new_id = f"{supplier_id}-{resource_id}"
-                new_resource = namespace_resource_reference(
+                new_resource = self.__fhir_service.namespace_resource_references(
                     original_resource, supplier_id
                 )
                 new_resource.id = new_id
@@ -200,7 +199,7 @@ class UpdateConsumerService:
                 )
                 # replace id with one from resource_map
                 original_resource.id = resource_map.consumer_resource_id
-                new_resource = namespace_resource_reference(
+                new_resource = self.__fhir_service.namespace_resource_references(
                     original_resource, supplier_id
                 )
                 new_entry = Entry(
