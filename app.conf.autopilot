@@ -14,6 +14,7 @@ pool_recycle=1800
 [scheduler]
 delay_input = 30s
 max_logs_entries = 100
+automatic_background_update = True
 
 [telemetry]
 enabled = True
@@ -43,6 +44,8 @@ ssl_key_file = server.key
 [mcsd]
 consumer_url = http://addressing-app:8502
 authentication = off
+request_count = 20
+strict_validation = False
 
 [mock_seeder]
 mock_supplier_url = # For a local test HAPI it can be: http://host.docker.internal:8081/fhir/

@@ -17,6 +17,8 @@ pool_recycle=1800
 delay_input = 30s
 # maximum number of entries in logs
 max_logs_entries = 100
+# background updates automatically start on bootstrap
+automatic_background_update = True
 
 [telemetry]
 # Telemetry is enabled or not
@@ -55,6 +57,12 @@ ssl_key_file = server.key
 consumer_url = http://addressing-app:8502
 # authentication can be either "off", or "azure_oauth2" in case of azure oauth2 authentication
 authentication = off
+
+# query parameter for the number of entries in Bundle per request (limit)
+# This is usually used in the supplier request service and not supplier API (LRZa)
+request_count = 20
+# choose weather to use a strict validation for FHIR mCSD resources or nor
+strict_validation = False
 
 [azure_oauth2]
 # Token url is the url of the oauth2 endpoint of the microsoft services

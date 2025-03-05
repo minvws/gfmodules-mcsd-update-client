@@ -1,15 +1,14 @@
 import logging
 from typing import Dict, Any, Tuple
 from datetime import datetime
+
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.models.supplier_update.dto import UpdateLookup, UpdateLookupEntry
 from app.services.bundle_tools import (
-    get_resource_from_reference,
     get_resource_type_and_id_from_entry,
     get_request_method_from_entry,
-    get_unique_references,
-    namespace_resource_refs,
 )
+from app.services.fhir.fhir_service import FhirService
 from app.services.request_services.supplier_request_service import (
     SupplierRequestsService,
 )
@@ -17,7 +16,7 @@ from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.request_services.consumer_request_service import (
     ConsumerRequestService,
 )
-from app.models.fhir.r4.types import Bundle, Request, Entry
+from app.models.fhir.r4.types import Bundle, Request, Entry, Resource
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +27,12 @@ class UpdateConsumerService:
         supplier_request_service: SupplierRequestsService,
         consumer_request_service: ConsumerRequestService,
         resource_map_service: ResourceMapService,
+        strict_validation: bool,
     ):
         self.__supplier_request_service = supplier_request_service
         self.__consumer_request_service = consumer_request_service
         self.__resource_map_service = resource_map_service
-        self.reference_seen_cache = set[str]()
+        self.__fhir_service = FhirService(strict_validation=strict_validation)
 
     def update_supplier(
         self,
@@ -53,11 +53,9 @@ class UpdateConsumerService:
             if resource_type is not None and resource_id is not None:
                 resource_ids.add((resource_type, resource_id))
 
-        # Clear the reference seen cache so we don't update the same resource twice in this supplier run
-        self.reference_seen_cache = set[str]()
         for resource_type, resource_id in resource_ids:
             resource_history = self.__supplier_request_service.get_resource_history(
-                supplier_id, resource_type, resource_id, _since
+                supplier_id, resource_type, resource_id, None
             )
             if resource_history.entry is None or len(resource_history.entry) == 0:
                 continue
@@ -74,18 +72,17 @@ class UpdateConsumerService:
     def update(self, supplier_id: str, history_size: int, latest_entry: Entry) -> None:
         _, main_resource_id = get_resource_type_and_id_from_entry(latest_entry)
         request_method = get_request_method_from_entry(latest_entry)
-        entry_resource = latest_entry.resource
 
+        main_resource = (
+            self.__fhir_service.create_resource(latest_entry.resource.model_dump())
+            if latest_entry.resource
+            else None
+        )
         unique_refs = (
-            get_unique_references(entry_resource.model_dump())
-            if entry_resource is not None
+            self.__fhir_service.get_references(main_resource)
+            if main_resource is not None
             else []
         )
-        split_refs = [
-            get_resource_from_reference(ref["reference"])
-            for ref in unique_refs
-            if len(unique_refs) > 0
-        ]
 
         update_lookup: UpdateLookup = {}
         if main_resource_id:
@@ -97,7 +94,8 @@ class UpdateConsumerService:
                 }
             )
 
-        for res_type, id in split_refs:
+        for ref in unique_refs:
+            res_type, id = self.__fhir_service.split_reference(ref)
             data = self.__supplier_request_service.get_resource_history(
                 resource_type=res_type, resource_id=id, supplier_id=supplier_id
             )
@@ -107,6 +105,7 @@ class UpdateConsumerService:
                     {id: UpdateLookupEntry(history_size=len(entry), entry=entry[0])}
                 )
 
+        # prepare bundle
         new_bundle = Bundle(type="transaction", entry=[])
         for id, lookup_data in update_lookup.items():
             resource_type, resource_id = get_resource_type_and_id_from_entry(
@@ -116,7 +115,13 @@ class UpdateConsumerService:
                 supplier_id, resource_type, resource_id
             )
             request_method = get_request_method_from_entry(lookup_data.entry)
-            original_resource = lookup_data.entry.resource
+            original_resource = (
+                self.__fhir_service.create_resource(
+                    lookup_data.entry.resource.model_dump()
+                )
+                if lookup_data.entry.resource is not None
+                else None
+            )
 
             # resource new and method is delete
             if resource_map is None and request_method == "DELETE":
@@ -147,24 +152,15 @@ class UpdateConsumerService:
                     f"resource {resource_id} from {supplier_id} is new ...processing"
                 )
                 new_id = f"{supplier_id}-{resource_id}"
-                new_resource = namespace_resource_refs(
-                    original_resource.model_dump(), supplier_id
+                new_resource = self.__fhir_service.namespace_resource_references(
+                    original_resource, supplier_id
                 )
                 new_resource.id = new_id
                 new_entry = Entry(
-                    resource=new_resource,
+                    resource=Resource(**new_resource.model_dump()),
                     request=Request(method="PUT", url=f"{resource_type}/{new_id}"),
                 )
                 new_bundle.entry.append(new_entry)
-                # self.__resource_map_service.add_one(
-                #     ResourceMapDto(
-                #         supplier_id=supplier_id,
-                #         supplier_resource_id=resource_id,  # type: ignore
-                #         resource_type=resource_type,  # type: ignore
-                #         consumer_resource_id=new_id,
-                #         history_size=lookup_data.history_size,
-                #     )
-                # )
                 lookup_data.resource_map = ResourceMapDto(
                     supplier_id=supplier_id,
                     supplier_resource_id=resource_id,  # type: ignore
@@ -203,11 +199,11 @@ class UpdateConsumerService:
                 )
                 # replace id with one from resource_map
                 original_resource.id = resource_map.consumer_resource_id
-                new_resource = namespace_resource_refs(
-                    original_resource.model_dump(), supplier_id
+                new_resource = self.__fhir_service.namespace_resource_references(
+                    original_resource, supplier_id
                 )
                 new_entry = Entry(
-                    resource=new_resource,
+                    resource=Resource(**new_resource.model_dump()),
                     request=Request(
                         method="PUT",
                         url=f"{resource_type}/{resource_map.consumer_resource_id}",

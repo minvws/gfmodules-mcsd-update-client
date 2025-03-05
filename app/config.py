@@ -25,6 +25,7 @@ class ConfigApp(BaseModel):
 class Scheduler(BaseModel):
     delay_input: str
     max_logs_entries: int
+    automatic_background_update: bool = Field(default=True)
 
     @computed_field  # type: ignore
     @property
@@ -95,6 +96,8 @@ class ConfigMcsd(BaseModel):
         default="off",
         description="Enable authentication, can be 'off', 'oauth2', or 'azure_oauth2'",
     )
+    request_count: int = Field(default=20)
+    strict_validation: bool = Field(default=False)
 
     @field_validator("authentication")
     def validate_authentication(cls, value: Any) -> str | bool:

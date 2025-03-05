@@ -21,9 +21,14 @@ class McsdResources(Enum):
 
 
 class SupplierRequestsService:
-    def __init__(self, supplier_service: SupplierService, auth: Authenticator) -> None:
+    def __init__(
+        self, supplier_service: SupplierService, auth: Authenticator, request_count: int
+    ) -> None:
         self.__supplier_service = supplier_service
-        self.__fhir_request_service = FhirRequestService(timeout=10, backoff=0.1, auth=auth)
+        self.__fhir_request_service = FhirRequestService(
+            timeout=10, backoff=0.1, auth=auth
+        )
+        self.__request_count = request_count
 
     def get_resource_history(
         self,
@@ -34,6 +39,11 @@ class SupplierRequestsService:
     ) -> Bundle:
         supplier = self.__supplier_service.get_one(supplier_id)
 
+        params = {"_count": str(self.__request_count), "_offset": "0"}
+
+        if _since is not None:
+            params.update({"_since": _since.isoformat()})
+
         histories: List[Bundle] = []
         if resource_type is None:
             for res_type in McsdResources:
@@ -42,7 +52,7 @@ class SupplierRequestsService:
                         base_url=supplier.endpoint,
                         resource_type=res_type.value,
                         resource_id=resource_id,
-                        params={"_since": _since.isoformat()} if _since else None,
+                        params=params,
                     )
                 )
         else:
@@ -51,7 +61,7 @@ class SupplierRequestsService:
                     base_url=supplier.endpoint,
                     resource_type=resource_type,
                     resource_id=resource_id,
-                    params={"_since": _since.isoformat()} if _since else None,
+                    params=params,
                 )
             )
 
@@ -63,13 +73,17 @@ class SupplierRequestsService:
 
         return new_bundle
 
-    def get_latest_entry_and_length_from_reference(self, supplier_id: str, reference: Dict[str, str]) -> Tuple[int, Entry | None]:
+    def get_latest_entry_and_length_from_reference(
+        self, supplier_id: str, reference: Dict[str, str]
+    ) -> Tuple[int, Entry | None]:
         """
         Return the number of entries for this reference from the history, and get the latest entry
         """
         supplier = self.__supplier_service.get_one(supplier_id)
 
-        (res_type, res_id) = get_resource_from_reference(reference["reference"] if "reference" in reference else "")
+        (res_type, res_id) = get_resource_from_reference(
+            reference["reference"] if "reference" in reference else ""
+        )
         if res_type is None:
             return 0, None
 
