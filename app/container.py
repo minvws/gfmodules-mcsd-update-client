@@ -22,6 +22,8 @@ from app.services.request_services.consumer_request_service import (
     ConsumerRequestService,
 )
 from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
+from app.services_new.api.suppliers_api import SuppliersApi
+from app.services_new.update_service import UpdateConsumer
 
 
 def container_config(binder: inject.Binder) -> None:
@@ -30,6 +32,7 @@ def container_config(binder: inject.Binder) -> None:
     db = Database(dsn=config.database.dsn)
     binder.bind(Database, db)
 
+    # TODO: remove this
     supplier_service = SupplierService(
         HttpApi(
             config.supplier_api.base_url,
@@ -38,6 +41,13 @@ def container_config(binder: inject.Binder) -> None:
         )
     )
     binder.bind(SupplierService, supplier_service)
+
+    supplier_api = SuppliersApi(
+        url=config.supplier_api.base_url,
+        timeout=config.supplier_api.timeout,
+        backoff=config.supplier_api.backoff,
+    )
+    binder.bind(SuppliersApi, supplier_api)
 
     resource_map_service = ResourceMapService(db)
     binder.bind(ResourceMapService, resource_map_service)
@@ -62,6 +72,19 @@ def container_config(binder: inject.Binder) -> None:
     supplier_request_service = SupplierRequestsService(
         supplier_service, NullAuthenticator(), request_count=config.mcsd.request_count
     )
+
+    # test
+    update_consumer = UpdateConsumer(
+        suppliers_register_url=config.supplier_api.base_url,
+        consumer_url=config.mcsd.consumer_url,
+        strict_validation=config.mcsd.strict_validation,
+        timeout=config.supplier_api.timeout,
+        backoff=config.supplier_api.backoff,
+        request_count=config.mcsd.request_count,
+        resource_map_service=resource_map_service,
+        # auth=NullAuthenticator(),
+    )
+    binder.bind(UpdateConsumer, update_consumer)
 
     update_consumer_service = UpdateConsumerService(
         consumer_request_service=consumer_request_service,
@@ -90,6 +113,10 @@ def get_database() -> Database:
     return inject.instance(Database)
 
 
+def get_supplier_api() -> SuppliersApi:
+    return inject.instance(SuppliersApi)
+
+
 def get_supplier_service() -> SupplierService:
     return inject.instance(SupplierService)
 
@@ -104,6 +131,10 @@ def get_update_consumer_service() -> UpdateConsumerService:
 
 def get_scheduler() -> Scheduler:
     return inject.instance(Scheduler)
+
+
+def get_update_consumer() -> UpdateConsumer:
+    return inject.instance(UpdateConsumer)
 
 
 def setup_container() -> None:

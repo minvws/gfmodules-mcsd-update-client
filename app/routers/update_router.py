@@ -4,11 +4,13 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.container import (
+    get_update_consumer,
     get_update_consumer_service,
     get_supplier_service,
 )
 from app.services.entity_services.supplier_service import SupplierService
 from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
+from app.services_new.update_service import UpdateConsumer
 
 router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"])
 
@@ -30,9 +32,20 @@ def update_supplier_resources(
         all_suppliers = supplier_service.get_all()
         data: list[dict[str, Any]] = []
         for supplier in all_suppliers:
-            data.append(
-                service.update_supplier(supplier.id, since)
-            )
+            data.append(service.update_supplier(supplier.id, since))
         return data
     else:
         return service.update_supplier(supplier_id, since)
+
+
+@router.post(
+    "-test/{supplier_id}", response_model=None, summary="Update by supplier ID"
+)
+@router.post("-test", response_model=None, summary="Update all suppliers")
+def update_test(
+    supplier_id: str | None,
+    query_params: UpdateQueryParams = Depends(),
+    service: UpdateConsumer = Depends(get_update_consumer),
+) -> Any:
+    if supplier_id:
+        return service.update(supplier_id)

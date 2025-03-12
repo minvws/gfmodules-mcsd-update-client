@@ -6,6 +6,7 @@ from app.models.supplier.dto import SupplierDto
 logger = logging.getLogger(__name__)
 
 
+# TODO: remove this file
 class SupplierApi:
     def get_one(self, supplier_id: str) -> SupplierDto|None:
         raise NotImplementedError

@@ -50,6 +50,18 @@ def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
     if "address" not in data:
         data["address"] = ""
         logger.warning(warning_message("Endpoint", "address", "empty string"))
+
+    # if "connectionType" in data:
+    #     logger.warning(
+    #         warning_message(
+    #             "Endpoint", "connectionType", "code system with warning text"
+    #         )
+    #     )
+    #     data["connectionType"] = {
+    #         "conding": [{"system": "System not available"}],
+    #         "text": "system was added dyrung update to bypass validation",
+    #     }
+
     return create_model(Endpoint, data, strict)
 
 
@@ -85,10 +97,12 @@ def create_healthcare_service(data: Dict[str, Any], strict: bool) -> HealthcareS
 
 
 def create_resource(data: Dict[str, Any], strict: bool = False) -> DomainResource:
-    if "resource_type" not in data.keys():
+    test = all("resourceType" in k or "resource_type" in k for k in data)
+    if all("resource_type" in k or "resourceType" in k for k in data):
         raise ValueError("Model is not a valid FHIR model")
 
-    resource_type: str = data["resource_type"]
+    res_type_key = "resource_type" if "resource_type" in data else "resourceType"
+    resource_type: str = data[res_type_key]
     match resource_type:
         case "Organization":
             return create_organization(data, strict)

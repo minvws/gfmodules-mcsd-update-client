@@ -1,9 +1,8 @@
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import List
 
-from app.models.fhir.r4.types import Entry, Bundle
-from app.services.bundle_tools import get_resource_from_reference
+from app.models.fhir.r4.types import Bundle
 
 from app.services.entity_services.supplier_service import SupplierService
 from app.services.request_services.Authenticators import Authenticator

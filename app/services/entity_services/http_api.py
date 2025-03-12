@@ -12,6 +12,7 @@ from app.models.supplier.dto import SupplierDto
 logger = logging.getLogger(__name__)
 
 
+# TODO: remove this
 class HttpApi(SupplierApi):
     def __init__(self, base_url: str, timeout: int, backoff: float) -> None:
         self.base_url = base_url
