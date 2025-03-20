@@ -38,6 +38,10 @@ class SupplierRequestsService:
         _since: datetime | None = None,
     ) -> Bundle:
         supplier = self.__supplier_service.get_one(supplier_id)
+        if supplier is None:
+            new_bundle = Bundle(type="history")
+            new_bundle.entry = []
+            return new_bundle
 
         params = {"_count": str(self.__request_count), "_offset": "0"}
 
@@ -80,6 +84,8 @@ class SupplierRequestsService:
         Return the number of entries for this reference from the history, and get the latest entry
         """
         supplier = self.__supplier_service.get_one(supplier_id)
+        if supplier is None:
+            return 0, None
 
         (res_type, res_id) = get_resource_from_reference(
             reference["reference"] if "reference" in reference else ""

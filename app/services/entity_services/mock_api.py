@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class MockApi(SupplierApi):
-    def get_one(self, supplier_id: str) -> SupplierDto:
+    def get_one(self, supplier_id: str) -> SupplierDto|None:
         if supplier_id == "1":
             return SupplierDto(
                 id="1",
@@ -21,6 +21,8 @@ class MockApi(SupplierApi):
                 name="Test Supplier 2",
                 endpoint="http://test2.supplier.example.org",
             )
+        elif supplier_id == "3":
+            return None
         else:
             raise ValueError(f"SupplierDto with ID {supplier_id} not found")
 

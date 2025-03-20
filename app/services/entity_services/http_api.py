@@ -19,9 +19,11 @@ class HttpApi(SupplierApi):
         self.backoff = backoff
         self.retry_count = 5
 
-    def get_one(self, supplier_id: str) -> SupplierDto:
+    def get_one(self, supplier_id: str) -> SupplierDto|None:
         url = URL(f"{self.base_url}/api/supplier/{supplier_id}")
         response = self._do_request("GET", url)
+        if response.status_code == 404:
+            return None
         if response.status_code > 300:
             raise Exception(response.json())
 
