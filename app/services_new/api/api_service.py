@@ -63,7 +63,7 @@ class ApiService(RequestService, ABC):
                 response = requests.request(
                     method=method,
                     url=str(url.with_query(None)),
-                    params=url.query,
+                    params=url.query,  # type: ignore
                     headers=headers,
                     timeout=self.timeout,
                     json=json,
@@ -110,7 +110,7 @@ class AuthenticationBasedApi(RequestService, ABC):
                 response = requests.request(
                     method=method,
                     url=str(url.with_query(None)),
-                    params=url.query,
+                    params=url.query,  # type: ignore
                     headers=headers,
                     json=json,
                     timeout=self.timeout,

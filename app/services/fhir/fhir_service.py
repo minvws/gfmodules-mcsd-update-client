@@ -1,6 +1,11 @@
 from typing import Any, Dict, List
+from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.reference import Reference
+from app.services.fhir.bundle.bundle_utils import (
+    get_request_method_from_entry,
+    get_resource_type_and_id_from_entry,
+)
 from app.services.fhir.model_factory import create_resource
 from app.services.fhir.references.reference_extractor import (
     extract_references,
@@ -51,3 +56,17 @@ class FhirService:
         Returns a split resource from a reference (e.g. "Patient/123" -> ("Patient", "123"))
         """
         return split_reference(data)
+
+    def get_resource_type_and_id_from_entry(
+        self, entry: BundleEntry
+    ) -> tuple[str, str]:
+        """
+        Retrieves the resource type and id from a Bundle entry
+        """
+        return get_resource_type_and_id_from_entry(entry)
+
+    def get_request_method_from_entry(self, entry: BundleEntry) -> str:
+        """
+        Retrieves the request method from a Bundle entry if a request is present
+        """
+        return get_request_method_from_entry(entry)

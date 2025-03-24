@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 from fhir.resources.R4B.bundle import (
     Bundle,
     BundleEntry,
@@ -9,9 +9,8 @@ from fhir.resources.R4B.bundle import (
 )
 from pydantic import ValidationError
 
+from app.models.adjacency.adjacency_map import AdjacencyReference
 from app.services.fhir.model_factory import create_resource
-
-# TODO: Add circular dependencies in seeder
 
 
 def create_bundle_link(data: Dict[str, Any]) -> BundleLink:
@@ -47,7 +46,13 @@ def create_bundle_entry(data: Dict[str, Any]) -> BundleEntry:
         bundle_entry.request = create_entry_request(data["request"])
 
     if "resource" in data:
-        bundle_entry.resource = create_resource(data["resource"])
+        if (
+            "resourceType" in data["resource"]
+            and data["resource"]["resourceType"] == "Bundle"
+        ):
+            bundle_entry.resource = create_bundle(data["resource"])
+        else:
+            bundle_entry.resource = create_resource(data["resource"])
 
     if "response" in data:
         bundle_entry.response = create_entry_response(data["response"])
@@ -91,3 +96,31 @@ def create_bundle(data: Dict[str, Any] | None = None, strict: bool = False) -> B
         return bundle
     except ValidationError as e:
         raise e
+
+
+def create_bundle_request(data: list[AdjacencyReference]) -> Bundle:
+
+    request_bundle = Bundle.model_construct(type="batch")
+    request_bundle.entry = []
+    for ref in data:
+        bunlde_request = BundleEntryRequest.model_construct(
+            method="GET", url=f"/{ref.resource_type}/{ref.id}/_history"
+        )
+        bundle_entry = BundleEntry.model_construct()
+        bundle_entry.request = bunlde_request
+        request_bundle.entry.append(bundle_entry)
+
+    return request_bundle
+
+
+# TODO: change name and put in fhir service
+def get_entries_from_bundle_of_bundles(data: Bundle) -> List[BundleEntry]:
+    entries = data.entry if data.entry else []
+    results: List[BundleEntry] = []
+
+    for entry in entries:
+        if isinstance(entry.resource, Bundle):
+            nested_bundle = entry.resource
+            nested_entries = nested_bundle.entry if nested_bundle.entry else []
+            results.extend(nested_entries)
+    return results

@@ -3,7 +3,11 @@ from fastapi.exceptions import HTTPException
 from app.db.db import Database
 from app.db.entities.resource_map import ResourceMap
 from app.db.repositories.resource_map_repository import ResourceMapRepository
-from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto, ResourceMapDeleteDto
+from app.models.resource_map.dto import (
+    ResourceMapDto,
+    ResourceMapUpdateDto,
+    ResourceMapDeleteDto,
+)
 
 
 class ResourceMapService:
@@ -41,7 +45,7 @@ class ResourceMapService:
             supplier_id=supplier_id,
             resource_type=resource_type,
             supplier_resource_id=supplier_resource_id,
-            consumer_resource_id=consumer_resource_id
+            consumer_resource_id=consumer_resource_id,
         )
         if resource_map is None:
             raise HTTPException(status_code=404, detail="Not Found")

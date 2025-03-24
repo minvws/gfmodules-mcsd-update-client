@@ -16,9 +16,9 @@ def extract_references(data: Any) -> Reference | None:
         if "reference" in data and data["reference"][0] != "#":
             return Reference.model_construct(**data)
 
-        if isinstance(data, Reference):
-            if data.reference is not None and not data.reference.startswith("#"):
-                return data
+    if isinstance(data, Reference):
+        if data.reference is not None and not data.reference.startswith("#"):
+            return data
 
     return None
 

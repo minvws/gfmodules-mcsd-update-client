@@ -1,31 +1,20 @@
 from datetime import datetime
-from enum import Enum
+from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
 from typing import Any, Dict, List
 import logging
 from fhir.resources.R4B.bundle import BundleEntry
 from yarl import URL
 from fhir.resources.R4B.domainresource import DomainResource
-
+from app.services.fhir.bundle.bundle_utils import filter_history_entries
 from app.services.fhir.bundle.bunlde_factory import create_bundle
 from app.services_new.api.api_service import AuthenticationBasedApi
 from app.services_new.api.authenticators import Authenticator
 from app.services.fhir.fhir_service import FhirService
 
-# from app.models.fhir.r4.types import Bundle
-
 from fhir.resources.R4B.bundle import Bundle
 
 logger = logging.getLogger(__name__)
-
-
-class McsdResources(Enum):
-    ORGANIZATION_AFFILIATION = "OrganizationAffiliation"
-    PRACTITIONER_ROLE = "PractitionerRole"
-    HEALTH_CARE_SERVICE = "HealthcareService"
-    LOCATION = "Location"
-    PRACTITIONER = "Practitioner"
-    ORGANIZATION = "Organization"
-    ENDPOINT = "Endpoint"
 
 
 class FhirApi(AuthenticationBasedApi):
@@ -43,41 +32,20 @@ class FhirApi(AuthenticationBasedApi):
         self.__request_count = request_count
         self.__fhir_service = FhirService(strict_validation=strict_validation)
 
-    def aggregate_all_resources_history(
-        self, _since: datetime | None = None
-    ) -> List[BundleEntry]:
-        aggregate: List[BundleEntry] = []
-        for res_type in McsdResources:
-            print(f"\nfetching data for resource type {res_type.value}\n")
-            aggregate.extend(
-                self.aggregate_resource_history(
-                    resource_type=res_type.value, _since=_since
-                )
+    def post_bundle(self, bundle: Bundle) -> Bundle:
+        try:
+            url = URL(f"{self.__base_url}")
+            response = self.do_request(
+                "POST", url, jsonable_encoder(bundle.model_dump())
             )
-
-        return aggregate
-
-    def aggregate_resource_history(
-        self,
-        resource_type: str,
-        resource_id: str | None = None,
-        _since: datetime | None = None,
-    ) -> List[BundleEntry]:
-
-        params = {"_count": str(self.__request_count)}
-        if _since is not None:
-            params.update({"_since": _since.isoformat()})
-
-        return self._aggregate_resource_history(
-            resource_type=resource_type, resource_id=resource_id, params=params
-        )
-
-    def post_bundle(self, bundle: Bundle) -> Dict[str, Any]:
-        url = URL(f"{self.__base_url}")
-        response = self.do_request("POST", url, bundle.model_dump())
-        data: Dict[str, Any] = response.json()
-
-        return data
+            if response.status_code > 300:
+                logger.error(response.json())
+                raise HTTPException(status_code=500, detail=response.json())
+            data = response.json()
+            return create_bundle(data)
+        except Exception as e:
+            logging.error(e)
+            raise e
 
     def get_resource(
         self, resource_type: str, resource_id: str
@@ -91,44 +59,49 @@ class FhirApi(AuthenticationBasedApi):
         except Exception:
             return None
 
-    def _aggregate_resource_history(
-        self,
-        resource_type: str,
-        resource_id: str | None = None,
-        params: dict[str, str] | None = None,
-    ) -> List[BundleEntry]:
-        history_entries: List[BundleEntry] = []
-        next_url: URL | None = (
-            URL(f"{self.__base_url}/{resource_type}/{resource_id}/_history").with_query(
-                params
-            )
-            if resource_id is not None
-            else URL(f"{self.__base_url}/{resource_type}/_history").with_query(params)
-        )
+    def delete_resource(self, resource_type: str, resource_id: str) -> None:
+        try:
+            url = URL(f"{self.__base_url}/{resource_type}/{resource_id}")
+            self.do_request("DELETE", url)
+        except Exception as e:
+            raise e
 
-        # Repeat until we have all the history
-        while next_url is not None:
-            response = self.do_request("GET", next_url)
+    def put_resrouce(
+        self, resource_type: str, resource_id: str, data: DomainResource
+    ) -> DomainResource | None:
+        try:
+            url = URL(f"{self.__base_url}/{resource_type}/{resource_id}")
+            response = self.do_request("PUT", url, data.model_dump())
             if response.status_code > 300:
-                logger.warning(
-                    f"Failed to get resource history: {response.status_code}"
+                raise HTTPException(
+                    status_code=response.status_code, detail=response.json()
                 )
-                break
 
-            # Convert the page result into a page-bundle
-            # page_bundle: Bundle = Bundle(**jsonable_encoder(response.json()))
-            page_bundle = create_bundle(response.json())
+            return self.__fhir_service.create_resource(response.json())
+        except Exception as e:
+            raise e
 
-            # Add all the entries to the main bundle
-            if page_bundle.entry is not None:
-                # history_bundle.entry.extend(page_bundle.entry)
-                history_entries.extend(page_bundle.entry)
+    def build_base_history_url(
+        self, resource_type: str, since: datetime | None = None
+    ) -> URL:
+        params: dict[str, int | str] = {"_count": self.__request_count}
+        if since is not None:
+            params["_since"] = since.isoformat()
 
-            # Try and extract the next page URL
-            next_url = None
-            if page_bundle.link is not None and len(page_bundle.link) > 0:
-                for link in page_bundle.link:
-                    if link.relation == "next":
-                        next_url = URL(link.url)  # type: ignore
-        # return history_bundle
-        return history_entries
+        url = URL(f"{self.__base_url}/{resource_type}/_history").with_query(params)
+        return url
+
+    def get_history_batch(
+        self,
+        url: URL,
+    ) -> tuple[URL | None, List[BundleEntry]]:
+        response = self.do_request("GET", url)
+        page_bundle = create_bundle(response.json())
+        next_url = None
+        entries = filter_history_entries(page_bundle.entry) if page_bundle.entry else []
+        if page_bundle.link is not None and len(page_bundle.link) > 0:
+            for link in page_bundle.link:
+                if link.relation == "next":
+                    next_url = URL(link.url)
+
+        return next_url, entries
