@@ -1,3 +1,4 @@
+from app.services.entity_services.supplier_info_service import SupplierInfoService
 from app.services.mcsd_services.mass_update_consumer_service import (
     MassUpdateConsumerService,
 )
@@ -70,9 +71,12 @@ def container_config(binder: inject.Binder) -> None:
     )
     binder.bind(UpdateConsumerService, update_consumer_service)
 
+    supplier_info_service = SupplierInfoService(db)
+
     mass_update_service = MassUpdateConsumerService(
         update_consumer_service=update_consumer_service,
         supplier_service=supplier_service,
+        supplier_info_service=supplier_info_service,
     )
     scheduler = Scheduler(
         function=mass_update_service.update_all,
