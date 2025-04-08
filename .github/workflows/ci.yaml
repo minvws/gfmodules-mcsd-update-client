@@ -14,7 +14,7 @@ concurrency:
 jobs:
     build:
         name: Build
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
 
         steps:
             - name: Checkout repositories
@@ -27,7 +27,7 @@ jobs:
 
     lint:
         name: Run code linter
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         needs: build
 
         steps:
@@ -44,7 +44,7 @@ jobs:
 
     type-check:
         name: Check static types
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         needs: build
 
         steps:
@@ -61,7 +61,7 @@ jobs:
 
     safety-check:
         name: Scan packages for vulnerabilities
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         needs: build
 
         steps:
@@ -78,7 +78,7 @@ jobs:
 
     spelling-check:
         name: Run spelling check
-        runs-on: ubuntu-22.04
+        runs-on: ubuntu-24.04
         needs: build
 
         steps:
