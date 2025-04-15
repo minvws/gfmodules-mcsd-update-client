@@ -195,7 +195,7 @@ jobs:
                 images: ghcr.io/${{ github.repository }}
 
             - name: Build and push Docker image
-              uses: docker/build-push-action@v5
+              uses: docker/build-push-action@v6
               env:
                 NEW_UID: 1000
                 NEW_GID: 1000
