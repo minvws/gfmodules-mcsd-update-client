@@ -69,7 +69,7 @@ class HttpApi(SupplierApi):
                 response = requests.request(
                     method=method,
                     url=str(url.with_query(None)),
-                    params=url.query,
+                    params=url.query,       # type: ignore
                     headers=headers,
                     timeout=self.timeout,
                 )
