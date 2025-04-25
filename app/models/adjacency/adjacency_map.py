@@ -3,6 +3,7 @@ from typing import Dict, List, Literal
 from pydantic import BaseModel, computed_field
 from fhir.resources.R4B.bundle import BundleEntry, BundleEntryRequest
 from fhir.resources.R4B.domainresource import DomainResource
+from app.models.fhir.types import HttpValidVerbs
 from app.services.fhir.references.reference_namespacer import (
     namespace_resource_reference,
 )
@@ -21,7 +22,7 @@ class AdjacencyReference(BaseModel):
 class SupplierNodeData(BaseModel):
     supplier_id: str
     references: List[AdjacencyReference]
-    method: str  # Literal
+    method: HttpValidVerbs
     entry: BundleEntry
 
     @computed_field  # type: ignore
@@ -40,7 +41,6 @@ class SupplierNodeData(BaseModel):
 
 class ConsumerNodeData(BaseModel):
     resource: DomainResource | None
-    # resource_id: str
 
     @computed_field  # type: ignore
     @property
@@ -74,46 +74,32 @@ class Node(BaseModel):
         self,
     ) -> Literal["ignore", "equal", "delete", "update", "new"]:
 
-        resource_not_needed = (
-            True
-            if self.supplier_data.method == "DELETE"
+        if (
+            self.supplier_data.method == "DELETE"
             and self.consumer_data.resource is None
-            else False
-        )
-        resources_are_equal = (
-            True
-            if self.supplier_data.method != "DELETE"
+        ):
+            return "ignore"
+
+        if (
+            self.supplier_data.method != "DELETE"
             and self.supplier_data.hash_value
             and self.consumer_data.hash_value
             and self.supplier_data.hash_value == self.consumer_data.hash_value
-            else False
-        )
+        ):
+            return "equal"
 
-        resource_needs_deletion = (
-            True
-            if self.supplier_data.method == "DELETE"
+        if (
+            self.supplier_data.method == "DELETE"
             and self.consumer_data.resource is not None
-            else False
-        )
-        resource_is_new = (
-            True
-            if self.supplier_data.method != "DELETE"
+        ):
+            return "delete"
+
+        if (
+            self.supplier_data.method != "DELETE"
             and self.supplier_data.hash_value is not None
             and self.consumer_data.hash_value is None
             and self.resource_map is None
-            else False
-        )
-
-        if resource_not_needed:
-            return "ignore"
-
-        if resources_are_equal:
-            return "equal"
-
-        if resource_needs_deletion:
-            return "delete"
-
-        if resource_is_new:
+        ):
             return "new"
 
         return "update"
@@ -123,6 +109,7 @@ class Node(BaseModel):
     def update_data(self) -> NodeUpdateData | None:
         consumer_resource_id = f"{self.supplier_data.supplier_id}-{self.resource_id}"
         url = f"{self.resource_type}/{consumer_resource_id}"
+        dto: ResourceMapDto | ResourceMapUpdateDto | None = None
         match self.update_status:
             case "ignore":
                 return None
@@ -142,14 +129,14 @@ class Node(BaseModel):
                         f"Resource map for {self.resource_id} {self.resource_type} cannot be None and marked as delete "
                     )
 
-                delete_dto = ResourceMapUpdateDto(
+                dto = ResourceMapUpdateDto(
                     history_size=self.resource_map.history_size + 1,
                     supplier_id=self.supplier_data.supplier_id,
                     resource_type=self.resource_type,
                     supplier_resource_id=self.resource_id,
                 )
 
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=delete_dto)
+                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
 
             case "new":
                 entry = BundleEntry.model_construct()
@@ -166,7 +153,7 @@ class Node(BaseModel):
                 entry.resource = resource
                 entry.request = entry_request
 
-                new_dto = ResourceMapDto(
+                dto = ResourceMapDto(
                     supplier_id=self.supplier_data.supplier_id,
                     supplier_resource_id=self.resource_id,
                     consumer_resource_id=consumer_resource_id,
@@ -174,7 +161,7 @@ class Node(BaseModel):
                     history_size=1,
                 )
 
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=new_dto)
+                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
 
             case "update":
                 entry = BundleEntry.model_construct()
@@ -197,14 +184,14 @@ class Node(BaseModel):
                         f"Resource map for {self.resource_id} {self.resource_type} cannot be None and marked as `update`"
                     )
 
-                update_dto = ResourceMapUpdateDto(
+                dto = ResourceMapUpdateDto(
                     supplier_id=self.supplier_data.supplier_id,
                     supplier_resource_id=self.resource_id,
                     resource_type=self.resource_type,
                     history_size=self.resource_map.history_size + 1,
                 )
 
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=update_dto)
+                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
 
 
 AdjacencyMap = Dict[str, Node]

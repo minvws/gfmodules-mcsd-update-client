@@ -104,12 +104,12 @@ class UpdateConsumer:
             next_url, history = supplier_fhir_api.get_history_batch(next_url)
             targets = []
             for e in history:
-                res_type, id = self.__fhir_service.get_resource_type_and_id_from_entry(
-                    e
-                )
-                if id is not None and res_type is not None:
+                _, id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
+                if id is not None:
                     if id in self.__cache:
-                        logger.info(f"{id} {res_type} already processed.. skipping.. ")
+                        logger.info(
+                            f"{id} {resource_type} already processed.. skipping.. "
+                        )
                         continue
                     targets.append(e)
 

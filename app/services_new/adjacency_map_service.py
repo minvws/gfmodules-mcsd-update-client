@@ -11,13 +11,6 @@ from app.models.adjacency.adjacency_map import (
 
 from app.models.resource_map.dto import ResourceMapDto
 from app.services.entity_services.resource_map_service import ResourceMapService
-from app.services.fhir.bundle.bundle_utils import (
-    filter_history_entries,
-)
-from app.services.fhir.bundle.bunlde_factory import (
-    create_bundle_request,
-    get_entries_from_bundle_of_bundles,
-)
 from app.services.fhir.fhir_service import FhirService
 from app.services_new.api.fhir_api import FhirApi
 
@@ -62,7 +55,6 @@ class AdjacencyMapService:
             resource_id=id,
             resource_type=res_type,
             supplier_data=supplier_node_data,
-            # consumer_data=consumer_node_data,
             consumer_data=ConsumerNodeData(resource=None),
         )
         resource_map = self.__resource_map_service.get(
@@ -106,9 +98,9 @@ class AdjacencyMapService:
                     missing_ids.append(ref)
 
             if len(missing_ids) > 0:
-                bundle_request = create_bundle_request(missing_ids)
-                res = filter_history_entries(
-                    get_entries_from_bundle_of_bundles(
+                bundle_request = self.__fhir_service.create_bundle_request(missing_ids)
+                res = self.__fhir_service.filter_history_entries(
+                    self.__fhir_service.get_entries_from_bundle_of_bundles(
                         self.__supplier_api.post_bundle(bundle_request)
                     )
                 )
@@ -145,9 +137,9 @@ class AdjacencyMapService:
             )
             for node in adj_map.values()
         ]
-        consumer_bunlde = create_bundle_request(consumer_targets)
-        res = filter_history_entries(
-            get_entries_from_bundle_of_bundles(
+        consumer_bunlde = self.__fhir_service.create_bundle_request(consumer_targets)
+        res = self.__fhir_service.filter_history_entries(
+            self.__fhir_service.get_entries_from_bundle_of_bundles(
                 self.__consumer_api.post_bundle(consumer_bunlde)
             )
         )

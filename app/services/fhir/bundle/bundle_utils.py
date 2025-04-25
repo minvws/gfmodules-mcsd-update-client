@@ -1,5 +1,17 @@
-from typing import List, Set
+from typing import List
 from fhir.resources.R4B.bundle import BundleEntry
+
+from app.models.fhir.types import HttpValidVerbs
+
+HTTP_VERBS: List[HttpValidVerbs] = [
+    "GET",
+    "POST",
+    "PATCH",
+    "POST",
+    "PUT",
+    "HEAD",
+    "DELETE",
+]
 
 
 def get_resource_type_and_id_from_entry(
@@ -9,7 +21,7 @@ def get_resource_type_and_id_from_entry(
     Retrieves the resource type and id from a Bundle entry
     """
     if entry.resource is not None:
-        return entry.resource.__resource_type__, entry.resource.id
+        return entry.resource.get_resource_type(), entry.resource.id
 
     if entry.fullUrl is not None:
         return entry.fullUrl.split("/")[-2], entry.fullUrl.split("/")[-1]
@@ -21,7 +33,7 @@ def get_resource_type_and_id_from_entry(
     raise ValueError("resourceType and id are not available in Bundle")
 
 
-def get_request_method_from_entry(entry: BundleEntry) -> str:
+def get_request_method_from_entry(entry: BundleEntry) -> HttpValidVerbs:
     """
     Retrieves the request method from a Bundle entry if a request is present
     """
@@ -29,15 +41,20 @@ def get_request_method_from_entry(entry: BundleEntry) -> str:
     if entry_request is None:
         raise ValueError("Entry request cannot be None")
 
-    method: str = entry_request.method
+    method: HttpValidVerbs | None = entry_request.method
     if method is None:
         raise ValueError("Entry request method cannot be None")
+
+    if method not in HTTP_VERBS:
+        raise ValueError("Unknown Http method}")
 
     return method
 
 
-# TODO: Add this to fhir service
 def filter_history_entries(entries: List[BundleEntry]) -> List[BundleEntry]:
+    """
+    Filters BundleEntries in a history Bundle and returns the latest for each ResourceType
+    """
     results = []
     ids = []
     for entry in entries:
@@ -52,13 +69,3 @@ def filter_history_entries(entries: List[BundleEntry]) -> List[BundleEntry]:
         results.append(entry)
 
     return results
-
-
-# TODO: this go in fhir service
-def get_entries_id_and_type(entries: List[BundleEntry]) -> List[tuple[str, str]]:
-    ids: Set[tuple[str, str]] = set()
-    for e in entries:
-        res_type, id = get_resource_type_and_id_from_entry(e)
-        if (id, res_type) not in ids:
-            ids.add((id, res_type))
-    return list(ids)
