@@ -12,6 +12,7 @@ from app.models.supplier.dto import SupplierDto
 logger = logging.getLogger(__name__)
 
 
+# TODO: remove this
 class HttpApi(SupplierApi):
     def __init__(self, base_url: str, timeout: int, backoff: float) -> None:
         self.base_url = base_url
@@ -19,7 +20,7 @@ class HttpApi(SupplierApi):
         self.backoff = backoff
         self.retry_count = 5
 
-    def get_one(self, supplier_id: str) -> SupplierDto|None:
+    def get_one(self, supplier_id: str) -> SupplierDto | None:
         url = URL(f"{self.base_url}/api/supplier/{supplier_id}")
         response = self._do_request("GET", url)
         if response.status_code == 404:
@@ -69,7 +70,7 @@ class HttpApi(SupplierApi):
                 response = requests.request(
                     method=method,
                     url=str(url.with_query(None)),
-                    params=url.query,       # type: ignore
+                    params=url.query,  # type: ignore
                     headers=headers,
                     timeout=self.timeout,
                 )

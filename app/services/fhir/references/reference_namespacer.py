@@ -1,6 +1,7 @@
 from copy import deepcopy
 from typing import Any
 from fhir.resources.R4B.domainresource import DomainResource
+from fhir.resources.R4B.healthcareservice import HealthcareService
 from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.reference import Reference
 from fhir.resources.R4B.organizationaffiliation import OrganizationAffiliation
@@ -29,6 +30,7 @@ def _namesapce_organization_references(
     data: Organization, namespace: str
 ) -> Organization:
     endpoints = deepcopy(data.endpoint)
+    part_of = data.partOf
     if endpoints is not None:
         for i, ep in enumerate(endpoints):
             new_ref = _namespace_reference(ep, namespace)
@@ -37,6 +39,10 @@ def _namesapce_organization_references(
 
         data.endpoint = endpoints
 
+    if part_of is not None:
+        new_ref = _namespace_reference(part_of, namespace)
+        if new_ref is not None:
+            data.partOf = new_ref
     return data
 
 
@@ -73,7 +79,7 @@ def _namespace_organization_affiliation_references(
     if network is not None:
         for i, org in enumerate(network):
             new_ref = _namespace_reference(org, namespace)
-            if new_ref is None:
+            if new_ref is not None:
                 network[i] = new_ref
 
         data.network = network
@@ -194,6 +200,45 @@ def _namespace_pratitioner_role(
     return data
 
 
+def _namespace_healthcare_service(
+    data: HealthcareService, namespace: str
+) -> HealthcareService:
+    provided_by = data.providedBy
+    location = data.location
+    coverage_area = data.coverageArea
+    endpoint = data.endpoint
+
+    if provided_by is not None:
+        new_ref = _namespace_reference(provided_by, namespace)
+        if new_ref is not None:
+            data.providedBy = new_ref
+
+    if location is not None:
+        for i, loc in enumerate(location):
+            new_ref = _namespace_reference(loc, namespace)
+            if new_ref is not None:
+                location[i] = new_ref
+
+        data.location = location
+
+    if coverage_area is not None:
+        for i, cov in enumerate(coverage_area):
+            new_ref = _namespace_reference(cov, namespace)
+            if new_ref is not None:
+                coverage_area[i] = new_ref
+
+        data.coverageArea = coverage_area
+
+    if endpoint is not None:
+        for i, ep in enumerate(endpoint):
+            new_ref = _namespace_reference(ep, namespace)
+            if new_ref is not None:
+                endpoint[i] = new_ref
+        data.endpoint = endpoint
+
+    return data
+
+
 def namespace_resource_reference(
     data: DomainResource, namespace: str
 ) -> DomainResource:
@@ -215,5 +260,8 @@ def namespace_resource_reference(
 
     if isinstance(data, PractitionerRole):
         new_data = _namespace_pratitioner_role(data, namespace)
+
+    if isinstance(data, HealthcareService):
+        new_data = _namespace_healthcare_service(data, namespace)
 
     return new_data

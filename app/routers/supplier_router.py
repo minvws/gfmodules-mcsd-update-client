@@ -1,27 +1,28 @@
 from collections.abc import Sequence
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.container import (
-    get_supplier_service,
+    get_supplier_api,
 )
 from app.models.supplier.dto import SupplierDto
-from app.services.entity_services.supplier_service import SupplierService
+from app.services_new.api.suppliers_api import SuppliersApi
 
 router = APIRouter(prefix="/supplier", tags=["Supplier"])
 
 
 @router.get("", response_model=None)
 def get_all_suppliers(
-    service: SupplierService = Depends(get_supplier_service),
+    service: SuppliersApi = Depends(get_supplier_api),
 ) -> Sequence[SupplierDto]:
     return service.get_all()
 
 
 @router.get("/{_id}", response_model=None)
 def get_one_supplier(
-    _id: str, service: SupplierService = Depends(get_supplier_service)
-) -> SupplierDto|Response:
+    _id: str, service: SuppliersApi = Depends(get_supplier_api)
+) -> SupplierDto:
     supplier = service.get_one(_id)
     if supplier is None:
-        return Response(status_code=404)
+        raise HTTPException(status_code=404)
+
     return supplier

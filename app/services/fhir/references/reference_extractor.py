@@ -13,12 +13,12 @@ from fhir.resources.R4B.practitionerrole import PractitionerRole
 
 def extract_references(data: Any) -> Reference | None:
     if isinstance(data, dict):
-        if "reference" in data:
+        if "reference" in data and data["reference"][0] != "#":
             return Reference.model_construct(**data)
 
-        if isinstance(data, Reference):
-            if data.reference is not None:
-                return data
+    if isinstance(data, Reference):
+        if data.reference is not None and not data.reference.startswith("#"):
+            return data
 
     return None
 

@@ -1,13 +1,18 @@
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Tuple
+import logging
+from typing import List, Dict, Tuple
 
-from app.models.fhir.r4.types import Entry, Bundle
-from app.services.bundle_tools import get_resource_from_reference
+from fastapi import HTTPException
+
+from app.models.fhir.r4.types import Bundle, Entry
 
 from app.services.entity_services.supplier_service import SupplierService
 from app.services.request_services.Authenticators import Authenticator
 from app.services.request_services.fhir_request_service import FhirRequestService
+from app.services.bundle_tools import get_resource_from_reference
+
+logger = logging.getLogger(__name__)
 
 
 class McsdResources(Enum):
@@ -84,8 +89,12 @@ class SupplierRequestsService:
         Return the number of entries for this reference from the history, and get the latest entry
         """
         supplier = self.__supplier_service.get_one(supplier_id)
+
         if supplier is None:
-            return 0, None
+            logger.error("Unable to retrieve entry and length from references")
+            raise HTTPException(
+                status_code=404, detail=f"supplier {id} does not exists"
+            )
 
         (res_type, res_id) = get_resource_from_reference(
             reference["reference"] if "reference" in reference else ""

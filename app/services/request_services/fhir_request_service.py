@@ -36,7 +36,7 @@ class FhirRequestService:
                 response = requests.request(
                     method=method,
                     url=str(url.with_query(None)),
-                    params=url.query,       # type: ignore
+                    params=url.query,  # type: ignore
                     headers=headers,
                     json=json,
                     timeout=self.timeout,
