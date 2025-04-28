@@ -11,6 +11,7 @@ from app.container import (
 from app.services.entity_services.supplier_service import SupplierService
 from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
 from app.services_new.update_service import UpdateConsumer
+from app.stats import get_stats
 
 router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"])
 
@@ -27,15 +28,17 @@ def update_supplier_resources(
     service: UpdateConsumerService = Depends(get_update_consumer_service),
     supplier_service: SupplierService = Depends(get_supplier_service),
 ) -> Any:
-    since = query_params.since.astimezone(timezone.utc) if query_params.since else None
-    if supplier_id is None:
-        all_suppliers = supplier_service.get_all()
-        data: list[dict[str, Any]] = []
-        for supplier in all_suppliers:
-            data.append(service.update_supplier(supplier.id, since))
-        return data
-    else:
-        return service.update_supplier(supplier_id, since)
+    stats = get_stats()
+    with stats.timer("mcsd.update_supplier"):
+        since = query_params.since.astimezone(timezone.utc) if query_params.since else None
+        if supplier_id is None:
+            all_suppliers = supplier_service.get_all()
+            data: list[dict[str, Any]] = []
+            for supplier in all_suppliers:
+                data.append(service.update_supplier(supplier.id, since))
+            return data
+        else:
+            return service.update_supplier(supplier_id, since)
 
 
 @router.post("/new/{supplier_id}", response_model=None)
@@ -44,5 +47,7 @@ def update_supplier_new(
     params: UpdateQueryParams = Depends(),
     service: UpdateConsumer = Depends(get_update_consumer),
 ) -> Any:
-    since = params.since.astimezone() if params.since else None
-    return service.update(supplier_id, since)
+    stats = get_stats()
+    with stats.timer("mcsd.update_supplier"):
+        since = params.since.astimezone() if params.since else None
+        return service.update(supplier_id, since)

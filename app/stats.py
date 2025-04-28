@@ -1,7 +1,9 @@
+from datetime import timedelta
 import time
-from typing import Callable, Awaitable
+from typing import Any, Callable, Awaitable
 
 import statsd
+from statsd.client.timer import Timer
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -23,6 +25,9 @@ class Stats:
     def gauge(self, key: str, value: int, delta: bool = False) -> None:
         raise NotImplementedError
 
+    def timer(self, key: str) -> Timer:
+        raise NotImplementedError
+
 
 class NoopStats(Stats):
     def timing(self, key: str, value: int) -> None:
@@ -37,10 +42,45 @@ class NoopStats(Stats):
     def gauge(self, key: str, value: int, delta: bool = False) -> None:
         pass
 
+    def timer(self, key: str) -> Timer:
+        raise NotImplementedError
+
+
+class MemoryClient:
+    def __init__(self) -> None:
+        self.memory: dict[str, list[Any]] = {}
+
+    def timer(self, stat: str, rate: int = 1) -> Timer:
+        return Timer(self, stat, rate)
+
+    def timing(self, stat: str, delta: timedelta | float, rate: int = 1) -> None:
+        if isinstance(delta, timedelta):
+            # Convert timedelta to number of milliseconds.
+            delta = delta.total_seconds() * 1000.0
+        if stat not in self.memory:
+            self.memory[stat] = []
+        self.memory[stat].append(delta)
+
+    def incr(self, stat: str, count: int = 1, rate: int = 1) -> None:
+        pass
+
+    def decr(self, stat: str, count: int = -1, rate: int = 1) -> None:
+        pass
+
+    def gauge(self, stat: str, value: int, rate: int = 1, delta: bool = False) -> None:
+        """Set a gauge value."""
+        if stat not in self.memory:
+            self.memory[stat] = []
+        snapshot = {"value": value, "timestamp": time.time()}
+        self.memory[stat].append(snapshot)
+
+    def get_memory(self) -> dict[str, list[Any]]:
+        return self.memory
+
 
 class Statsd(Stats):
-    def __init__(self, host: str, port: int):
-        self.client = statsd.StatsClient(host, port)
+    def __init__(self, client: statsd.StatsClient | MemoryClient):
+        self.client = client
 
     def timing(self, key: str, value: int) -> None:
         self.client.timing(key, value)
@@ -54,6 +94,9 @@ class Statsd(Stats):
     def gauge(self, key: str, value: int, delta: bool = False) -> None:
         self.client.gauge(key, value, delta)
 
+    def timer(self, key: str) -> Timer:
+        return self.client.timer(key)
+
 
 _STATS: Stats = NoopStats()
 
@@ -63,12 +106,14 @@ def setup_stats() -> None:
 
     if config.stats.enabled is False:
         return
-
-    config.stats.host = config.stats.host or "localhost"
-    config.stats.port = config.stats.port or 8125
-
+    if not config.stats.keep_in_memory:
+        config.stats.host = config.stats.host or "localhost"
+        config.stats.port = config.stats.port or 8125
+        client = statsd.StatsClient(config.stats.host, config.stats.port)
+    else:
+        client = MemoryClient()
     global _STATS
-    _STATS = Statsd(config.stats.host, config.stats.port)
+    _STATS = Statsd(client)
 
 
 def get_stats() -> Stats:
@@ -85,9 +130,7 @@ class StatsdMiddleware(BaseHTTPMiddleware):
         self.module_name = module_name
 
     async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
-        normalized_path = self.normalize_path(request)
-
-        key = f"{self.module_name}.http.request.{request.method.lower()}.{normalized_path}"
+        key = f"{self.module_name}.http.request.{request.method.lower()}.{request.url.path}"
         get_stats().inc(key)
 
         start_time = time.monotonic()
@@ -98,23 +141,3 @@ class StatsdMiddleware(BaseHTTPMiddleware):
         get_stats().timing(f"{self.module_name}.http.response_time", response_time)
 
         return response
-
-    @staticmethod
-    def normalize_path(request: Request) -> str:
-        """
-        Normalize the path to remove resource IDs. This makes it easier to group similar requests together in the stats
-        """
-        if not request.url.path.startswith("/resource/"):
-            return request.url.path
-
-        parts = request.url.path.split("/")
-
-        if len(parts) >= 4 and parts[3] != "_search":
-            parts[3] = "%resource_id%"  # Remove Resource ID
-        if len(parts) >= 5 and parts[4] == "_history":
-            parts[5] = "%version_id%"  # Remove Version ID
-        return '/'.join(parts)
-
-
-
-

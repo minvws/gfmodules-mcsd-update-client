@@ -88,6 +88,8 @@ class ConfigStats(BaseModel):
     host: str | None
     port: int | None
     module_name: str | None
+    keep_in_memory: bool = Field(default=False)
+
 
 
 class ConfigMcsd(BaseModel):

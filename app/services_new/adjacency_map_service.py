@@ -13,6 +13,7 @@ from app.models.resource_map.dto import ResourceMapDto
 from app.services.entity_services.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
 from app.services_new.api.fhir_api import FhirApi
+from app.stats import get_stats
 
 
 class AdjacencyMapService:
@@ -86,37 +87,43 @@ class AdjacencyMapService:
         adj_map: AdjacencyMap = dict(zip(ids, nodes))
 
         processed = []
-        while ids:
-            id = ids.popleft()
-            node = adj_map[id]
-            processed.append(id)
+        stats = get_stats()
+        with stats.timer("missing_ids_while"):
+            while ids:
+                id = ids.popleft()
+                node = adj_map[id]
+                processed.append(id)
 
-            # take care of missing resources from list
-            missing_ids = []
-            for ref in node.supplier_data.references:
-                if ref.id not in ids:
-                    missing_ids.append(ref)
-
-            if len(missing_ids) > 0:
-                bundle_request = self.__fhir_service.create_bundle_request(missing_ids)
-                res = self.__fhir_service.filter_history_entries(
-                    self.__fhir_service.get_entries_from_bundle_of_bundles(
-                        self.__supplier_api.post_bundle(bundle_request)
+                # take care of missing resources from list
+                missing_ids = []
+                for ref in node.supplier_data.references:
+                    if ref.id not in ids:
+                        missing_ids.append(ref)
+                
+                if len(missing_ids) > 0:
+                    bundle_request = self.__fhir_service.create_bundle_request(missing_ids)
+                    res = self.__fhir_service.filter_history_entries(
+                        self.__fhir_service.get_entries_from_bundle_of_bundles(
+                            self.__supplier_api.post_bundle(bundle_request)
+                        )
                     )
-                )
-                for e in res:
-                    missing_node = self.create_node(e)
-                    if missing_node.resource_id not in processed:
-                        self.add_node(adj_map, missing_node)
-                        ids.append(missing_node.resource_id)
-                        # mark as processed
-                        processed.append(missing_node.resource_id)
+                    with stats.timer("missing_ids_missing_nodes"):
+                        for e in res:
+                            missing_node = self.create_node(e)
+                            if missing_node.resource_id not in processed:
+                                self.add_node(adj_map, missing_node)
+                                ids.append(missing_node.resource_id)
+                                # mark as processed
+                                processed.append(missing_node.resource_id)
 
-            # take care of existing references
-            for ref in node.supplier_data.references:
-                silbing = adj_map[ref.id]
-                if silbing.resource_id not in processed:
-                    processed.append(silbing.resource_id)
+                # take care of existing references
+                for ref in node.supplier_data.references:
+                    silbing = adj_map[ref.id]
+                    if silbing.resource_id not in processed:
+                        pass
+                        processed.append(silbing.resource_id)
+
+        print(len(processed))
 
         # mark ids from previous runs as processed
         if updated_ids is not None:
