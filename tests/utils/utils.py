@@ -10,7 +10,7 @@ from app.container import get_database
 from app.db.db import Database
 from app.db.repositories.resource_map_repository import ResourceMapRepository
 from app.services.request_services.supplier_request_service import McsdResources
-from .mcsd_resource_gen import generate_history_bundles, setup_fhir_resource
+from .mcsd_resource_gen import generate_history_bundles, generate_post_bundle, setup_fhir_resource
 
 def create_file_structure(
     base_path: str, resource_count: int, version_count: int, max_depth: int = 1
@@ -34,6 +34,7 @@ def create_file_structure(
                 )
 
     generate_history_bundles(base_path)
+    generate_post_bundle(base_path)
 
 def generate_report(test_name: str, durations: List[float], iterations: int, monitor_data: List[Dict[str, Any]], total_resources: int) -> Dict[str, Any]:
     memory = [x["memory_mb"] for x in monitor_data]

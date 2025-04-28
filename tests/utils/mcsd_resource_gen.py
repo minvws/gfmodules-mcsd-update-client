@@ -184,6 +184,47 @@ def save_resource_version(
             resource = json.loads(resource)
             json.dump(resource, f, indent=4)
 
+def generate_post_bundle(base_path: str) -> None:
+    global_post_bundle = {
+        "resourceType": "Bundle",
+        "id": str(uuid4()),
+        "type": "transaction",
+        "total": 0,
+        "entry": [],
+    }
+    for resource_type in McsdResources:
+        resource_folder = os.path.join(base_path, resource_type.value)
+        for resource_id in os.listdir(resource_folder):
+            resource_id_folder = os.path.join(resource_folder, resource_id)
+            if "_history.json" in resource_id_folder:
+                continue
+            versions = sorted(os.listdir(resource_id_folder))
+            for version in versions:
+                if "_history.json" in version:
+                    continue
+                version_file = os.path.join(resource_id_folder, version)
+                with open(version_file, "r") as f:
+                    resource = json.load(f)
+                    methods = ["PUT"]
+                    # if version.replace(".json", "") != "1":
+                    #     methods.append("DELETE")
+                    entry = {
+                        "fullUrl": f"{resource_type.value}/{resource_id}",
+                        "resource": resource,
+                        "request": {
+                            "method": choice(methods),
+                            "url": f"{resource_type.value}/{resource_id}",
+                        },
+                    }
+                    assert isinstance(global_post_bundle["entry"], list)
+                    assert isinstance(global_post_bundle["total"], int)
+
+                    global_post_bundle["entry"].append(entry)
+                    global_post_bundle["total"] += 1
+                break
+    with open(os.path.join(base_path, "post_resources.json"), "w") as f:
+        json.dump(global_post_bundle, f, indent=4)
+    
 
 def generate_history_bundles(base_path: str) -> None:
     global_history_bundle = {
