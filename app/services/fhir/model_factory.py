@@ -10,7 +10,6 @@ from fhir.resources.R4B.practitionerrole import PractitionerRole
 from fhir.resources.R4B.healthcareservice import HealthcareService
 from pydantic import ValidationError
 
-
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=DomainResource)

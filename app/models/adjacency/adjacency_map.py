@@ -1,197 +1,64 @@
-import copy
-from typing import Dict, List, Literal
-from pydantic import BaseModel, computed_field
-from fhir.resources.R4B.bundle import BundleEntry, BundleEntryRequest
-from fhir.resources.R4B.domainresource import DomainResource
-from app.models.fhir.types import HttpValidVerbs
-from app.services.fhir.references.reference_namespacer import (
-    namespace_resource_reference,
-)
-from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
+from collections import deque
+from itertools import chain
+from typing import Dict, List, Deque
+
+from app.models.adjacency.node import Node, NodeReference
 
 
-class AdjacencyReference(BaseModel):
-    id: str
-    resource_type: str
-
-    def namespace_id(self, namespace: str) -> None:
-        new_id = f"{namespace}-{self.id}"
-        self.id = new_id
+AdjacencyData = Dict[str, Node]
 
 
-class SupplierNodeData(BaseModel):
-    supplier_id: str
-    references: List[AdjacencyReference]
-    method: HttpValidVerbs
-    entry: BundleEntry
+class AdjacencyMap:
+    def __init__(self, nodes: List[Node], updated_ids: List[str] | None = None) -> None:
+        self.data: AdjacencyData = self._create_adj_map(nodes, updated_ids)
 
-    @computed_field  # type: ignore
-    @property
-    def hash_value(self) -> int | None:
-        if self.entry.resource is None:
-            return None
+    def add_nodes(self, nodes: List[Node]) -> None:
+        self.data.update([(node.resource_id, node) for node in nodes])
 
-        resource = copy.deepcopy(self.entry.resource)
-        namespace_resource_reference(resource, self.supplier_id)
-        resource.meta = None
-        resource.id = None
+    def add_node(self, node: Node) -> None:
+        self.data[node.resource_id] = node
 
-        return hash(resource.model_dump().__repr__())
+    def get_group(self, node: Node) -> List[Node]:
+        """
+        Use Breadth First Search approach to retrieve Node and silbings.
+        """
+        queue: Deque["Node"] = deque()
+        group = []
 
+        node.visited = True
+        queue.append(node)
+        group.append(node)
 
-class ConsumerNodeData(BaseModel):
-    resource: DomainResource | None
+        while queue:
+            current = queue.popleft()
+            for ref in current.supplier_data.references:
+                sibling = self.data[ref.id]
+                if sibling.visited is False:
+                    sibling.visited = True
+                    queue.append(sibling)
+                    group.append(sibling)
 
-    @computed_field  # type: ignore
-    @property
-    def hash_value(self) -> int | None:
-        if self.resource is None:
-            return None
+        return group
 
-        res = copy.deepcopy(self.resource)
-        res.meta = None
-        res.id = None
-        return hash(res.model_dump().__repr__())
+    def get_missing_refs(self) -> List[NodeReference]:
+        refs = list(
+            chain.from_iterable(
+                [node.supplier_data.references for node in self.data.values()]
+            )
+        )
+        return list(filter(self._ref_in_ajd_map, refs))
 
+    def _ref_in_ajd_map(self, adj_ref: NodeReference) -> bool:
+        return adj_ref.id not in self.data.keys()
 
-class NodeUpdateData(BaseModel):
-    bundle_entry: BundleEntry | None = None
-    resource_map_dto: ResourceMapDto | ResourceMapUpdateDto | None = None
+    def _create_adj_map(
+        self, nodes: List[Node], updated_ids: List[str] | None = None
+    ) -> AdjacencyData:
+        ids = [node.resource_id for node in nodes]
+        data: AdjacencyData = dict(zip(ids, nodes))
+        if updated_ids:
+            for id in updated_ids:
+                if id in data.keys():
+                    data[id].updated = True
 
-
-class Node(BaseModel):
-    resource_id: str
-    resource_type: str
-    visited: bool = False
-    updated: bool = False
-    supplier_data: SupplierNodeData
-    consumer_data: ConsumerNodeData
-    resource_map: ResourceMapDto | ResourceMapUpdateDto | None = None
-
-    @computed_field  # type: ignore
-    @property
-    def update_status(
-        self,
-    ) -> Literal["ignore", "equal", "delete", "update", "new"]:
-
-        if (
-            self.supplier_data.method == "DELETE"
-            and self.consumer_data.resource is None
-        ):
-            return "ignore"
-
-        if (
-            self.supplier_data.method != "DELETE"
-            and self.supplier_data.hash_value
-            and self.consumer_data.hash_value
-            and self.supplier_data.hash_value == self.consumer_data.hash_value
-        ):
-            return "equal"
-
-        if (
-            self.supplier_data.method == "DELETE"
-            and self.consumer_data.resource is not None
-        ):
-            return "delete"
-
-        if (
-            self.supplier_data.method != "DELETE"
-            and self.supplier_data.hash_value is not None
-            and self.consumer_data.hash_value is None
-            and self.resource_map is None
-        ):
-            return "new"
-
-        return "update"
-
-    @computed_field  # type: ignore
-    @property
-    def update_data(self) -> NodeUpdateData | None:
-        consumer_resource_id = f"{self.supplier_data.supplier_id}-{self.resource_id}"
-        url = f"{self.resource_type}/{consumer_resource_id}"
-        dto: ResourceMapDto | ResourceMapUpdateDto | None = None
-        match self.update_status:
-            case "ignore":
-                return None
-
-            case "equal":
-                return None
-
-            case "delete":
-                entry = BundleEntry.model_construct()
-                entry_request = BundleEntryRequest.model_construct(
-                    method="DELETE", url=url
-                )
-                entry.request = entry_request
-
-                if self.resource_map is None:
-                    raise Exception(
-                        f"Resource map for {self.resource_id} {self.resource_type} cannot be None and marked as delete "
-                    )
-
-                dto = ResourceMapUpdateDto(
-                    history_size=self.resource_map.history_size + 1,
-                    supplier_id=self.supplier_data.supplier_id,
-                    resource_type=self.resource_type,
-                    supplier_resource_id=self.resource_id,
-                )
-
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
-
-            case "new":
-                entry = BundleEntry.model_construct()
-                entry_request = BundleEntryRequest.model_construct(
-                    method="PUT", url=url
-                )
-                resource = copy.deepcopy(self.supplier_data.entry.resource)
-                if resource is None:
-                    raise Exception(
-                        f"Resource {self.resource_id} {self.resource_type} cannot be None when a node is marked `new`"
-                    )
-                namespace_resource_reference(resource, self.supplier_data.supplier_id)
-                resource.id = consumer_resource_id
-                entry.resource = resource
-                entry.request = entry_request
-
-                dto = ResourceMapDto(
-                    supplier_id=self.supplier_data.supplier_id,
-                    supplier_resource_id=self.resource_id,
-                    consumer_resource_id=consumer_resource_id,
-                    resource_type=self.resource_type,
-                    history_size=1,
-                )
-
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
-
-            case "update":
-                entry = BundleEntry.model_construct()
-                entry_request = BundleEntryRequest.model_construct(
-                    method="PUT", url=url
-                )
-                resource = copy.deepcopy(self.supplier_data.entry.resource)
-                if resource is None:
-                    raise Exception(
-                        f"Resource {self.resource_id} {self.resource_type} cannot be None and node marked as `update`"
-                    )
-
-                namespace_resource_reference(resource, self.supplier_data.supplier_id)
-                resource.id = consumer_resource_id
-                entry.request = entry_request
-                entry.resource = resource
-
-                if self.resource_map is None:
-                    raise Exception(
-                        f"Resource map for {self.resource_id} {self.resource_type} cannot be None and marked as `update`"
-                    )
-
-                dto = ResourceMapUpdateDto(
-                    supplier_id=self.supplier_data.supplier_id,
-                    supplier_resource_id=self.resource_id,
-                    resource_type=self.resource_type,
-                    history_size=self.resource_map.history_size + 1,
-                )
-
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
-
-
-AdjacencyMap = Dict[str, Node]
+        return data
