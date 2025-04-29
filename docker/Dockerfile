@@ -56,4 +56,4 @@ WORKDIR ${PROJECT_DIR}
 
 ENV PYTHONPATH=${PROJECT_DIR}
 
-CMD docker/./init.sh mcsd_consumer_db
+CMD ["docker/init.sh"]

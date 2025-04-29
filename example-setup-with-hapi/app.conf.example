@@ -4,7 +4,7 @@ loglevel=debug
 
 [database]
 # Dsn for database connection
-dsn=postgresql+psycopg://postgres:postgres@mcsd_consumer_db:5432/postgres
+dsn=postgresql+psycopg://postgres:postgres@postgres:5432/postgres
 create_tables=false
 retry_backoff=0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 4.8, 6.4, 10.0
 pool_size=5
@@ -22,23 +22,23 @@ automatic_background_update = True
 
 [telemetry]
 # Telemetry is enabled or not
-enabled = True
+enabled = False
 # Endpoint to GRPC server for telemetry
 endpoint = http://tracing:4317
 # Service name to use
-service_name = Lokalisatie Metadata Register
+service_name = mcsd_consumer
 # Tracer name to use
-tracer_name = zmodules.service.localisation_metadata_register
+tracer_name = service.mcsd_consumer
 
 [stats]
 # Statsd is enabled or not
-enabled = True
+enabled = False
 # Host for statsd server
 host = 127.0.0.1
 # Port for statsd server
 port = 8125
 # Module name to use
-module_name = metadata
+module_name = mcsd_consumer
 
 [uvicorn]
 swagger_enabled = True
@@ -80,13 +80,11 @@ profile =
 # Region of the healthlake
 region = eu-west-2
 
-[mock_seeder]
-mock_supplier_url = # For a local test HAPI it can be: http://host.docker.internal:8081/fhir/
-
-
 [supplier_api]
-# Base url to fetch supplier endpoints
-base_url = http://supplier_api:8080/
+# Suppliers provider url url to fetch supplier endpoints
+suppliers_provider_url = http://supplier_api:8080/
+# OR use a relative path that points to file that specifies which suppliers to use. See example file supplier_urls.example.json
+supplier_urls = supplier_urls.json
 # Timeout for the supplier api
 timeout = 10
 # Backoff time for the supplier api

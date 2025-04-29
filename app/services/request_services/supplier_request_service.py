@@ -7,10 +7,10 @@ from fastapi import HTTPException
 
 from app.models.fhir.r4.types import Bundle, Entry
 
-from app.services.entity_services.supplier_service import SupplierService
 from app.services.request_services.Authenticators import Authenticator
 from app.services.request_services.fhir_request_service import FhirRequestService
 from app.services.bundle_tools import get_resource_from_reference
+from app.services_new.api.suppliers_api import SuppliersApi
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class McsdResources(Enum):
 
 class SupplierRequestsService:
     def __init__(
-        self, supplier_service: SupplierService, auth: Authenticator, request_count: int
+        self, supplier_service: SuppliersApi, auth: Authenticator, request_count: int
     ) -> None:
         self.__supplier_service = supplier_service
         self.__fhir_request_service = FhirRequestService(

@@ -1,0 +1,9 @@
+{
+    "suppliers": [
+        {
+            "id": "hapi-supplier", 
+            "name": "HAPI supplier", 
+            "url": "http://hapi-supplier:8080/fhir"
+        }
+    ]
+}

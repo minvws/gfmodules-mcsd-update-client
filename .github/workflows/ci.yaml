@@ -99,7 +99,7 @@ jobs:
         container: python:3.11-bookworm
         needs: build
         services:
-          mcsd_consumer_db:
+          postgres:
             image: postgres:14
             env:
               POSTGRES_USER: postgres
@@ -114,9 +114,6 @@ jobs:
         steps:
             - name: Checkout repositories
               uses: actions/checkout@v4
-
-            - name: Copy CI configuration
-              run: cp app.conf.autopilot app.conf
 
             - name: Run build action
               uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main

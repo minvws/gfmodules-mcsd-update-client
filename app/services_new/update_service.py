@@ -40,13 +40,13 @@ class McsdResources(Enum):
 class UpdateConsumer:
     def __init__(
         self,
-        suppliers_register_url: str,
         consumer_url: str,
         strict_validation: bool,
         timeout: int,
         backoff: float,
         request_count: int,
         resource_map_service: ResourceMapService,
+        suppliers_api: SuppliersApi,
         auth: Authenticator = NullAuthenticator(),
     ) -> None:
         self.strict_validation = strict_validation
@@ -55,9 +55,7 @@ class UpdateConsumer:
         self.auth = auth
         self.request_count = request_count
         self.__resource_map_service = resource_map_service
-        self.__suppliers_register_api = SuppliersApi(
-            suppliers_register_url, timeout, backoff
-        )
+        self.__suppliers_register_api = suppliers_api
         self.__consumer_fhir_api = FhirApi(
             timeout, backoff, auth, consumer_url, request_count, strict_validation
         )
@@ -70,6 +68,10 @@ class UpdateConsumer:
             self.__cache = []
 
         supplier = self.__suppliers_register_api.get_one(supplier_id)
+        if supplier is None:
+            raise Exception(
+                f"Supplier with id {supplier_id} not found in supplier provider"
+            )
         for res in McsdResources:
             self.update_resource(supplier, res.value, since)
         results = copy.deepcopy(self.__cache)

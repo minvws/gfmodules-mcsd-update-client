@@ -1,7 +1,8 @@
 from enum import Enum
 import configparser
+import json
 import re
-from typing import Any, Union
+from typing import Any, Union, List, Tuple
 
 from pydantic import BaseModel, Field, ValidationError, computed_field, field_validator
 
@@ -56,9 +57,29 @@ class ConfigDatabase(BaseModel):
 
 
 class ConfigSupplierApi(BaseModel):
-    base_url: str
+    suppliers_provider_url: str | None
+    supplier_urls: List[Tuple[str, str, str]] | None  # List of tuples (id, name, url)
     timeout: int
     backoff: float
+
+    @field_validator("supplier_urls", mode="before")
+    def validate_supplier_urls(cls, value: Any) -> List[Tuple[str, str, str]] | None:
+        if value is None:
+            return value
+        if not isinstance(value, list):
+            raise ValueError(
+                "supplier_urls must be a list of [id, name, url] sublists."
+            )
+        for item in value:
+            if len(item) != 3:
+                raise ValueError(
+                    "Each item in supplier_urls must be a list of three elements: [id, name, url]."
+                )
+            if not all(isinstance(sub_item, str) for sub_item in item):
+                raise ValueError(
+                    "Each element in the sublist of supplier_urls must be a string."
+                )
+        return [tuple(item) for item in value]
 
 
 class ConfigUvicorn(BaseModel):
@@ -91,7 +112,7 @@ class ConfigStats(BaseModel):
 
 
 class ConfigMcsd(BaseModel):
-    consumer_url: str = Field(default="http://addressing-app:8502")
+    consumer_url: str
     authentication: Union[str] = Field(
         default="off",
         description="Enable authentication, can be 'off', 'oauth2', or 'azure_oauth2'",
@@ -106,10 +127,6 @@ class ConfigMcsd(BaseModel):
                 "authentication must be either 'off', 'oauth2', 'azure_oauth2' or 'aws'"
             )
         return str(value)
-
-
-class ConfigMockSeeder(BaseModel):
-    mock_supplier_url: str | None
 
 
 class ConfigAws(BaseModel):
@@ -129,7 +146,6 @@ class Config(BaseModel):
     database: ConfigDatabase
     uvicorn: ConfigUvicorn
     mcsd: ConfigMcsd
-    mock_seeder: ConfigMockSeeder
     telemetry: ConfigTelemetry
     stats: ConfigStats
     azure_oauth2: ConfigAzureOauth2 | None
@@ -187,6 +203,17 @@ def get_config(path: str | None = None) -> Config:
                 ini_data["azure_oauth2"] = None
             if "aws" not in ini_data:
                 ini_data["aws"] = None
+        if "supplier_urls" in ini_data["supplier_api"]:
+            try:
+                with open(ini_data["supplier_api"]["supplier_urls"]) as f:
+                    ini_data["supplier_api"]["supplier_urls"] = []
+                    supplier_data = json.load(f)
+                    for supplier in supplier_data["suppliers"]:
+                        ini_data["supplier_api"]["supplier_urls"].append((supplier["id"], supplier["name"], supplier["url"]))
+            except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+                raise ValueError(f"Error processing supplier_urls: {e}")
+        else:
+            ini_data["supplier_api"]["supplier_urls"] = None
 
         _CONFIG = Config(**ini_data)
     except ValidationError as e:

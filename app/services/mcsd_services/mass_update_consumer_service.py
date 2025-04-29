@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from app.services.entity_services.supplier_info_service import SupplierInfoService
-from app.services.entity_services.supplier_service import SupplierService
 from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
+from app.services_new.api.suppliers_api import SuppliersApi
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class MassUpdateConsumerService:
     def __init__(
         self,
         update_consumer_service: UpdateConsumerService,
-        supplier_service: SupplierService,
+        supplier_service: SuppliersApi,
         supplier_info_service: SupplierInfoService,
     ) -> None:
         self.__supplier_service = supplier_service
