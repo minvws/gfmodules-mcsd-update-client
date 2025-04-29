@@ -3,10 +3,11 @@ from typing import Any
 from collections.abc import Generator
 import pytest
 
+from app.config import set_config
 from app.db.db import Database
-from app.services.entity_services.mock_api import MockApi
-from app.services.entity_services.supplier_service import SupplierService
 from app.services.entity_services.resource_map_service import ResourceMapService
+from get_test_config import test_config
+
 
 
 @pytest.fixture()
@@ -18,12 +19,7 @@ def database() -> Generator[Database, Any, None]:
     except Exception as e:
         raise e
 
-
-@pytest.fixture
-def supplier_service() -> SupplierService:
-    return SupplierService(MockApi())
-
-
 @pytest.fixture
 def resource_map_service(database: Database) -> ResourceMapService:
+    set_config(test_config())
     return ResourceMapService(database=database)

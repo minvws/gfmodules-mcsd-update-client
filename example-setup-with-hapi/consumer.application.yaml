@@ -1,0 +1,26 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: 'jdbc:postgresql://postgres:5432/mcsd_consumer_hapi'
+    username: postgres
+    password: postgres
+    driverClassName: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+      hibernate.search.enabled: false
+
+hapi:
+  fhir:
+    tester:
+      home:
+        id: home
+        name: hapi2 Tester
+        server_address: 'http://localhost:8081/fhir'
+        refuse_to_fetch_third_party_urls: false
+        fhir_version: R4
+    allow_multiple_delete: true
+    allow_expunge: true
+    delete_expunge_enabled: true

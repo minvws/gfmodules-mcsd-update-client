@@ -7,9 +7,7 @@ import inject
 
 from app.db.db import Database
 from app.config import get_config
-from app.services.entity_services.http_api import HttpApi
 from app.services.entity_services.resource_map_service import ResourceMapService
-from app.services.entity_services.supplier_service import SupplierService
 from app.services.request_services.Authenticators import (
     AzureOAuth2Authenticator,
     NullAuthenticator,
@@ -22,7 +20,7 @@ from app.services.request_services.consumer_request_service import (
     ConsumerRequestService,
 )
 from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
-from app.services_new.api.suppliers_api import SuppliersApi
+from app.services_new.api.suppliers_api import SupplierProvider, SuppliersApi
 from app.services_new.update_service import UpdateConsumer
 
 
@@ -32,20 +30,15 @@ def container_config(binder: inject.Binder) -> None:
     db = Database(dsn=config.database.dsn)
     binder.bind(Database, db)
 
-    # TODO: remove this
-    supplier_service = SupplierService(
-        HttpApi(
-            config.supplier_api.base_url,
-            config.supplier_api.timeout,
-            config.supplier_api.backoff,
-        )
+    supplier_provider = SupplierProvider(
+        supplier_urls=config.supplier_api.supplier_urls,
+        supplier_provider_url=config.supplier_api.suppliers_provider_url,
     )
-    binder.bind(SupplierService, supplier_service)
 
     supplier_api = SuppliersApi(
-        url=config.supplier_api.base_url,
         timeout=config.supplier_api.timeout,
         backoff=config.supplier_api.backoff,
+        supplier_provider=supplier_provider,
     )
     binder.bind(SuppliersApi, supplier_api)
 
@@ -70,17 +63,17 @@ def container_config(binder: inject.Binder) -> None:
         raise ValueError("authentication must be either False, or 'azure_oauth2'")
     consumer_request_service = ConsumerRequestService(config.mcsd.consumer_url, auth)
     supplier_request_service = SupplierRequestsService(
-        supplier_service, NullAuthenticator(), request_count=config.mcsd.request_count
+        supplier_api, NullAuthenticator(), request_count=config.mcsd.request_count
     )
 
     # test
     update_consumer = UpdateConsumer(
-        suppliers_register_url=config.supplier_api.base_url,
         consumer_url=config.mcsd.consumer_url,
         strict_validation=config.mcsd.strict_validation,
         timeout=config.supplier_api.timeout,
         backoff=config.supplier_api.backoff,
         request_count=config.mcsd.request_count,
+        suppliers_api=supplier_api,
         resource_map_service=resource_map_service,
         # auth=NullAuthenticator(),
     )
@@ -98,7 +91,7 @@ def container_config(binder: inject.Binder) -> None:
 
     mass_update_service = MassUpdateConsumerService(
         update_consumer_service=update_consumer_service,
-        supplier_service=supplier_service,
+        supplier_service=supplier_api,
         supplier_info_service=supplier_info_service,
     )
     scheduler = Scheduler(
@@ -115,10 +108,6 @@ def get_database() -> Database:
 
 def get_supplier_api() -> SuppliersApi:
     return inject.instance(SuppliersApi)
-
-
-def get_supplier_service() -> SupplierService:
-    return inject.instance(SupplierService)
 
 
 def get_resource_map_service() -> ResourceMapService:

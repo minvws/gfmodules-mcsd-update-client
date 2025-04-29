@@ -5,11 +5,11 @@ from pydantic import BaseModel, Field
 
 from app.container import (
     get_update_consumer_service,
-    get_supplier_service,
+    get_supplier_api,
     get_update_consumer,
 )
-from app.services.entity_services.supplier_service import SupplierService
 from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
+from app.services_new.api.suppliers_api import SuppliersApi
 from app.services_new.update_service import UpdateConsumer
 
 router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"])
@@ -25,7 +25,7 @@ def update_supplier_resources(
     supplier_id: str | None = None,
     query_params: UpdateQueryParams = Depends(),
     service: UpdateConsumerService = Depends(get_update_consumer_service),
-    supplier_service: SupplierService = Depends(get_supplier_service),
+    supplier_service: SuppliersApi = Depends(get_supplier_api),
 ) -> Any:
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
     if supplier_id is None:
