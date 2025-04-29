@@ -57,3 +57,6 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 cache_dir = "~/.cache/pytest"
 testpaths = ["tests"]
+
+[tool.poetry.scripts]
+seed = "seeds.seed_hapi:generate_data"

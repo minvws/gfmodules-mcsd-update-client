@@ -71,7 +71,7 @@ class ConfigSupplierApi(BaseModel):
                 "supplier_urls must be a list of [id, name, url] sublists."
             )
         for item in value:
-            if not (isinstance(item, list) and len(item) == 3):
+            if len(item) != 3:
                 raise ValueError(
                     "Each item in supplier_urls must be a list of three elements: [id, name, url]."
                 )
@@ -129,10 +129,6 @@ class ConfigMcsd(BaseModel):
         return str(value)
 
 
-class ConfigMockSeeder(BaseModel):
-    mock_supplier_url: str | None
-
-
 class ConfigAws(BaseModel):
     profile: str
     region: str
@@ -150,7 +146,6 @@ class Config(BaseModel):
     database: ConfigDatabase
     uvicorn: ConfigUvicorn
     mcsd: ConfigMcsd
-    mock_seeder: ConfigMockSeeder
     telemetry: ConfigTelemetry
     stats: ConfigStats
     azure_oauth2: ConfigAzureOauth2 | None
@@ -209,9 +204,16 @@ def get_config(path: str | None = None) -> Config:
             if "aws" not in ini_data:
                 ini_data["aws"] = None
         if "supplier_urls" in ini_data["supplier_api"]:
-            ini_data["supplier_api"]["supplier_urls"] = json.loads(
-                ini_data["supplier_api"]["supplier_urls"]
-            )
+            try:
+                with open(ini_data["supplier_api"]["supplier_urls"]) as f:
+                    ini_data["supplier_api"]["supplier_urls"] = []
+                    supplier_data = json.load(f)
+                    for supplier in supplier_data["suppliers"]:
+                        ini_data["supplier_api"]["supplier_urls"].append((supplier["id"], supplier["name"], supplier["url"]))
+            except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+                raise ValueError(f"Error processing supplier_urls: {e}")
+        else:
+            ini_data["supplier_api"]["supplier_urls"] = None
 
         _CONFIG = Config(**ini_data)
     except ValidationError as e:

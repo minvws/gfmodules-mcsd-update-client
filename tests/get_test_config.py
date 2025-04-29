@@ -4,7 +4,6 @@ from app.config import (
     ConfigDatabase,
     ConfigUvicorn,
     ConfigMcsd,
-    ConfigMockSeeder,
     ConfigTelemetry,
     ConfigStats,
     ConfigSupplierApi,
@@ -45,9 +44,6 @@ def test_config() -> Config:
             authentication="off",
             request_count=20,
             strict_validation=False,
-        ),
-        mock_seeder=ConfigMockSeeder(
-            mock_supplier_url=None,
         ),
         telemetry=ConfigTelemetry(
             enabled=False,

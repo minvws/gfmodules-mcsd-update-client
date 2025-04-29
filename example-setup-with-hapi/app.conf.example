@@ -80,15 +80,11 @@ profile =
 # Region of the healthlake
 region = eu-west-2
 
-[mock_seeder]
-# An url of a supplier to upload mock data and test the setup
-mock_supplier_url = http://hapi-supplier:8080/fhir
-
 [supplier_api]
 # Suppliers provider url url to fetch supplier endpoints
 suppliers_provider_url = http://supplier_api:8080/
-# OR use a list of supplier urls, tupled on id, name and endpoint url
-supplier_urls = [["hapi-supplier", "HAPI supplier", "http://hapi-supplier:8080/fhir"]]
+# OR use a relative path that points to file that specifies which suppliers to use. See example file supplier_urls.example.json
+supplier_urls = supplier_urls.json
 # Timeout for the supplier api
 timeout = 10
 # Backoff time for the supplier api

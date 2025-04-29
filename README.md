@@ -46,14 +46,14 @@ docker compose up
 ```
 
 This will configure the whole system for you and you should be able to use the
-API right away at <https://localhost:8509/docs>.
+API right away at <http://localhost:8509/docs>.
 
 ## Seeding supplier
 
-In the case you want to seed a mock supplier with fake data, first set up the correct
-URL of the mock supplier in the app.conf under `mock_seeder`.
-Finally, in a terminal in the same `example-setup-with-hapi` directory run the following command to add fake test data to the mock supplier:
+There is a mock data seeder available in case you want to seed a mock supplier with fake data.
+In a terminal in the same `example-setup-with-hapi` directory run the following command to add fake test data to the mock supplier,
+with an url parameter you can specify the base url of the supplier you want to seed:
 
 ```bash
-docker compose run --rm mcsd-consumer make seed
+docker compose run --rm mcsd-consumer poetry run seed http://hapi-supplier:8080/fhir/
 ```

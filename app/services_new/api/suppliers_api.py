@@ -18,7 +18,6 @@ class SuppliersApi(ApiService):
 
     def get_one(self, supplier_id: str) -> SupplierDto | None:
         if self.__supplier_urls is not None:
-            print(f"Using supplier_urls: {self.__supplier_urls}")
             for id, name, endpoint in self.__supplier_urls:
                 if id == supplier_id:
                     return SupplierDto(
