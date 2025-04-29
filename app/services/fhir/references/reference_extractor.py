@@ -26,11 +26,17 @@ def extract_references(data: Any) -> Reference | None:
 def _get_org_references(model: Organization) -> List[Reference]:
     refs: List[Reference] = []
     endpoints = model.endpoint
+    part_of = model.partOf
     if endpoints is not None:
         for endpoint in endpoints:
             ref = extract_references(endpoint)
             if ref is not None:
                 refs.append(ref)
+
+    if part_of is not None:
+        new_ref = extract_references(part_of)
+        if new_ref is not None:
+            refs.append(new_ref)
 
     return refs
 
