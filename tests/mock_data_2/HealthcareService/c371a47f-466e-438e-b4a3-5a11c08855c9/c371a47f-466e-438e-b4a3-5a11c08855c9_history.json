@@ -1,0 +1,22 @@
+{
+    "resourceType": "Bundle",
+    "id": "dd2bd106-2f52-4c32-8da0-b95a2d60ae51",
+    "type": "history",
+    "total": 1,
+    "entry": [
+        {
+            "fullUrl": "HealthcareService/c371a47f-466e-438e-b4a3-5a11c08855c9/1",
+            "resource": {
+                "resourceType": "HealthcareService",
+                "id": "c371a47f-466e-438e-b4a3-5a11c08855c9",
+                "location": [],
+                "coverageArea": [],
+                "endpoint": []
+            },
+            "request": {
+                "method": "POST",
+                "url": "HealthcareService/c371a47f-466e-438e-b4a3-5a11c08855c9/1"
+            }
+        }
+    ]
+}

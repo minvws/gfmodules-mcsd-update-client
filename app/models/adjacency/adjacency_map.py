@@ -18,6 +18,9 @@ class AdjacencyReference(BaseModel):
         new_id = f"{namespace}-{self.id}"
         self.id = new_id
 
+    def __hash__(self) -> int:
+        return hash((self.id, self.resource_type))
+
 
 class SupplierNodeData(BaseModel):
     supplier_id: str

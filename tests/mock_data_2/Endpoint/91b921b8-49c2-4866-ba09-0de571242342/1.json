@@ -1,0 +1,22 @@
+{
+    "resourceType": "Endpoint",
+    "id": "91b921b8-49c2-4866-ba09-0de571242342",
+    "status": "active",
+    "connectionType": {
+        "system": "http://example.org/connection-type",
+        "code": "hl7-fhir-rest",
+        "display": "HL7 FHIR REST"
+    },
+    "payloadType": [
+        {
+            "coding": [
+                {
+                    "system": "http://example.org/payload-type",
+                    "code": "application/fhir+json",
+                    "display": "FHIR JSON"
+                }
+            ]
+        }
+    ],
+    "address": "http://example.org/"
+}

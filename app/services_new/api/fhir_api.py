@@ -68,4 +68,12 @@ class FhirApi(AuthenticationBasedApi):
                 if link.relation == "next":
                     next_url = URL(link.url)
 
+        unique = []
+        for e in entries:
+            id = e.resource.id
+            if id not in unique:
+                unique.append(id)
+
+        print("Unizue:" + str(len(unique)))
+        print("Unizue:" + str(len(entries)))
         return next_url, entries

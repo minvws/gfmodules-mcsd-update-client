@@ -1,0 +1,15 @@
+{
+    "resourceType": "Location",
+    "id": "70e2241c-e517-4a08-bbbd-6b7aceba4d02",
+    "managingOrganization": {
+        "reference": "Organization/d17beffe-76b1-46ab-b7e9-70be6383df8c"
+    },
+    "partOf": {
+        "reference": "Location/23c1c8cb-bbc8-4c90-bb92-177fee74a563"
+    },
+    "endpoint": [
+        {
+            "reference": "Endpoint/94cd1c95-5f89-47d6-b0a5-e3c0bf2c418d"
+        }
+    ]
+}

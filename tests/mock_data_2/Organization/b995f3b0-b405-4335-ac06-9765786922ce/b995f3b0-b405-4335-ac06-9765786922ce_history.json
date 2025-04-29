@@ -1,0 +1,65 @@
+{
+    "resourceType": "Bundle",
+    "id": "6e6802f6-bb7c-4815-af51-1469b5dca409",
+    "type": "history",
+    "total": 3,
+    "entry": [
+        {
+            "fullUrl": "Organization/b995f3b0-b405-4335-ac06-9765786922ce/1",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "b995f3b0-b405-4335-ac06-9765786922ce",
+                "partOf": {
+                    "reference": "Organization/abaea122-98b7-438f-a26d-a0c0a350744f"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/cd23a76d-ece9-4d13-9c6b-7fb26359efc6"
+                    }
+                ]
+            },
+            "request": {
+                "method": "POST",
+                "url": "Organization/b995f3b0-b405-4335-ac06-9765786922ce/1"
+            }
+        },
+        {
+            "fullUrl": "Organization/b995f3b0-b405-4335-ac06-9765786922ce/2",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "b995f3b0-b405-4335-ac06-9765786922ce",
+                "partOf": {
+                    "reference": "Organization/8fe3357e-e3bd-4e9e-9fd8-42df78d2e81c"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/cb0341e6-2ffe-4a73-8807-31d65b70b558"
+                    }
+                ]
+            },
+            "request": {
+                "method": "POST",
+                "url": "Organization/b995f3b0-b405-4335-ac06-9765786922ce/2"
+            }
+        },
+        {
+            "fullUrl": "Organization/b995f3b0-b405-4335-ac06-9765786922ce/3",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "b995f3b0-b405-4335-ac06-9765786922ce",
+                "partOf": {
+                    "reference": "Organization/648446dd-5b11-4722-815a-90a8da31a6be"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/701520b8-6d52-4dc3-a645-326360babbbd"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "Organization/b995f3b0-b405-4335-ac06-9765786922ce/3"
+            }
+        }
+    ]
+}

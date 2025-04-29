@@ -1,0 +1,113 @@
+{
+    "resourceType": "Bundle",
+    "id": "5307d256-3ba8-4fb3-abc7-d15e8fbdc0ee",
+    "type": "history",
+    "total": 3,
+    "entry": [
+        {
+            "fullUrl": "HealthcareService/910d8afb-57e9-482e-9bd8-ac68940d3bda/1",
+            "resource": {
+                "resourceType": "HealthcareService",
+                "id": "910d8afb-57e9-482e-9bd8-ac68940d3bda",
+                "providedBy": {
+                    "reference": "Organization/5a3ca0d2-aa74-4ca3-aebd-040352eab632"
+                },
+                "location": [
+                    {
+                        "reference": "Location/d75441ca-76c9-4b8c-a50e-cdc9d8a0c33c"
+                    },
+                    {
+                        "reference": "Location/d2b75aeb-eb24-464b-a1c5-5ebacf199dce"
+                    }
+                ],
+                "coverageArea": [
+                    {
+                        "reference": "Location/40382e94-ed9c-4e5f-a07f-4b4d476977c8"
+                    },
+                    {
+                        "reference": "Location/846d9d7f-9875-4ffa-ae48-d9df95e6a9cc"
+                    }
+                ],
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/fa6b3b8d-b5dd-4dd5-a571-94489da7cd53"
+                    }
+                ]
+            },
+            "request": {
+                "method": "POST",
+                "url": "HealthcareService/910d8afb-57e9-482e-9bd8-ac68940d3bda/1"
+            }
+        },
+        {
+            "fullUrl": "HealthcareService/910d8afb-57e9-482e-9bd8-ac68940d3bda/2",
+            "resource": {
+                "resourceType": "HealthcareService",
+                "id": "910d8afb-57e9-482e-9bd8-ac68940d3bda",
+                "providedBy": {
+                    "reference": "Organization/ee85bd33-9716-4ca0-af11-4d09dbe08c49"
+                },
+                "location": [
+                    {
+                        "reference": "Location/dc6d23b6-2416-464c-9d41-07d575daf537"
+                    },
+                    {
+                        "reference": "Location/04d68b5f-65a6-468c-8e44-cf4471a152e2"
+                    }
+                ],
+                "coverageArea": [
+                    {
+                        "reference": "Location/653adbef-87dd-4313-b780-ee4a06d973b3"
+                    },
+                    {
+                        "reference": "Location/b5ad1fb7-8275-402c-aa4a-b207a72249e1"
+                    }
+                ],
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/dd44ae8b-7f06-4f65-9d97-6f2f3836933d"
+                    }
+                ]
+            },
+            "request": {
+                "method": "DELETE",
+                "url": "HealthcareService/910d8afb-57e9-482e-9bd8-ac68940d3bda/2"
+            }
+        },
+        {
+            "fullUrl": "HealthcareService/910d8afb-57e9-482e-9bd8-ac68940d3bda/3",
+            "resource": {
+                "resourceType": "HealthcareService",
+                "id": "910d8afb-57e9-482e-9bd8-ac68940d3bda",
+                "providedBy": {
+                    "reference": "Organization/7effa62f-c37d-40ba-a1d2-5acf160b00b6"
+                },
+                "location": [
+                    {
+                        "reference": "Location/1e8eca89-e6db-418b-8005-2385063efc8f"
+                    },
+                    {
+                        "reference": "Location/714dd504-45df-4c3d-84f6-1baa65e5ab81"
+                    }
+                ],
+                "coverageArea": [
+                    {
+                        "reference": "Location/9ac64222-36a3-4e53-803b-48d3c89d5f37"
+                    },
+                    {
+                        "reference": "Location/e693f858-b588-442a-9082-465436696af3"
+                    }
+                ],
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/085da62a-c841-447e-bc08-40105a4c5df7"
+                    }
+                ]
+            },
+            "request": {
+                "method": "DELETE",
+                "url": "HealthcareService/910d8afb-57e9-482e-9bd8-ac68940d3bda/3"
+            }
+        }
+    ]
+}

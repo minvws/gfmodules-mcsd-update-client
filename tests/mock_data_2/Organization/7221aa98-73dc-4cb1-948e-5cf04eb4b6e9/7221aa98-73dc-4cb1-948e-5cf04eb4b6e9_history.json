@@ -1,0 +1,20 @@
+{
+    "resourceType": "Bundle",
+    "id": "6f03f96c-0f26-4c93-ae1b-680ee8affd1d",
+    "type": "history",
+    "total": 1,
+    "entry": [
+        {
+            "fullUrl": "Organization/7221aa98-73dc-4cb1-948e-5cf04eb4b6e9/1",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "7221aa98-73dc-4cb1-948e-5cf04eb4b6e9",
+                "endpoint": []
+            },
+            "request": {
+                "method": "PUT",
+                "url": "Organization/7221aa98-73dc-4cb1-948e-5cf04eb4b6e9/1"
+            }
+        }
+    ]
+}

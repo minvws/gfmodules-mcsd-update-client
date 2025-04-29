@@ -1,0 +1,28 @@
+{
+    "resourceType": "HealthcareService",
+    "id": "81aa6568-1de4-4354-868d-25f3292b31cf",
+    "providedBy": {
+        "reference": "Organization/a7ce3959-185a-4c1e-a93e-c9881e6d9f6d"
+    },
+    "location": [
+        {
+            "reference": "Location/2c4bef70-c345-499b-abfa-4d0e76e3f1f5"
+        },
+        {
+            "reference": "Location/50e62611-73b0-44ec-aef3-f759b16d60f8"
+        }
+    ],
+    "coverageArea": [
+        {
+            "reference": "Location/1ee1d13b-864c-48ea-8ecd-5bc7f6dc09cb"
+        },
+        {
+            "reference": "Location/73868a20-7e59-4db6-9130-f9d0bed0ef67"
+        }
+    ],
+    "endpoint": [
+        {
+            "reference": "Endpoint/6c3bb812-fe5d-48cb-a012-150525a45697"
+        }
+    ]
+}

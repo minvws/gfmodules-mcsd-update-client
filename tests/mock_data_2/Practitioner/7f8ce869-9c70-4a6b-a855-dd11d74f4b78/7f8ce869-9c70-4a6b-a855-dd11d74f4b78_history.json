@@ -1,0 +1,131 @@
+{
+    "resourceType": "Bundle",
+    "id": "3038afc1-8756-458f-8eea-f9a335e67d36",
+    "type": "history",
+    "total": 3,
+    "entry": [
+        {
+            "fullUrl": "Practitioner/7f8ce869-9c70-4a6b-a855-dd11d74f4b78/1",
+            "resource": {
+                "resourceType": "Practitioner",
+                "id": "7f8ce869-9c70-4a6b-a855-dd11d74f4b78",
+                "qualification": [
+                    {
+                        "code": {
+                            "coding": [
+                                {
+                                    "system": "http://example.org/practitioner-qualification",
+                                    "code": "MD",
+                                    "display": "Doctor of Medicine"
+                                }
+                            ]
+                        },
+                        "issuer": {
+                            "reference": "Organization/a47973d2-8f17-47aa-a006-411ad35e1466"
+                        }
+                    },
+                    {
+                        "code": {
+                            "coding": [
+                                {
+                                    "system": "http://example.org/practitioner-qualification",
+                                    "code": "MD",
+                                    "display": "Doctor of Medicine"
+                                }
+                            ]
+                        },
+                        "issuer": {
+                            "reference": "Organization/6379b0f7-c3e3-4132-b1f6-3a62af370082"
+                        }
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "Practitioner/7f8ce869-9c70-4a6b-a855-dd11d74f4b78/1"
+            }
+        },
+        {
+            "fullUrl": "Practitioner/7f8ce869-9c70-4a6b-a855-dd11d74f4b78/2",
+            "resource": {
+                "resourceType": "Practitioner",
+                "id": "7f8ce869-9c70-4a6b-a855-dd11d74f4b78",
+                "qualification": [
+                    {
+                        "code": {
+                            "coding": [
+                                {
+                                    "system": "http://example.org/practitioner-qualification",
+                                    "code": "MD",
+                                    "display": "Doctor of Medicine"
+                                }
+                            ]
+                        },
+                        "issuer": {
+                            "reference": "Organization/526962cd-c076-4b27-b5bf-af0d343a9bf0"
+                        }
+                    },
+                    {
+                        "code": {
+                            "coding": [
+                                {
+                                    "system": "http://example.org/practitioner-qualification",
+                                    "code": "MD",
+                                    "display": "Doctor of Medicine"
+                                }
+                            ]
+                        },
+                        "issuer": {
+                            "reference": "Organization/09a02a1f-bf4e-4b4e-8735-515756edad0f"
+                        }
+                    }
+                ]
+            },
+            "request": {
+                "method": "POST",
+                "url": "Practitioner/7f8ce869-9c70-4a6b-a855-dd11d74f4b78/2"
+            }
+        },
+        {
+            "fullUrl": "Practitioner/7f8ce869-9c70-4a6b-a855-dd11d74f4b78/3",
+            "resource": {
+                "resourceType": "Practitioner",
+                "id": "7f8ce869-9c70-4a6b-a855-dd11d74f4b78",
+                "qualification": [
+                    {
+                        "code": {
+                            "coding": [
+                                {
+                                    "system": "http://example.org/practitioner-qualification",
+                                    "code": "MD",
+                                    "display": "Doctor of Medicine"
+                                }
+                            ]
+                        },
+                        "issuer": {
+                            "reference": "Organization/94b3be36-a003-494e-bf4c-3283b01b66d0"
+                        }
+                    },
+                    {
+                        "code": {
+                            "coding": [
+                                {
+                                    "system": "http://example.org/practitioner-qualification",
+                                    "code": "MD",
+                                    "display": "Doctor of Medicine"
+                                }
+                            ]
+                        },
+                        "issuer": {
+                            "reference": "Organization/880a1c86-0171-4fd5-a66c-cd59d1618c5b"
+                        }
+                    }
+                ]
+            },
+            "request": {
+                "method": "DELETE",
+                "url": "Practitioner/7f8ce869-9c70-4a6b-a855-dd11d74f4b78/3"
+            }
+        }
+    ]
+}

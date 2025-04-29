@@ -18,8 +18,10 @@ from app.services.request_services.consumer_request_service import (
 )
 from app.models.fhir.r4.types import Bundle, Request, Entry, Resource
 
-logger = logging.getLogger(__name__)
+from app.stats import get_stats
 
+logger = logging.getLogger(__name__)
+stats = get_stats()
 
 class UpdateConsumerService:
     def __init__(
@@ -71,7 +73,6 @@ class UpdateConsumerService:
     def update(self, supplier_id: str, history_size: int, latest_entry: Entry) -> None:
         _, main_resource_id = get_resource_type_and_id_from_entry(latest_entry)
         request_method = get_request_method_from_entry(latest_entry)
-
         main_resource = (
             self.__fhir_service.create_resource(latest_entry.resource.model_dump())
             if latest_entry.resource
@@ -94,15 +95,16 @@ class UpdateConsumerService:
             )
 
         for ref in unique_refs:
-            res_type, id = self.__fhir_service.split_reference(ref)
-            data = self.__supplier_request_service.get_resource_history(
-                resource_type=res_type, resource_id=id, supplier_id=supplier_id
-            )
-            entry = data.entry
-            if entry is not None and len(entry) > 0 and id is not None:
-                update_lookup.update(
-                    {id: UpdateLookupEntry(history_size=len(entry), entry=entry[0])}
+            with stats.timer("unique"):
+                res_type, id = self.__fhir_service.split_reference(ref)
+                data = self.__supplier_request_service.get_resource_history(
+                    resource_type=res_type, resource_id=id, supplier_id=supplier_id
                 )
+                entry = data.entry
+                if entry is not None and len(entry) > 0 and id is not None:
+                    update_lookup.update(
+                        {id: UpdateLookupEntry(history_size=len(entry), entry=entry[0])}
+                    )
 
         # prepare bundle
         new_bundle = Bundle(type="transaction", entry=[])

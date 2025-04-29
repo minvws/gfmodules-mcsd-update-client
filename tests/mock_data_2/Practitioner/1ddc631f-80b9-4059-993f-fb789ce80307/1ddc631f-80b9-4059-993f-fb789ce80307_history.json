@@ -1,0 +1,20 @@
+{
+    "resourceType": "Bundle",
+    "id": "e20927fc-ecd3-4fd5-ab16-1ed17d546b7c",
+    "type": "history",
+    "total": 1,
+    "entry": [
+        {
+            "fullUrl": "Practitioner/1ddc631f-80b9-4059-993f-fb789ce80307/1",
+            "resource": {
+                "resourceType": "Practitioner",
+                "id": "1ddc631f-80b9-4059-993f-fb789ce80307",
+                "qualification": []
+            },
+            "request": {
+                "method": "POST",
+                "url": "Practitioner/1ddc631f-80b9-4059-993f-fb789ce80307/1"
+            }
+        }
+    ]
+}

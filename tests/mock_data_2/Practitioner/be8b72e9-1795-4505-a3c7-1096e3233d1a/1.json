@@ -1,0 +1,34 @@
+{
+    "resourceType": "Practitioner",
+    "id": "be8b72e9-1795-4505-a3c7-1096e3233d1a",
+    "qualification": [
+        {
+            "code": {
+                "coding": [
+                    {
+                        "system": "http://example.org/practitioner-qualification",
+                        "code": "MD",
+                        "display": "Doctor of Medicine"
+                    }
+                ]
+            },
+            "issuer": {
+                "reference": "Organization/a20caba4-d410-45e9-b613-af243415910c"
+            }
+        },
+        {
+            "code": {
+                "coding": [
+                    {
+                        "system": "http://example.org/practitioner-qualification",
+                        "code": "MD",
+                        "display": "Doctor of Medicine"
+                    }
+                ]
+            },
+            "issuer": {
+                "reference": "Organization/7024c701-c269-4f32-9581-6dda493deaf4"
+            }
+        }
+    ]
+}

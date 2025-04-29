@@ -253,5 +253,11 @@ def generate_history_bundles(base_path: str) -> None:
             os.path.join(resource_folder, f"{resource_type.value}_history.json"), "w"
         ) as f:
             json.dump(resource_history_bundle, f, indent=4)
+    import sys
+    import resource
+    print(sys.getsizeof(resource_history_bundle))
+    print(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+
+
     with open(os.path.join(base_path, "all_resources_history.json"), "w") as f:
         json.dump(global_history_bundle, f, indent=4)

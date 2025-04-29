@@ -1,3 +1,4 @@
+from token import PERCENT
 from datetime import datetime
 import json
 import os
@@ -5,6 +6,7 @@ import time
 import threading
 import psutil
 import pytest
+import numpy as np
 
 from typing import Any, Dict, List, Sequence
 from fastapi.testclient import TestClient
@@ -23,6 +25,7 @@ from utils.utils import (
 from fhir.resources.R4B.bundle import BundleEntry
 
 from app.stats import Stats, get_stats
+from app.services.fhir.bundle.bundle_utils import filter_history_entries
 
 MOCK_DATA_PATH = "tests/mock_data"
 TEST_RESULTS_PATH = "tests/new_testing_results"
@@ -53,7 +56,7 @@ def _read_mock_data(file_path: str) -> Bundle:
                 return Bundle(**json.load(file))
 
 def mock_do_request(method: str, url: URL, json: Dict[str, Any] | None = None) -> requests.Response:
-    
+
     if str(url) == "http://testserver/supplier":
         global iteration
         with get_stats().timer(f"{iteration}.mock_get_resource_history"):
@@ -62,13 +65,15 @@ def mock_do_request(method: str, url: URL, json: Dict[str, Any] | None = None) -
                 if not entry.get('request'):
                     continue
                 if entry['request'].get('method') == 'GET':
-                    resource_type = entry['request'].get('url').split('/')[1]
-                    file_path = f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
-                    bundle = _read_mock_data(file_path)
-                    return_bundle.entry.append(BundleEntry(resource=bundle))
+                    with get_stats().timer("reading from file"):
+                        resource_type = entry['request'].get('url').split('/')[1]
+                        file_path = f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
+                        bundle = _read_mock_data(file_path)
+                        return_bundle.entry.append(BundleEntry(resource=bundle))
             response = requests.Response()
             response.status_code = 200
-            response._content = return_bundle.model_dump_json(indent=4).encode('utf-8')
+            with get_stats().timer("json_dump"):
+                response._content = return_bundle.model_dump_json(indent=4).encode('utf-8')
             return response
     if str(url) == "http://testserver/consumer/test":
         response = requests.Response()
@@ -85,10 +90,11 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
         file_path = f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
         with open(file_path, "r") as file:
             bundle = Bundle(**json.load(file))
-            return None, bundle.entry
+            entries = filter_history_entries(bundle.entry)
+            return None, entries
     assert False, "Should not reach here"
     return None, []
-            
+
 @pytest.mark.filterwarnings("ignore:Pydantic serializer warnings")
 @pytest.mark.parametrize(
     "resource_count, version_count, max_depth, test_name",
@@ -96,7 +102,7 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
         # (1, 1, 1, "very_simple"),
         # (2, 2, 1, "no_depth"),
         # (5, 3, 1, "more_resources"),
-        (5, 3, 2, "just_a_little_depth"),
+        # (5, 3, 2, "just_a_little_depth"),
         # (5, 3, 4, "medium"),
         # (5, 3, 5, "difficult"),
         # (5, 3, 6, "hard"),
@@ -104,7 +110,7 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
         # (5, 3, 8, "extreme"),
         # (5, 3, 9, "crazy"),
         # (5, 3, 10, "insane"),
-        # (10, 5, 10, "impossible"),
+        (10, 5, 10, "impossible"),
     ],
 )
 @patch(
@@ -164,9 +170,9 @@ def test_consumer_update_with_timing(
 
             print(response.text)
 
-            # ok_status_code = response.status_code == 200 or False  
-            # good_updated_message = response.json()[0]["message"] == "organizations and endpoints are updated" or False  
-            # if ok_status_code is False or good_updated_message is False: 
+            # ok_status_code = response.status_code == 200 or False
+            # good_updated_message = response.json()[0]["message"] == "organizations and endpoints are updated" or False
+            # if ok_status_code is False or good_updated_message is False:
             #     errors += 1
     finally:
         monitoring = False
@@ -190,7 +196,18 @@ def test_consumer_update_with_timing(
     assert hasattr(stats, "client")
     report = stats.client.get_memory()
 
-    print(report)
+
+    #print(report)
+    for key, value in sorted(report.items(), key=lambda x: sum(x[1]), reverse=True):
+        print(f"{key}:")
+        print(f"\t p1:{str(np.round(np.percentile(value, 1), 4))}")
+        print(f"\t p50:{str(np.round(np.percentile(value, 50), 4))}")
+        print(f"\t p75:{str(np.round(np.percentile(value, 75), 4))}")
+        print(f"\t p99:{str(np.round(np.percentile(value, 99), 4))}")
+        print(f"\t min:{str(np.min(value))}")
+        print(f"\t max:{str(np.max(value))}")
+        print(f"\t count:{len(value)}")
+        print(f"\t sum:{str(np.sum(value))}")
 
     durations = []
     for idx, item in enumerate(report["mcsd.update_supplier"]):

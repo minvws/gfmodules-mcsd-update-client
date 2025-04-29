@@ -1,0 +1,74 @@
+{
+    "resourceType": "Bundle",
+    "id": "1edca3a0-a58f-44b4-920a-8fee3f204d3c",
+    "type": "history",
+    "total": 3,
+    "entry": [
+        {
+            "fullUrl": "Location/d04e4596-f746-403e-b120-e1cf8836d610/1",
+            "resource": {
+                "resourceType": "Location",
+                "id": "d04e4596-f746-403e-b120-e1cf8836d610",
+                "managingOrganization": {
+                    "reference": "Organization/e840f893-87a9-4884-87ca-fbb19f3edcc3"
+                },
+                "partOf": {
+                    "reference": "Location/3d448a06-f2e8-4ec6-b486-98e1ac50f486"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/6c712731-fc2b-455c-8257-e2c76eea1d6c"
+                    }
+                ]
+            },
+            "request": {
+                "method": "POST",
+                "url": "Location/d04e4596-f746-403e-b120-e1cf8836d610/1"
+            }
+        },
+        {
+            "fullUrl": "Location/d04e4596-f746-403e-b120-e1cf8836d610/2",
+            "resource": {
+                "resourceType": "Location",
+                "id": "d04e4596-f746-403e-b120-e1cf8836d610",
+                "managingOrganization": {
+                    "reference": "Organization/db755b71-c7c6-433d-bb03-b3689afbea82"
+                },
+                "partOf": {
+                    "reference": "Location/de02ff77-850b-47dc-a385-b0f0aebdf4fa"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/56f17e99-34b2-4fef-bc92-c2fb804aa6eb"
+                    }
+                ]
+            },
+            "request": {
+                "method": "DELETE",
+                "url": "Location/d04e4596-f746-403e-b120-e1cf8836d610/2"
+            }
+        },
+        {
+            "fullUrl": "Location/d04e4596-f746-403e-b120-e1cf8836d610/3",
+            "resource": {
+                "resourceType": "Location",
+                "id": "d04e4596-f746-403e-b120-e1cf8836d610",
+                "managingOrganization": {
+                    "reference": "Organization/70e8a580-8d2b-4565-a040-ae30452022ef"
+                },
+                "partOf": {
+                    "reference": "Location/ff5cc7fa-1220-4408-858e-9d8b0d77a2b9"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/53746046-b697-42b6-b6c3-f732d00bfa93"
+                    }
+                ]
+            },
+            "request": {
+                "method": "DELETE",
+                "url": "Location/d04e4596-f746-403e-b120-e1cf8836d610/3"
+            }
+        }
+    ]
+}

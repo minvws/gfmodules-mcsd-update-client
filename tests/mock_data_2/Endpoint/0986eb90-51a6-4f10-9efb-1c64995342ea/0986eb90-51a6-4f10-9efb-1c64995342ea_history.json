@@ -1,0 +1,104 @@
+{
+    "resourceType": "Bundle",
+    "id": "618c157f-6716-416f-8d34-fbe95c8bc0d1",
+    "type": "history",
+    "total": 3,
+    "entry": [
+        {
+            "fullUrl": "Endpoint/0986eb90-51a6-4f10-9efb-1c64995342ea/1",
+            "resource": {
+                "resourceType": "Endpoint",
+                "id": "0986eb90-51a6-4f10-9efb-1c64995342ea",
+                "status": "active",
+                "connectionType": {
+                    "system": "http://example.org/connection-type",
+                    "code": "hl7-fhir-rest",
+                    "display": "HL7 FHIR REST"
+                },
+                "managingOrganization": {
+                    "reference": "Organization/fc3b1870-0278-4237-9f57-263acec1d9d8"
+                },
+                "payloadType": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://example.org/payload-type",
+                                "code": "application/fhir+json",
+                                "display": "FHIR JSON"
+                            }
+                        ]
+                    }
+                ],
+                "address": "http://example.org/"
+            },
+            "request": {
+                "method": "POST",
+                "url": "Endpoint/0986eb90-51a6-4f10-9efb-1c64995342ea/1"
+            }
+        },
+        {
+            "fullUrl": "Endpoint/0986eb90-51a6-4f10-9efb-1c64995342ea/2",
+            "resource": {
+                "resourceType": "Endpoint",
+                "id": "0986eb90-51a6-4f10-9efb-1c64995342ea",
+                "status": "active",
+                "connectionType": {
+                    "system": "http://example.org/connection-type",
+                    "code": "hl7-fhir-rest",
+                    "display": "HL7 FHIR REST"
+                },
+                "managingOrganization": {
+                    "reference": "Organization/ebc97a41-982b-4896-8777-da3e533a8bf6"
+                },
+                "payloadType": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://example.org/payload-type",
+                                "code": "application/fhir+json",
+                                "display": "FHIR JSON"
+                            }
+                        ]
+                    }
+                ],
+                "address": "http://example.org/"
+            },
+            "request": {
+                "method": "POST",
+                "url": "Endpoint/0986eb90-51a6-4f10-9efb-1c64995342ea/2"
+            }
+        },
+        {
+            "fullUrl": "Endpoint/0986eb90-51a6-4f10-9efb-1c64995342ea/3",
+            "resource": {
+                "resourceType": "Endpoint",
+                "id": "0986eb90-51a6-4f10-9efb-1c64995342ea",
+                "status": "active",
+                "connectionType": {
+                    "system": "http://example.org/connection-type",
+                    "code": "hl7-fhir-rest",
+                    "display": "HL7 FHIR REST"
+                },
+                "managingOrganization": {
+                    "reference": "Organization/4fbc41d2-55fc-4952-904e-37df5566cb41"
+                },
+                "payloadType": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://example.org/payload-type",
+                                "code": "application/fhir+json",
+                                "display": "FHIR JSON"
+                            }
+                        ]
+                    }
+                ],
+                "address": "http://example.org/"
+            },
+            "request": {
+                "method": "PUT",
+                "url": "Endpoint/0986eb90-51a6-4f10-9efb-1c64995342ea/3"
+            }
+        }
+    ]
+}

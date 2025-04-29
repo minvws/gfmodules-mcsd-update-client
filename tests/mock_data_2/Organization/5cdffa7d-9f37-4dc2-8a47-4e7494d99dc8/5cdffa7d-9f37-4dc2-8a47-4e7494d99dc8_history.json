@@ -1,0 +1,65 @@
+{
+    "resourceType": "Bundle",
+    "id": "3112da51-acc3-48ca-aa88-a1d5838031cb",
+    "type": "history",
+    "total": 3,
+    "entry": [
+        {
+            "fullUrl": "Organization/5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8/1",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8",
+                "partOf": {
+                    "reference": "Organization/d91023f6-6eb3-49f2-9f1c-410417fa3bf0"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/a04b264c-d47f-4fb7-8895-a24c0e58aeee"
+                    }
+                ]
+            },
+            "request": {
+                "method": "POST",
+                "url": "Organization/5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8/1"
+            }
+        },
+        {
+            "fullUrl": "Organization/5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8/2",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8",
+                "partOf": {
+                    "reference": "Organization/adc7e270-b196-49a7-b959-0b868b1b61c4"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/310485ec-bf7d-44e5-86ec-2e746245413d"
+                    }
+                ]
+            },
+            "request": {
+                "method": "POST",
+                "url": "Organization/5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8/2"
+            }
+        },
+        {
+            "fullUrl": "Organization/5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8/3",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8",
+                "partOf": {
+                    "reference": "Organization/b6618d3f-9850-4dc1-87ce-b1c1d738a706"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/8151cf82-9fcd-469b-9033-da985a83967f"
+                    }
+                ]
+            },
+            "request": {
+                "method": "DELETE",
+                "url": "Organization/5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8/3"
+            }
+        }
+    ]
+}

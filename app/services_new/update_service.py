@@ -23,6 +23,7 @@ from app.services_new.api.authenticators import Authenticator, NullAuthenticator
 from app.services_new.api.suppliers_api import SuppliersApi
 from app.services.fhir.fhir_service import FhirService
 from app.services_new.api.fhir_api import FhirApi
+from app.stats import get_stats
 
 logger = logging.getLogger(__name__)
 
@@ -100,31 +101,38 @@ class UpdateConsumer:
             resource_type, since
         )
 
+        stats = get_stats()
         while next_url is not None:
-            next_url, history = supplier_fhir_api.get_history_batch(next_url)
-            targets = []
-            for e in history:
-                _, id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
-                if id is not None:
-                    if id in self.__cache:
-                        logger.info(
-                            f"{id} {resource_type} already processed.. skipping.. "
-                        )
-                        continue
-                    targets.append(e)
+            with stats.timer("next_URL"):
+                with stats.timer("iets"):
+                    next_url, history = supplier_fhir_api.get_history_batch(next_url)
+                with stats.timer("after_fetch"):
+                    targets = []
+                    for e in history:
+                        _, id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
+                        if id is not None:
+                            if id in self.__cache:
+                                logger.info(
+                                    f"{id} {resource_type} already processed.. skipping.. "
+                                )
+                                continue
+                            targets.append(e)
 
-            updated_nodes = self.update_page(targets, adjacency_map_service)
-            for node in updated_nodes:
-                if node.resource_id not in self.__cache:
-                    self.__cache.append(node.resource_id)
+                    with stats.timer("update_page"):
+                        updated_nodes = self.update_page(targets, adjacency_map_service)
+                    for node in updated_nodes:
+                        if node.resource_id not in self.__cache:
+                            self.__cache.append(node.resource_id)
 
     def update_page(
         self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
     ) -> List[Node]:
+        stats = get_stats()
         updated = []
-        adj_map: AdjacencyMap = adjacency_map_service.build_adjacency_map(
-            entries, self.__cache
-        )
+        with stats.timer("build adjecency map"):
+            adj_map: AdjacencyMap = adjacency_map_service.build_adjacency_map(
+                entries, self.__cache
+            )
         for node in adj_map.values():
             if node.updated is True:
                 logger.info(

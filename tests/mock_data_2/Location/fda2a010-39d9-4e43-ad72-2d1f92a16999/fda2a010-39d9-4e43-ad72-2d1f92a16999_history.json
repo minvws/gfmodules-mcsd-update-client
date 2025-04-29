@@ -1,0 +1,20 @@
+{
+    "resourceType": "Bundle",
+    "id": "31a7090c-4b7d-419f-94f9-53204566534c",
+    "type": "history",
+    "total": 1,
+    "entry": [
+        {
+            "fullUrl": "Location/fda2a010-39d9-4e43-ad72-2d1f92a16999/1",
+            "resource": {
+                "resourceType": "Location",
+                "id": "fda2a010-39d9-4e43-ad72-2d1f92a16999",
+                "endpoint": []
+            },
+            "request": {
+                "method": "POST",
+                "url": "Location/fda2a010-39d9-4e43-ad72-2d1f92a16999/1"
+            }
+        }
+    ]
+}

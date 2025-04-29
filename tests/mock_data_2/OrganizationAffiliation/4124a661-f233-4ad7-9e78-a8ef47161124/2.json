@@ -1,0 +1,39 @@
+{
+    "resourceType": "OrganizationAffiliation",
+    "id": "4124a661-f233-4ad7-9e78-a8ef47161124",
+    "organization": {
+        "reference": "Organization/acb1e923-35d5-48d2-af17-4ea7f3a98898"
+    },
+    "participatingOrganization": {
+        "reference": "Organization/7e627345-ba69-422a-a923-f66e7cd46e3b"
+    },
+    "network": [
+        {
+            "reference": "Organization/e011328d-904b-46af-87ba-b3d1bf7ab90f"
+        },
+        {
+            "reference": "Organization/553c1fc0-01a9-4d99-9379-b668980ae02b"
+        }
+    ],
+    "location": [
+        {
+            "reference": "Location/e44bb02f-a79d-415a-96de-df9299e13bb8"
+        },
+        {
+            "reference": "Location/900974d1-195f-454b-848f-7aca4051268b"
+        }
+    ],
+    "healthcareService": [
+        {
+            "reference": "HealthcareService/762570e2-e48f-4b96-b7e9-c6412232ee2f"
+        },
+        {
+            "reference": "HealthcareService/f1ce05fe-7f1b-46ff-a0b6-3cec890f1fc3"
+        }
+    ],
+    "endpoint": [
+        {
+            "reference": "Endpoint/63ea98a1-3052-4137-a980-89673500e6f8"
+        }
+    ]
+}

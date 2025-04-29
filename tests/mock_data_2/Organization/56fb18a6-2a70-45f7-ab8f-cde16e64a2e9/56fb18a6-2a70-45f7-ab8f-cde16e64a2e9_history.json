@@ -1,0 +1,65 @@
+{
+    "resourceType": "Bundle",
+    "id": "c92a3b70-43b5-41cb-9f14-71aeb3ab9725",
+    "type": "history",
+    "total": 3,
+    "entry": [
+        {
+            "fullUrl": "Organization/56fb18a6-2a70-45f7-ab8f-cde16e64a2e9/1",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "56fb18a6-2a70-45f7-ab8f-cde16e64a2e9",
+                "partOf": {
+                    "reference": "Organization/8a4d1a6c-6b33-4a64-a987-1545e780f581"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/1799b137-dba1-45ad-9592-c6259e53b887"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "Organization/56fb18a6-2a70-45f7-ab8f-cde16e64a2e9/1"
+            }
+        },
+        {
+            "fullUrl": "Organization/56fb18a6-2a70-45f7-ab8f-cde16e64a2e9/2",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "56fb18a6-2a70-45f7-ab8f-cde16e64a2e9",
+                "partOf": {
+                    "reference": "Organization/a9cef45f-2c5a-4e22-a305-00ebbd8c5931"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/26242994-c866-4587-b386-9c2d48a1faa4"
+                    }
+                ]
+            },
+            "request": {
+                "method": "DELETE",
+                "url": "Organization/56fb18a6-2a70-45f7-ab8f-cde16e64a2e9/2"
+            }
+        },
+        {
+            "fullUrl": "Organization/56fb18a6-2a70-45f7-ab8f-cde16e64a2e9/3",
+            "resource": {
+                "resourceType": "Organization",
+                "id": "56fb18a6-2a70-45f7-ab8f-cde16e64a2e9",
+                "partOf": {
+                    "reference": "Organization/46629bae-b90d-4711-a71f-ada2cce8b428"
+                },
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/a276a1bc-ba9c-43b5-8830-0b45b514d880"
+                    }
+                ]
+            },
+            "request": {
+                "method": "POST",
+                "url": "Organization/56fb18a6-2a70-45f7-ab8f-cde16e64a2e9/3"
+            }
+        }
+    ]
+}

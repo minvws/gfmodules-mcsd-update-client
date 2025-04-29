@@ -1,0 +1,31 @@
+{
+    "resourceType": "PractitionerRole",
+    "id": "8a8333a0-df35-40ec-8487-9c87012dcdcd",
+    "practitioner": {
+        "reference": "Practitioner/dc8e1635-2bed-49b3-b10e-aed2f3a4e88f"
+    },
+    "organization": {
+        "reference": "Organization/c9d81210-45e4-42d7-9ca1-74ed0b85fc21"
+    },
+    "location": [
+        {
+            "reference": "Location/095662dd-2e52-42d0-bfa0-6631e536f5a1"
+        },
+        {
+            "reference": "Location/372032ac-db35-4471-848e-7395cd30db6d"
+        }
+    ],
+    "healthcareService": [
+        {
+            "reference": "HealthcareService/7999217d-d907-4953-b49a-786d43a234c2"
+        },
+        {
+            "reference": "HealthcareService/9462298a-7b1a-44fb-ad1d-dafae7f91bca"
+        }
+    ],
+    "endpoint": [
+        {
+            "reference": "Endpoint/09666094-1dd9-4823-8e60-6946b2d5ae9a"
+        }
+    ]
+}

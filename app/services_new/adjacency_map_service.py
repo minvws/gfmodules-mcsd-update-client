@@ -1,5 +1,9 @@
+from re import I
+from fhir.resources.R4B.domainresource import DomainResource
+from test.test_re import B
+from math import exp
 from collections import deque
-from typing import List, Deque
+from typing import Dict, List, Deque, Set
 from fhir.resources.R4B.bundle import BundleEntry
 from app.models.adjacency.adjacency_map import (
     AdjacencyMap,
@@ -74,54 +78,123 @@ class AdjacencyMapService:
 
         adj_map[node.resource_id] = node
 
+    def loop(self, entries: List[BundleEntry], result: AdjacencyMap) -> Set[AdjacencyReference]:
+        stats = get_stats()
+        with stats.timer("loop"):
+            missing_refs = set()
+            for entry in entries:
+                if entry.resource is None:
+                    continue
+                _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
+                if id in result:
+                    print(f"id {id} already in result")
+                result[id] = self.create_node(entry)
+            for entry in entries:
+                if entry.resource is None:
+                    continue
+                refs = self.__fhir_service.get_references(entry.resource)
+                for ref in refs:
+                    res_type, ref_id = self.__fhir_service.split_reference(ref)
+                    if ref_id in result:
+                        continue
+                    missing_refs.add(AdjacencyReference(id=ref_id, resource_type=res_type))
+            return missing_refs
+
     def build_adjacency_map(
         self, entries: List[BundleEntry], updated_ids: List[str] | None = None
     ) -> AdjacencyMap:
-        ids = deque(
-            [
-                self.__fhir_service.get_resource_type_and_id_from_entry(entry)[1]
-                for entry in entries
-            ]
-        )
-        nodes = [self.create_node(entry) for entry in entries]
-        adj_map: AdjacencyMap = dict(zip(ids, nodes))
+        result :AdjacencyMap = {}
+        with get_stats().timer("inside_build"):
 
+            missing_refs = self.loop(entries, result)
+
+            while len(missing_refs) > 0:
+                with get_stats().timer("create_bundle"):
+                    bundle_request = self.__fhir_service.create_bundle_request(list(missing_refs))
+                with get_stats().timer("post_bundle"):
+                    resp = self.__supplier_api.post_bundle(bundle_request)
+                with get_stats().timer("get_entries"):
+                    entries_inner = self.__fhir_service.get_entries_from_bundle_of_bundles(
+                        resp
+                    )
+                with get_stats().timer("filter"):
+                    entries = self.__fhir_service.filter_history_entries(
+                        entries_inner
+                    )
+                missing_refs = self.loop(entries, result)
+
+
+            print(f"len(result.keys()): {len(result.keys())}")
+            return result
+
+        adj_map: AdjacencyMap = {key: self.create_node(value) for key, value in result.items()}
+        return adj_map
+        stats = get_stats()
+        with stats.timer("deque"):
+            ids = deque(
+                [
+                    self.__fhir_service.get_resource_type_and_id_from_entry(entry)[1]
+                    for entry in entries
+                ]
+            )
+        with stats.timer("create_nodes"):
+            nodes = [self.create_node(entry) for entry in entries]
+        with stats.timer("zip"):
+            adj_map: adjacencymap = dict(zip(ids, nodes))
+        print("ids:")
+        print(len(ids))
+        output = []
+        for x in ids:
+            if x not in output:
+                output.append(x)
+
+        print(f"unique: {len(output)}")
+        print(f"entries: {len(entries)}")
         processed = []
         stats = get_stats()
         with stats.timer("missing_ids_while"):
             while ids:
                 id = ids.popleft()
-                node = adj_map[id]
-                processed.append(id)
-
-                # take care of missing resources from list
-                missing_ids = []
-                for ref in node.supplier_data.references:
-                    if ref.id not in ids:
-                        missing_ids.append(ref)
-                
-                if len(missing_ids) > 0:
-                    bundle_request = self.__fhir_service.create_bundle_request(missing_ids)
-                    res = self.__fhir_service.filter_history_entries(
-                        self.__fhir_service.get_entries_from_bundle_of_bundles(
-                            self.__supplier_api.post_bundle(bundle_request)
+                if id in adj_map:
+                    continue
+                #with stats.timer(f"per_id:{id}"):
+                with stats.timer(f"per_id"):
+                    node = adj_map[id]
+                    processed.append(id)
+                    # print(len(node.supplier_data.references))
+                    # take care of missing resources from list
+                    missing_ids = []
+                    for ref in node.supplier_data.references:
+                        if ref.id not in adj_map:
+                            missing_ids.append(ref)
+                        #if ref.id not in ids and ref.id not in processed:
+                        #    missing_ids.append(ref)
+                    print(f"missing_ids: {missing_ids}")
+                    if len(missing_ids) > 0:
+                        bundle_request = self.__fhir_service.create_bundle_request(missing_ids)
+                        res = self.__fhir_service.filter_history_entries(
+                            self.__fhir_service.get_entries_from_bundle_of_bundles(
+                                self.__supplier_api.post_bundle(bundle_request)
+                            )
                         )
-                    )
-                    with stats.timer("missing_ids_missing_nodes"):
-                        for e in res:
-                            missing_node = self.create_node(e)
-                            if missing_node.resource_id not in processed:
-                                self.add_node(adj_map, missing_node)
-                                ids.append(missing_node.resource_id)
-                                # mark as processed
-                                processed.append(missing_node.resource_id)
-
-                # take care of existing references
-                for ref in node.supplier_data.references:
-                    silbing = adj_map[ref.id]
-                    if silbing.resource_id not in processed:
-                        pass
-                        processed.append(silbing.resource_id)
+                        with stats.timer("missing_ids_missing_nodes"):
+                            for e in res:
+                                missing_node = self.create_node(e)
+                                if missing_node.resource_id not in processed:
+                                    missing_ids.pop(missing_ids.index(missing_node.resource_id))
+                                    self.add_node(adj_map, missing_node)
+                                    ids.append(missing_node.resource_id)
+                                    # mark as processed
+                                    processed.append(missing_node.resource_id)
+                        print(missing_ids)
+                        if len(missing_ids) > 0:
+                            print(f"missing nodes: {missing_ids}")
+                            raise exception(f"missing nodes: {missing_ids}")
+                    # take care of existing references
+                    for ref in node.supplier_data.references:
+                        silbing = adj_map[ref.id]
+                        if silbing.resource_id not in processed:
+                            processed.append(silbing.resource_id)
 
         print(len(processed))
 
@@ -132,8 +205,9 @@ class AdjacencyMapService:
                     adj_map[id].updated = True
 
         # get consumer data for adj list:
-        self.get_consumer_data(adj_map)
-
+        with stats.timer("get_consumer_data"):
+            self.get_consumer_data(adj_map)
+        print(f"adjecency map size: {len(adj_map.keys())}")
         return adj_map
 
     def get_consumer_data(self, adj_map: AdjacencyMap) -> None:

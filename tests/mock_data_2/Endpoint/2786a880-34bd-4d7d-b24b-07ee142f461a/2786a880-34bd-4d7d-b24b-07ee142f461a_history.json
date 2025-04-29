@@ -1,0 +1,37 @@
+{
+    "resourceType": "Bundle",
+    "id": "0e656b26-f95e-4aa8-92ca-75737a9deac1",
+    "type": "history",
+    "total": 1,
+    "entry": [
+        {
+            "fullUrl": "Endpoint/2786a880-34bd-4d7d-b24b-07ee142f461a/1",
+            "resource": {
+                "resourceType": "Endpoint",
+                "id": "2786a880-34bd-4d7d-b24b-07ee142f461a",
+                "status": "active",
+                "connectionType": {
+                    "system": "http://example.org/connection-type",
+                    "code": "hl7-fhir-rest",
+                    "display": "HL7 FHIR REST"
+                },
+                "payloadType": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://example.org/payload-type",
+                                "code": "application/fhir+json",
+                                "display": "FHIR JSON"
+                            }
+                        ]
+                    }
+                ],
+                "address": "http://example.org/"
+            },
+            "request": {
+                "method": "POST",
+                "url": "Endpoint/2786a880-34bd-4d7d-b24b-07ee142f461a/1"
+            }
+        }
+    ]
+}

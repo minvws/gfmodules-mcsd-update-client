@@ -1,0 +1,12 @@
+{
+    "resourceType": "Organization",
+    "id": "5cdffa7d-9f37-4dc2-8a47-4e7494d99dc8",
+    "partOf": {
+        "reference": "Organization/adc7e270-b196-49a7-b959-0b868b1b61c4"
+    },
+    "endpoint": [
+        {
+            "reference": "Endpoint/310485ec-bf7d-44e5-86ec-2e746245413d"
+        }
+    ]
+}

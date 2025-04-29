@@ -1,0 +1,122 @@
+{
+    "resourceType": "Bundle",
+    "id": "37a4f4dc-dbaa-44cd-b0a5-e0000106c502",
+    "type": "history",
+    "total": 3,
+    "entry": [
+        {
+            "fullUrl": "PractitionerRole/59cab1fd-77b1-48c6-9896-2bd9e9eecc4b/1",
+            "resource": {
+                "resourceType": "PractitionerRole",
+                "id": "59cab1fd-77b1-48c6-9896-2bd9e9eecc4b",
+                "practitioner": {
+                    "reference": "Practitioner/0ee8f643-d3b3-4f28-b881-ef27bf9e3bf4"
+                },
+                "organization": {
+                    "reference": "Organization/d35c48ec-2736-492f-87c5-0c0a20795012"
+                },
+                "location": [
+                    {
+                        "reference": "Location/0d349126-cbc2-4086-98f1-e92e081e8365"
+                    },
+                    {
+                        "reference": "Location/da24cf8f-eae4-4865-88de-3be0fcafbbd6"
+                    }
+                ],
+                "healthcareService": [
+                    {
+                        "reference": "HealthcareService/fb9f651f-24fd-4ba5-8a0c-e081cfd08c9d"
+                    },
+                    {
+                        "reference": "HealthcareService/159c6ae6-1b5a-42b0-b024-345fe694c481"
+                    }
+                ],
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/56579a42-78d3-4530-8606-0b26d75160fe"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "PractitionerRole/59cab1fd-77b1-48c6-9896-2bd9e9eecc4b/1"
+            }
+        },
+        {
+            "fullUrl": "PractitionerRole/59cab1fd-77b1-48c6-9896-2bd9e9eecc4b/2",
+            "resource": {
+                "resourceType": "PractitionerRole",
+                "id": "59cab1fd-77b1-48c6-9896-2bd9e9eecc4b",
+                "practitioner": {
+                    "reference": "Practitioner/b5e04816-25df-45a4-9711-486780da8ef9"
+                },
+                "organization": {
+                    "reference": "Organization/c3928708-dabe-44ee-b58f-46b94e5f792f"
+                },
+                "location": [
+                    {
+                        "reference": "Location/fda2a010-39d9-4e43-ad72-2d1f92a16999"
+                    },
+                    {
+                        "reference": "Location/555e6059-926c-4e03-8b1f-b4411e3d36e0"
+                    }
+                ],
+                "healthcareService": [
+                    {
+                        "reference": "HealthcareService/397c4b37-d3e8-429a-ae75-b6d0edbec60e"
+                    },
+                    {
+                        "reference": "HealthcareService/da136d12-de6c-460a-bebf-ec39e005a3e8"
+                    }
+                ],
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/d6471e94-88c6-492c-bc19-7cc41006659b"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "PractitionerRole/59cab1fd-77b1-48c6-9896-2bd9e9eecc4b/2"
+            }
+        },
+        {
+            "fullUrl": "PractitionerRole/59cab1fd-77b1-48c6-9896-2bd9e9eecc4b/3",
+            "resource": {
+                "resourceType": "PractitionerRole",
+                "id": "59cab1fd-77b1-48c6-9896-2bd9e9eecc4b",
+                "practitioner": {
+                    "reference": "Practitioner/07ab65a3-9486-476b-88b7-ddf0b7c6dddd"
+                },
+                "organization": {
+                    "reference": "Organization/9036530d-62f8-49db-9934-5f4aca2c62aa"
+                },
+                "location": [
+                    {
+                        "reference": "Location/f4c43938-a9a9-42fd-a8b0-361d9c4ed884"
+                    },
+                    {
+                        "reference": "Location/a89fa28f-2279-4fa3-8687-b9d3192e09e3"
+                    }
+                ],
+                "healthcareService": [
+                    {
+                        "reference": "HealthcareService/9ff9a20f-c857-4731-91f8-568ffe867583"
+                    },
+                    {
+                        "reference": "HealthcareService/92620453-4f96-4fda-97cc-4c88cfa67dd0"
+                    }
+                ],
+                "endpoint": [
+                    {
+                        "reference": "Endpoint/b729b365-a450-436c-979b-cc43fef95168"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "PractitionerRole/59cab1fd-77b1-48c6-9896-2bd9e9eecc4b/3"
+            }
+        }
+    ]
+}

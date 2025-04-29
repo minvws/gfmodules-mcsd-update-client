@@ -1,0 +1,20 @@
+{
+    "resourceType": "Bundle",
+    "id": "1489e9ab-66a8-407c-a8cf-eb63e97ab07b",
+    "type": "history",
+    "total": 1,
+    "entry": [
+        {
+            "fullUrl": "Location/b1850b93-b0b8-43cd-8029-d8eccf1471d8/1",
+            "resource": {
+                "resourceType": "Location",
+                "id": "b1850b93-b0b8-43cd-8029-d8eccf1471d8",
+                "endpoint": []
+            },
+            "request": {
+                "method": "POST",
+                "url": "Location/b1850b93-b0b8-43cd-8029-d8eccf1471d8/1"
+            }
+        }
+    ]
+}
