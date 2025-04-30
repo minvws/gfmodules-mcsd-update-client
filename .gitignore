@@ -8,3 +8,6 @@ secrets/*
 *.pub
 docker-compose.override.yml
 coverage.xml
+tests/mock_data
+tests/testing_results
+tests/new_testing_results
