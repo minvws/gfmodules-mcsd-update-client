@@ -38,6 +38,7 @@ safety = "^3.3.0"
 codespell = "^2.2.6"
 types-requests = "^2.32"
 faker = "^37.1.0"
+numpy = "^2.2.5"
 
 [build-system]
 requires = ["poetry-core"]

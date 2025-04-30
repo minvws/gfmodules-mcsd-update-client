@@ -12,7 +12,7 @@ from app.config import (
 )
 
 
-def test_config() -> Config:
+def get_test_config() -> Config:
     return Config(
         app=ConfigApp(
             loglevel=LogLevel.error,
@@ -40,7 +40,7 @@ def test_config() -> Config:
             ssl_key_file=None,
         ),
         mcsd=ConfigMcsd(
-            consumer_url="http://testserver/test",
+            consumer_url="http://testserver/consumer/test",
             authentication="off",
             request_count=20,
             strict_validation=False,
@@ -52,7 +52,7 @@ def test_config() -> Config:
             tracer_name=None,
         ),
         stats=ConfigStats(
-            enabled=False,
+            enabled=True,
             host=None,
             port=None,
             module_name=None,
@@ -61,7 +61,7 @@ def test_config() -> Config:
         aws=None,
         supplier_api=ConfigSupplierApi(
             suppliers_provider_url="http://testserver/test",
-            supplier_urls=None,
+            supplier_urls=[("test-supplier", "test-supplier", "http://testserver/test")],
             timeout=1,
             backoff=0.1,
         ),
