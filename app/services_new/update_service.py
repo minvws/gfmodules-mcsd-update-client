@@ -8,8 +8,7 @@ from uuid import uuid4
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
 from yarl import URL
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
-from app.models.adjacency.adjacency_map import (
-    AdjacencyMap,
+from app.models.adjacency.node import (
     Node,
 )
 from app.models.supplier.dto import SupplierDto
@@ -124,17 +123,15 @@ class UpdateConsumer:
         self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
     ) -> List[Node]:
         updated = []
-        adj_map: AdjacencyMap = adjacency_map_service.build_adjacency_map(
-            entries, self.__cache
-        )
-        for node in adj_map.values():
+        adj_map = adjacency_map_service.build_adjacency_map(entries, self.__cache)
+        for node in adj_map.data.values():
             if node.updated is True:
                 logger.info(
                     f"Item {node.resource_id} {node.resource_type} has been processed earlier, skipping..."
                 )
                 continue
 
-            group = adjacency_map_service.bfs(adj_map, node)
+            group = adj_map.get_group(node)
             results = self.update_with_bundle(group)
             updated.extend(results)
 

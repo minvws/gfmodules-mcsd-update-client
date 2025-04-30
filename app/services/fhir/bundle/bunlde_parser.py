@@ -9,7 +9,7 @@ from fhir.resources.R4B.bundle import (
 )
 from pydantic import ValidationError
 
-from app.models.adjacency.adjacency_map import AdjacencyReference
+from app.models.adjacency.node import NodeReference
 from app.services.fhir.model_factory import create_resource
 
 
@@ -98,8 +98,7 @@ def create_bundle(data: Dict[str, Any] | None = None, strict: bool = False) -> B
         raise e
 
 
-def create_bundle_request(data: list[AdjacencyReference]) -> Bundle:
-
+def create_bundle_request(data: list[NodeReference]) -> Bundle:
     request_bundle = Bundle.model_construct(type="batch")
     request_bundle.entry = []
     for ref in data:
@@ -113,7 +112,6 @@ def create_bundle_request(data: list[AdjacencyReference]) -> Bundle:
     return request_bundle
 
 
-# TODO: change name and put in fhir service
 def get_entries_from_bundle_of_bundles(data: Bundle) -> List[BundleEntry]:
     entries = data.entry if data.entry else []
     results: List[BundleEntry] = []

@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 from fhir.resources.R4B.bundle import BundleEntry, Bundle
 from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.reference import Reference
-from app.models.adjacency.adjacency_map import AdjacencyReference
+from app.models.adjacency.node import NodeReference
 from app.models.fhir.types import HttpValidVerbs
 from app.services.fhir.bundle.bundle_utils import (
     filter_history_entries,
@@ -91,7 +91,7 @@ class FhirService:
         """
         return filter_history_entries(entries)
 
-    def create_bundle_request(self, data: List[AdjacencyReference]) -> Bundle:
+    def create_bundle_request(self, data: List[NodeReference]) -> Bundle:
         """
         Takes a list of AdjacencyReference and creates a Bundle with GET as an HTTP request method
         """
