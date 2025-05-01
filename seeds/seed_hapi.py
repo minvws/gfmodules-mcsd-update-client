@@ -6,7 +6,6 @@ import sys
 generator = DataGenerator()
 
 def generate_data():
-    print(sys.argv)
     if len(sys.argv) != 2:
         raise ValueError("Usage: python seed_hapi.py <mock_supplier_url> \n For example: python seed_hapi.py http://example.com/fhir/")
 

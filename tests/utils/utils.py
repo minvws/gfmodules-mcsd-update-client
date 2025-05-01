@@ -1,11 +1,11 @@
 import os
 import platform
 import shutil
+import psutil
 from typing import Any, Dict, List, Set
 from uuid import uuid4
 
 import numpy as np
-import psutil
 from app.container import get_database
 from app.db.db import Database
 from app.db.repositories.resource_map_repository import ResourceMapRepository
@@ -85,7 +85,6 @@ def check_if_id_in_database(id: str, db: Database) -> bool:
     with db.get_db_session() as session:
         repo = session.get_repository(ResourceMapRepository)
         result = repo.find(supplier_resource_id=id)
-        # print(f"finding {id} in database")
         for resource_map in result:
             if id == resource_map.supplier_resource_id:
                 return True
