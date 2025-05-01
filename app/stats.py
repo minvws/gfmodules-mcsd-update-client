@@ -112,10 +112,8 @@ def setup_stats() -> None:
 
     if config.stats.enabled is False:
         return
-    if config.stats.host is not None and config.stats.port is not None:
-        client = statsd.StatsClient(config.stats.host, config.stats.port)
-    else:
-        client = MemoryClient()
+    in_memory = (config.stats.host is None and config.stats.port is None) or False
+    client = MemoryClient() if in_memory else statsd.StatsClient(config.stats.host, config.stats.port) 
     global _STATS
     _STATS = Statsd(client)
 

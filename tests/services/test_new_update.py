@@ -55,7 +55,7 @@ def mock_do_request(method: str, url: URL, json_data: Dict[str, Any] | None = No
             return_bundle = Bundle(type="batch-response", entry=[])
             assert json_data is not None
             for entry in json_data.get('entry', []):
-                if not entry.get('request'): # 
+                if not entry.get('request'):
                     continue
                 if entry['request'].get('method') == 'GET':
                     resource_type = entry['request'].get('url').split('/')[1]
@@ -191,11 +191,6 @@ def test_consumer_update_with_timing(
             print(f"Iteration {iteration + 1}/{iterations}")
             _response = api_client.post("/update_resources/new/test-supplier")
             print("Update done: mCSD resources are updated")
-
-            # ok_status_code = response.status_code == 200 or False  
-            # good_updated_message = response.json()[0]["message"] == "organizations and endpoints are updated" or False  
-            # if ok_status_code is False or good_updated_message is False: 
-            #     errors += 1
     finally:
         monitoring = False
         monitor_thread.join()

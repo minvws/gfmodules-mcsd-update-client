@@ -109,7 +109,8 @@ def setup_fastapi() -> FastAPI:
         fastapi.include_router(router)
 
     stats_conf = get_config().stats
-    if stats_conf.enabled and stats_conf.host is not None and stats_conf.port is not None:
+    keep_in_memory = (stats_conf.enabled and stats_conf.host is not None and stats_conf.port is not None) or False
+    if keep_in_memory:
         fastapi.add_middleware(StatsdMiddleware, module_name=stats_conf.module_name)
 
     return fastapi

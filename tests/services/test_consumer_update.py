@@ -60,12 +60,11 @@ def mock_get_resource_history(
                 )
             if resource_id is None:
                 print(
-                    f"All from resourcetype history bundle is requested: {resource_type}"
+                    f"All history bundle is requested for: {resource_type}"
                 )
                 return _read_mock_data(
                     f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
                 )                
-            # print(f"Specific resource history bundle is requested: {resource_type} - {resource_id}")
             return _read_mock_data(
                 f"{MOCK_DATA_PATH}/{resource_type}/{resource_id}/{resource_id}_history.json"
             )
