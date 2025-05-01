@@ -18,10 +18,10 @@ jobs:
         run: 'echo "{ \"version\": \"${{ env.RELEASE_VERSION }}\", \"git_ref\": \"$GITHUB_SHA\"}" > version.json'
 
       - name: Create tar
-        run: tar -czf gfmodules-mcsd-consumer_${{ env.RELEASE_VERSION }}.tar.gz app docs tools ./version.json
+        run: tar -czf gfmodules-mcsd-client_${{ env.RELEASE_VERSION }}.tar.gz app docs tools ./version.json
 
       - name: Upload release tar
         uses: actions/upload-artifact@v4
         with:
-          name: gfmodules-mcsd-consumer_${{ env.RELEASE_VERSION }}
-          path: gfmodules-mcsd-consumer_${{ env.RELEASE_VERSION }}.tar.gz
+          name: gfmodules-mcsd-client_${{ env.RELEASE_VERSION }}
+          path: gfmodules-mcsd-client_${{ env.RELEASE_VERSION }}.tar.gz

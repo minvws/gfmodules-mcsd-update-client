@@ -16,4 +16,4 @@ jobs:
         uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/python-venv-package@main
         with:
           python_version: ${{ matrix.python_version }}
-          package_file_name: gfmodules-mcsd-consumer
+          package_file_name: gfmodules-mcsd-client
