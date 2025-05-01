@@ -69,13 +69,9 @@ def create_bundle_entry(data: Dict[str, Any]) -> BundleEntry:
 def create_bundle(data: Dict[str, Any] | None = None, strict: bool = False) -> Bundle:
     try:
         if strict:
-            return (
-                Bundle.model_validate(**data)
-                if data is not None
-                else Bundle.model_construct()
-            )
+            return Bundle(**data) if data is not None else Bundle.model_construct()
 
-        bundle = Bundle.model_construct()
+        bundle = Bundle.model_construct(type="")
         if data is not None:
             if "type" in data:
                 bundle.type = data["type"]
@@ -117,7 +113,7 @@ def get_entries_from_bundle_of_bundles(data: Bundle) -> List[BundleEntry]:
     results: List[BundleEntry] = []
 
     for entry in entries:
-        if isinstance(entry.resource, Bundle):
+        if isinstance(entry, BundleEntry) and isinstance(entry.resource, Bundle):
             nested_bundle = entry.resource
             nested_entries = nested_bundle.entry if nested_bundle.entry else []
             results.extend(nested_entries)

@@ -16,7 +16,6 @@ from app.services.fhir.bundle.bunlde_parser import (
 )
 from app.services.fhir.model_factory import create_resource
 from app.services.fhir.references.reference_extractor import (
-    extract_references,
     get_references,
 )
 from app.services.fhir.references.reference_misc import split_reference
@@ -38,16 +37,11 @@ class FhirService:
         """
         return create_resource(data, self.strict_validation)
 
-    def extract_references(self, data: Any) -> Reference | None:
-        """
-        Builds a Reference object only if the "reference" exists in the object
-        """
-        return extract_references(data)
-
     def get_references(self, data: DomainResource) -> List[Reference]:
         """
         Retrieves a unique list of References from an FHIR mCSD Resources.
-        References are returned only if they contain the property "reference" in them.
+        data returned only if they contain the property "reference" in them,
+        also contained references are ignored.
         """
         return get_references(data)
 

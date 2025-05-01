@@ -108,9 +108,9 @@ class UpdateConsumer:
                 _, id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
                 if id is not None:
                     if id in self.__cache:
-                        logger.info(
-                            f"{id} {resource_type} already processed.. skipping.. "
-                        )
+                        # logger.info(
+                        #     f"{id} {resource_type} already processed.. skipping.. "
+                        # )
                         continue
                     targets.append(e)
 
@@ -126,9 +126,9 @@ class UpdateConsumer:
         adj_map = adjacency_map_service.build_adjacency_map(entries, self.__cache)
         for node in adj_map.data.values():
             if node.updated is True:
-                logger.info(
-                    f"Item {node.resource_id} {node.resource_type} has been processed earlier, skipping..."
-                )
+                # logger.info(
+                #     f"Item {node.resource_id} {node.resource_type} has been processed earlier, skipping..."
+                # )
                 continue
 
             group = adj_map.get_group(node)
