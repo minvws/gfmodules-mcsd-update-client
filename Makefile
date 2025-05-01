@@ -13,6 +13,9 @@ all: help
 container-build: ## Build the container
 	docker compose build --build-arg="NEW_UID=${NEW_UID}" --build-arg="NEW_GID=${NEW_GID}"
 
+container-build-sa: ## Build the container for standalone mode
+	docker compose build --build-arg="NEW_UID=${NEW_UID}" --build-arg="NEW_GID=${NEW_GID}" --build-arg="standalone=true"
+
 up: ## Start the container
 	docker compose up
 

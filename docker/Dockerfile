@@ -49,11 +49,24 @@ FROM base AS final
 
 COPY --chown=${APP_USER}:${APP_GROUP} --from=builder /usr/local /usr/local
 RUN chown -R ${APP_USER}:${APP_GROUP} /usr/local/lib/python3.11/site-packages
+ADD . /src
+
+COPY ./docker/init-standalone.sh /usr/local/bin
+COPY ./docker/init.sh /usr/local/bin
+
+ARG standalone=false
+
+RUN if [ "$standalone" = "true" ] ; then \
+    ln -sf /usr/local/bin/init-standalone.sh /docker-entrypoint.sh; \
+  else \
+    ln -sf /usr/local/bin/init.sh /docker-entrypoint.sh ; \
+  fi
 
 USER ${APP_USER}
+
 EXPOSE 8509:8509
 WORKDIR ${PROJECT_DIR}
 
 ENV PYTHONPATH=${PROJECT_DIR}
 
-CMD ["docker/init.sh"]
+CMD ["/docker-entrypoint.sh"]
