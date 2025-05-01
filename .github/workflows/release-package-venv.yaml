@@ -12,8 +12,11 @@ jobs:
         python_version: ["3.11"]
     runs-on: ubuntu-24.04
     steps:
+      - name: Set env
+        run: echo "PKG_NAME=$GITHUB_REPOSITORY" >> $GITHUB_ENV
+
       - name: Build venv package
         uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/python-venv-package@main
         with:
           python_version: ${{ matrix.python_version }}
-          package_file_name: gfmodules-mcsd-client
+          package_file_name: ${{ env.PKG_NAME }}

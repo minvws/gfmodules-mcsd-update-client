@@ -1,6 +1,6 @@
-# mCSD Client
+# mCSD Update Client
 
-This app is the mCSD (Mobile Care Service Discovery) Client and is part of
+This app is the mCSD (Mobile Care Service Discovery) Update Client and is part of
 the 'Generieke Functies, lokalisatie en addressering' project of the Ministry of Health, Welfare and Sport of the Dutch government. The purpose of this application is
 to perform updates on [mCSD Supported Resources](https://profiles.ihe.net/ITI/mCSD/index.html).
 The update mechanism is based on [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html).
@@ -29,11 +29,10 @@ risk and that the authors assume no liability for any consequences of its use.
 ## Setup
 
 In order to test the update mechanism, you need at least two other instances of
-a FHIR store. One instance as a [Client](https://profiles.ihe.net/ITI/mCSD/volume-1.html#146113-update-client)
+a FHIR store. One instance as a [Update Client](https://profiles.ihe.net/ITI/mCSD/4.0.0-comment/volume-1.html#146113-update-client)
 and at least one instance as a
-[Provider](https://profiles.ihe.net/ITI/mCSD/volume-1.html#146113-care-services-update-consumer).
-You can either use a [HAPI JPA server](https://hapifhir.io/hapi-fhir/),  
-[addressing-register](https://github.com/minvws/gfmodules-addressing-register) or
+[Data Source](https://profiles.ihe.net/ITI/mCSD/4.0.0-comment/volume-1.html#146114-data-source).
+You can use a [HAPI JPA server](https://hapifhir.io/hapi-fhir/) or
 any other FHIR store of your choosing as long as they support mCSD specs.
 
 Follow the instructions to get the app running:
