@@ -57,3 +57,15 @@ with an url parameter you can specify the base url of the supplier you want to s
 ```bash
 docker compose run --rm mcsd-consumer poetry run seed http://hapi-supplier:8080/fhir/
 ```
+
+## Contribution
+
+As stated in the [Disclaimer](#disclaimer) this project and all associated code serve solely as documentation and 
+demonstation purposes to illustrate potential system communication patterns and architectures.
+
+For that reason we will only accept contributions that fit this goal. We do appriciate any effort from the 
+community, but because our time is limited it is possible that your PR or issue is closed without a full justification.
+
+If you plan to make non-trivial changes, we recommend to open an issue beforehand where we can discuss your planned changes. This increases the chance that we might be able to use your contribution (or it avoids doing work if there are reasons why we wouldn't be able to use it).
+
+Note that all commits should be signed using a gpg key.
