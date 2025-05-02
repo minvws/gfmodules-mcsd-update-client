@@ -203,7 +203,7 @@ def get_config(path: str | None = None) -> Config:
                 ini_data["azure_oauth2"] = None
             if "aws" not in ini_data:
                 ini_data["aws"] = None
-        if "supplier_urls" in ini_data["supplier_api"]:
+        if "supplier_urls" in ini_data["supplier_api"] and ini_data["supplier_api"]["supplier_urls"]:
             try:
                 with open(ini_data["supplier_api"]["supplier_urls"]) as f:
                     ini_data["supplier_api"]["supplier_urls"] = []
