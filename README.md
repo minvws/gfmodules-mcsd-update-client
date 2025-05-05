@@ -69,7 +69,7 @@ This will build a docker container that will run its migrations to the database 
 The second mode is a "standalone" mode, where it will not generate migrations, and where you must explicitly specify
 an app.conf mount.
 
-    make container-build-standalone
+    make container-build-sa
 
 Both containers only differ in their init script and the default version usually will mount its own local src directory
 into the container's /src dir.
