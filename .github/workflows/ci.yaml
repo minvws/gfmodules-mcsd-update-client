@@ -85,13 +85,8 @@ jobs:
             - name: Checkout repositories
               uses: actions/checkout@v4
 
-            - name: Run build action
-              uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/poetry-install@main
-              with:
-                python_version: "3.11"
-
             - name: Run spelling check
-              run: poetry run $(make spelling-check --just-print --silent)
+              run: codespell-project/actions-codespell@v2
 
     test:
         name: Run the tests
