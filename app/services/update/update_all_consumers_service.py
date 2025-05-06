@@ -2,14 +2,14 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any
 
-from app.services.entity_services.supplier_info_service import SupplierInfoService
-from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
-from app.services_new.api.suppliers_api import SuppliersApi
+from app.services.entity.supplier_info_service import SupplierInfoService
+from app.services.api.suppliers_api import SuppliersApi
+from app.services.update.update_consumer_service import UpdateConsumerService
 
 logger = logging.getLogger(__name__)
 
 
-class MassUpdateConsumerService:
+class UpdateAllConsumersService:
     def __init__(
         self,
         update_consumer_service: UpdateConsumerService,
@@ -29,7 +29,7 @@ class MassUpdateConsumerService:
             new_updated = datetime.now() - timedelta(seconds=60)
             try:
                 data.append(
-                    self.__update_consumer_service.update_supplier(
+                    self.__update_consumer_service.update(
                         supplier.id, info.last_success_sync
                     )
                 )

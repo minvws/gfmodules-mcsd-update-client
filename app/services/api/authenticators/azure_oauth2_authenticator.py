@@ -1,7 +1,7 @@
 import time
 import requests
 from typing import Any
-from app.services_new.api.authenticators.authenticator import Authenticator
+from app.services.api.authenticators.authenticator import Authenticator
 
 
 class AzureOAuth2Authenticator(Authenticator):

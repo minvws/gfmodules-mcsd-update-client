@@ -10,7 +10,7 @@ from fhir.resources.R4B.location import Location
 from fhir.resources.R4B.practitioner import Practitioner, PractitionerQualification
 from fhir.resources.R4B.practitionerrole import PractitionerRole
 
-from app.services.bundle_tools import get_resource_from_reference
+from app.services.fhir.bundle.bundle_utils import get_resource_from_reference
 from app.services.fhir.references.reference_extractor import extract_references
 
 

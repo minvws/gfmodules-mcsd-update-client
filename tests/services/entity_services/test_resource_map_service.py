@@ -2,8 +2,12 @@ from fastapi import HTTPException
 import pytest
 from sqlalchemy.exc import IntegrityError
 
-from app.services.entity_services.resource_map_service import ResourceMapService
-from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto, ResourceMapDeleteDto
+from app.services.entity.resource_map_service import ResourceMapService
+from app.models.resource_map.dto import (
+    ResourceMapDto,
+    ResourceMapUpdateDto,
+    ResourceMapDeleteDto,
+)
 
 
 @pytest.fixture

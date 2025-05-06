@@ -5,10 +5,10 @@ from pydantic import BaseModel, Field
 
 from app.container import (
     get_supplier_api,
-    get_update_service,
+    get_update_consumer_service,
 )
-from app.services_new.api.suppliers_api import SuppliersApi
-from app.services_new.update_service import UpdateService
+from app.services.api.suppliers_api import SuppliersApi
+from app.services.update.update_consumer_service import UpdateConsumerService
 
 router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"])
 
@@ -19,10 +19,10 @@ class UpdateQueryParams(BaseModel):
 
 @router.post("/{supplier_id}", response_model=None, summary="Update by supplier ID")
 @router.post("", response_model=None, summary="Update all suppliers")
-def update_supplier_new(
+def update_supplier(
     supplier_id: str | None = None,
     params: UpdateQueryParams = Depends(),
-    update_service: UpdateService = Depends(get_update_service),
+    update_service: UpdateConsumerService = Depends(get_update_consumer_service),
     supplier_service: SuppliersApi = Depends(get_supplier_api),
 ) -> Any:
     since = params.since.astimezone() if params.since else None

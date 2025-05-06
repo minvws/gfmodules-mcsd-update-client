@@ -5,7 +5,7 @@ from typing import Dict, Any
 import requests
 from yarl import URL
 
-from app.services_new.api.authenticators.authenticator import Authenticator
+from app.services.api.authenticators.authenticator import Authenticator
 
 logger = logging.getLogger(__name__)
 

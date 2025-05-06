@@ -2,13 +2,13 @@ import logging
 from collections.abc import Sequence
 
 from app.models.supplier.dto import SupplierDto
-from app.services_new.api.suppliers_api import SuppliersApi
+from app.services.api.suppliers_api import SuppliersApi
 
 logger = logging.getLogger(__name__)
 
 
 class MockApi(SuppliersApi):
-    def get_one(self, supplier_id: str) -> SupplierDto|None:
+    def get_one(self, supplier_id: str) -> SupplierDto | None:
         if supplier_id == "1":
             return SupplierDto(
                 id="1",

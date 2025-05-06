@@ -1,8 +1,8 @@
 from app.config import Config
-from app.services_new.api.authenticators.authenticator import Authenticator
-from app.services_new.api.authenticators.null_authenticator import NullAuthenticator
-from app.services_new.api.authenticators.aws_v4_authenticator import AwsV4Authenticator
-from app.services_new.api.authenticators.azure_oauth2_authenticator import (
+from app.services.api.authenticators.authenticator import Authenticator
+from app.services.api.authenticators.null_authenticator import NullAuthenticator
+from app.services.api.authenticators.aws_v4_authenticator import AwsV4Authenticator
+from app.services.api.authenticators.azure_oauth2_authenticator import (
     AzureOAuth2Authenticator,
 )
 

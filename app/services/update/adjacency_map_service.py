@@ -9,9 +9,9 @@ from app.models.adjacency.node import (
     SupplierNodeData,
 )
 from app.models.resource_map.dto import ResourceMapDto
-from app.services.entity_services.resource_map_service import ResourceMapService
+from app.services.entity.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
-from app.services_new.api.fhir_api import FhirApi
+from app.services.api.fhir_api import FhirApi
 
 
 class AdjacencyMapService:

@@ -14,6 +14,17 @@ HTTP_VERBS: List[HttpValidVerbs] = [
 ]
 
 
+def get_resource_from_reference(reference: str) -> tuple[str | None, str | None]:
+    """
+    Returns a split resource from a reference (e.g. "Patient/123" -> ("Patient", "123"))
+    """
+    parts = reference.split("/")
+    if len(parts) < 2:
+        return None, None
+
+    return parts[-2], parts[-1]
+
+
 def get_resource_type_and_id_from_entry(
     entry: BundleEntry,
 ) -> tuple[str, str]:
