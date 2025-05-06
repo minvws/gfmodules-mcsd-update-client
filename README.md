@@ -77,7 +77,7 @@ into the container's /src dir.
 ## Contribution
 
 As stated in the [Disclaimer](#disclaimer) this project and all associated code serve solely as documentation and 
-demonstation purposes to illustrate potential system communication patterns and architectures.
+demonstration purposes to illustrate potential system communication patterns and architectures.
 
 For that reason we will only accept contributions that fit this goal. We do appreciate any effort from the 
 community, but because our time is limited it is possible that your PR or issue is closed without a full justification.
