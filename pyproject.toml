@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "mcsd-client"
+name = "mcsd-update-client"
 version = "0.1.0"
 description = ""
 license = "EUPL-1.2"
 authors = ["Ministerie van Volksgezondheid, Welzijn en Sport"]
-repository = "https://github.com/minvws/gfmodules-mcsd-client"
+repository = "https://github.com/minvws/gfmodules-mcsd-update-client"
 readme = "README.md"
 packages = [{ include = "app" }]
 
