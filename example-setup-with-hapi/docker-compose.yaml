@@ -1,5 +1,5 @@
 services:
-  mcsd-consumer:
+  mcsd-client:
     build:
       context: ../
       dockerfile: docker/Dockerfile
@@ -21,7 +21,7 @@ services:
       - ../Makefile:/src/Makefile
       - ../README.md:/src/README.md
     configs:
-      - source: mcsd_consumer_conf
+      - source: mcsd_client_conf
         target: /src/app.conf
       - source: supplier_urls_json
         target: /src/supplier_urls.json
@@ -32,26 +32,26 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      hapi-consumer-health:
+      hapi-client-directory-health:
         condition: service_healthy
-      hapi-supplier-health:
+      hapi-supplier-directory-health:
         condition: service_healthy
     stop_signal: SIGKILL
     networks:
-      - mcsd_consumer_net
+      - mcsd_client_net
 
-  hapi-consumer:
+  hapi-client:
     image: "hapiproject/hapi:latest"
     ports:
       - "8081:8081"
     configs:
-      - source: hapi_consumer_config
+      - source: hapi_client_config
         target: /app/config/application.yaml
     depends_on:
       - postgres
     networks:
-      - mcsd_consumer_net
-  
+      - mcsd_client_net
+
   hapi-supplier:
     image: "hapiproject/hapi:latest"
     ports:
@@ -67,34 +67,34 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - mcsd_consumer_net
+      - mcsd_client_net
 
-  hapi-consumer-health:
+  hapi-client-directory-health:
     image: curlimages/curl
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://hapi-consumer:8081/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://hapi-client-directory:8081/actuator/health"]
       start_period: 100s
       start_interval: 5s
     depends_on:
-      - hapi-consumer
+      - hapi-client
     stop_signal: SIGKILL
     networks:
-      - mcsd_consumer_net
+      - mcsd_client_net
     command: sleep infinity
 
-  hapi-supplier-health:
+  hapi-supplier-directory-health:
     image: curlimages/curl
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://hapi-supplier:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://hapi-supplier-directory:8080/actuator/health"]
       start_period: 100s
       start_interval: 5s
     depends_on:
-      - hapi-supplier
+      - hapi-supplier-directory
     stop_signal: SIGKILL
     networks:
-      - mcsd_consumer_net
+      - mcsd_client_net
     command: sleep infinity
-  
+
   postgres:
     image: postgres:15
     healthcheck:
@@ -109,19 +109,19 @@ services:
     volumes:
       - ./create-dbs.sql:/docker-entrypoint-initdb.d/create-db.sql
     networks:
-      - mcsd_consumer_net
+      - mcsd_client_net
 
 configs:
-  hapi_supplier_config:
+  hapi_supplier_directory_config:
     file: supplier.application.yaml
-  mcsd_consumer_conf:
+  mcsd_client_conf:
     file: app.conf
   supplier_urls_json:
     file: supplier_urls.json
-  hapi_consumer_config:
-    file: consumer.application.yaml
+  hapi_client_directory_config:
+    file: client.application.yaml
 
 networks:
-  mcsd_consumer_net:
+  mcsd_client_net:
     driver: bridge
-    name: mcsd_consumer_net
+    name: mcsd_client_net
