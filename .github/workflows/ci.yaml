@@ -90,6 +90,8 @@ jobs:
               with:
                 python_version: "3.11"
 
+            - uses: codespell-project/codespell-problem-matcher@v1
+
             - name: Run spelling check
               run: poetry run $(make spelling-check --just-print --silent)
 
