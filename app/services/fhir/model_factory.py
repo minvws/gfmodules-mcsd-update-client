@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict, TypeVar, Type
 from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.organization import Organization
@@ -10,13 +9,7 @@ from fhir.resources.R4B.practitionerrole import PractitionerRole
 from fhir.resources.R4B.healthcareservice import HealthcareService
 from pydantic import ValidationError
 
-logger = logging.getLogger(__name__)
-
 T = TypeVar("T", bound=DomainResource)
-
-
-def warning_message(resource: str, missing_field: str, placeholder: str) -> str:
-    return f"'{resource}' does not contain '{missing_field}' which is required in FHIR resource definition, adding '{placeholder}' to bypass validations..."
 
 
 def create_model(model: Type[T], data: Dict[str, Any], strict: bool) -> T:
@@ -45,15 +38,10 @@ def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
     if "payloadType" not in data:
         data["payloadType"] = []
 
-        logger.warning(warning_message("Endpoint", "payload_type", "empty array"))
     if "address" not in data:
         data["address"] = ""
-        logger.warning(warning_message("Endpoint", "address", "empty string"))
 
     if "status" not in data:
-        logger.warning(
-            warning_message("Endpoint", "status", "code system with warning text")
-        )
         code = {
             "coding": [{"system": "System not available"}],
             "text": "system was added during update to bypass validation",
@@ -61,11 +49,6 @@ def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
         data["status"] = code
 
     if "connectionType" not in data:
-        logger.warning(
-            warning_message(
-                "Endpoint", "connectionType", "code system with warning text"
-            )
-        )
         data["connectionType"] = {
             "conding": [{"system": "System not available"}],
             "text": "system was added dyrung update to bypass validation",
@@ -82,11 +65,6 @@ def create_practitioner(data: Dict[str, Any], strict: bool) -> Practitioner:
     if "qualification" in data:
         for i, q in enumerate(data["qualification"]):
             if "code" not in q:
-                logger.warning(
-                    warning_message(
-                        "Practitioner", "code", "code system with warning text"
-                    )
-                )
                 code = {
                     "coding": [{"system": "System not available"}],
                     "text": "system was added during update to bypass validation",
