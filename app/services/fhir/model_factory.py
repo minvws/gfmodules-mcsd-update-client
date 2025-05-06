@@ -42,8 +42,8 @@ def create_organization_affiliation(
 
 
 def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
-    if "payload_type" not in data:
-        data["payload_type"] = []
+    if "payloadType" not in data:
+        data["payloadType"] = []
 
         logger.warning(warning_message("Endpoint", "payload_type", "empty array"))
     if "address" not in data:
