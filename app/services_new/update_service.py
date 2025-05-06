@@ -18,7 +18,7 @@ from app.services_new.adjacency_map_service import (
 from app.services.entity_services.resource_map_service import (
     ResourceMapService,
 )
-from app.services_new.api.authenticators import Authenticator, NullAuthenticator
+from app.services_new.api.authenticators.authenticator import Authenticator
 from app.services_new.api.suppliers_api import SuppliersApi
 from app.services.fhir.fhir_service import FhirService
 from app.services_new.api.fhir_api import FhirApi
@@ -36,7 +36,7 @@ class McsdResources(Enum):
     ENDPOINT = "Endpoint"
 
 
-class UpdateConsumer:
+class UpdateService:
     def __init__(
         self,
         consumer_url: str,
@@ -46,13 +46,14 @@ class UpdateConsumer:
         request_count: int,
         resource_map_service: ResourceMapService,
         suppliers_api: SuppliersApi,
-        auth: Authenticator = NullAuthenticator(),
+        auth: Authenticator,
     ) -> None:
         self.strict_validation = strict_validation
         self.timeout = timeout
         self.backoff = backoff
         self.auth = auth
         self.request_count = request_count
+        self.auth = auth
         self.__resource_map_service = resource_map_service
         self.__suppliers_register_api = suppliers_api
         self.__consumer_fhir_api = FhirApi(

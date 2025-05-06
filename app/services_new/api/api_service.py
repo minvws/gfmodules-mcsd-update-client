@@ -5,7 +5,7 @@ from typing import Dict, Any
 import requests
 from yarl import URL
 
-from app.services_new.api.authenticators import Authenticator
+from app.services_new.api.authenticators.authenticator import Authenticator
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class ApiService(RequestService, ABC):
                 response = requests.request(
                     method=method,
                     url=str(url.with_query(None)),
-                    params=url.query, # type: ignore
+                    params=url.query,  # type: ignore
                     headers=headers,
                     timeout=self.timeout,
                     json=json,
@@ -110,7 +110,7 @@ class AuthenticationBasedApi(RequestService, ABC):
                 response = requests.request(
                     method=method,
                     url=str(url.with_query(None)),
-                    params=url.query, #type: ignore
+                    params=url.query,  # type: ignore
                     headers=headers,
                     json=json,
                     timeout=self.timeout,

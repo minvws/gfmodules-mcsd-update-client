@@ -20,8 +20,9 @@ from app.services.request_services.consumer_request_service import (
     ConsumerRequestService,
 )
 from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
+from app.services_new.api.authenticators.factory import AuthenticatorFactory
 from app.services_new.api.suppliers_api import SupplierProvider, SuppliersApi
-from app.services_new.update_service import UpdateConsumer
+from app.services_new.update_service import UpdateService
 
 
 def container_config(binder: inject.Binder) -> None:
@@ -66,8 +67,11 @@ def container_config(binder: inject.Binder) -> None:
         supplier_api, NullAuthenticator(), request_count=config.mcsd.request_count
     )
 
-    # test
-    update_consumer = UpdateConsumer(
+    # new services
+    auth_factory = AuthenticatorFactory(config=config)
+    auth = auth_factory.create_authenticator()
+
+    update_service = UpdateService(
         consumer_url=config.mcsd.consumer_url,
         strict_validation=config.mcsd.strict_validation,
         timeout=config.supplier_api.timeout,
@@ -75,9 +79,9 @@ def container_config(binder: inject.Binder) -> None:
         request_count=config.mcsd.request_count,
         suppliers_api=supplier_api,
         resource_map_service=resource_map_service,
-        # auth=NullAuthenticator(),
+        auth=auth,
     )
-    binder.bind(UpdateConsumer, update_consumer)
+    binder.bind(UpdateService, update_service)
 
     update_consumer_service = UpdateConsumerService(
         consumer_request_service=consumer_request_service,
@@ -122,8 +126,8 @@ def get_scheduler() -> Scheduler:
     return inject.instance(Scheduler)
 
 
-def get_update_consumer() -> UpdateConsumer:
-    return inject.instance(UpdateConsumer)
+def get_update_service() -> UpdateService:
+    return inject.instance(UpdateService)
 
 
 def setup_container() -> None:
