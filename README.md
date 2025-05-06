@@ -54,7 +54,7 @@ In a terminal in the same `example-setup-with-hapi` directory run the following 
 with a url parameter you can specify the base url of the supplier you want to seed:
 
 ```bash
-docker compose run --rm mcsd-client poetry run seed http://hapi-supplier:8080/fhir/
+docker compose run --rm mcsd-update-client poetry run seed http://hapi-supplier:8080/fhir/
 ```
 
 ## Docker container builds

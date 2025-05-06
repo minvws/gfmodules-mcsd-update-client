@@ -1,5 +1,5 @@
 services:
-  mcsd-client:
+  mcsd-update-client:
     build:
       context: ../
       dockerfile: docker/Dockerfile
@@ -21,7 +21,7 @@ services:
       - ../Makefile:/src/Makefile
       - ../README.md:/src/README.md
     configs:
-      - source: mcsd_client_conf
+      - source: mcsd_update_client_conf
         target: /src/app.conf
       - source: supplier_urls_json
         target: /src/supplier_urls.json
@@ -38,7 +38,7 @@ services:
         condition: service_healthy
     stop_signal: SIGKILL
     networks:
-      - mcsd_client_net
+      - mcsd_update_client_net
 
   hapi-client:
     image: "hapiproject/hapi:latest"
@@ -50,7 +50,7 @@ services:
     depends_on:
       - postgres
     networks:
-      - mcsd_client_net
+      - mcsd_update_client_net
 
   hapi-supplier:
     image: "hapiproject/hapi:latest"
@@ -67,7 +67,7 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - mcsd_client_net
+      - mcsd_update_client_net
 
   hapi-client-directory-health:
     image: curlimages/curl
@@ -79,7 +79,7 @@ services:
       - hapi-client
     stop_signal: SIGKILL
     networks:
-      - mcsd_client_net
+      - mcsd_update_client_net
     command: sleep infinity
 
   hapi-supplier-directory-health:
@@ -92,7 +92,7 @@ services:
       - hapi-supplier-directory
     stop_signal: SIGKILL
     networks:
-      - mcsd_client_net
+      - mcsd_update_client_net
     command: sleep infinity
 
   postgres:
@@ -109,12 +109,12 @@ services:
     volumes:
       - ./create-dbs.sql:/docker-entrypoint-initdb.d/create-db.sql
     networks:
-      - mcsd_client_net
+      - mcsd_update_client_net
 
 configs:
   hapi_supplier_directory_config:
     file: supplier.application.yaml
-  mcsd_client_conf:
+  mcsd_update_client_conf:
     file: app.conf
   supplier_urls_json:
     file: supplier_urls.json
@@ -122,6 +122,6 @@ configs:
     file: client.application.yaml
 
 networks:
-  mcsd_client_net:
+  mcsd_update_client_net:
     driver: bridge
-    name: mcsd_client_net
+    name: mcsd_update_client_net
