@@ -5,7 +5,7 @@ import pytest
 
 from app.config import set_config
 from app.db.db import Database
-from app.services.entity_services.resource_map_service import ResourceMapService
+from app.services.entity.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
 from tests.get_test_config import test_config
 

@@ -6,8 +6,8 @@ import logging
 from fhir.resources.R4B.bundle import BundleEntry
 from yarl import URL
 from app.services.fhir.bundle.bundle_utils import filter_history_entries
-from app.services_new.api.api_service import AuthenticationBasedApi
-from app.services_new.api.authenticators import Authenticator
+from app.services.api.api_service import AuthenticationBasedApi
+from app.services.api.authenticators.authenticator import Authenticator
 from app.services.fhir.fhir_service import FhirService
 
 from fhir.resources.R4B.bundle import Bundle

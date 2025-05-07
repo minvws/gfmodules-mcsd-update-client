@@ -1,16 +1,14 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.container import (
-    get_update_consumer_service,
     get_supplier_api,
-    get_update_consumer,
+    get_update_consumer_service,
 )
-from app.services.mcsd_services.update_consumer_service import UpdateConsumerService
-from app.services_new.api.suppliers_api import SuppliersApi
-from app.services_new.update_service import UpdateConsumer
+from app.services.api.suppliers_api import SuppliersApi
+from app.services.update.update_consumer_service import UpdateConsumerService
 
 router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"])
 
@@ -21,28 +19,18 @@ class UpdateQueryParams(BaseModel):
 
 @router.post("/{supplier_id}", response_model=None, summary="Update by supplier ID")
 @router.post("", response_model=None, summary="Update all suppliers")
-def update_supplier_resources(
+def update_supplier(
     supplier_id: str | None = None,
-    query_params: UpdateQueryParams = Depends(),
-    service: UpdateConsumerService = Depends(get_update_consumer_service),
+    params: UpdateQueryParams = Depends(),
+    update_service: UpdateConsumerService = Depends(get_update_consumer_service),
     supplier_service: SuppliersApi = Depends(get_supplier_api),
 ) -> Any:
-    since = query_params.since.astimezone(timezone.utc) if query_params.since else None
-    if supplier_id is None:
-        all_suppliers = supplier_service.get_all()
-        data: list[dict[str, Any]] = []
-        for supplier in all_suppliers:
-            data.append(service.update_supplier(supplier.id, since))
-        return data
-    else:
-        return service.update_supplier(supplier_id, since)
-
-
-@router.post("/new/{supplier_id}", response_model=None)
-def update_supplier_new(
-    supplier_id: str,
-    params: UpdateQueryParams = Depends(),
-    service: UpdateConsumer = Depends(get_update_consumer),
-) -> Any:
     since = params.since.astimezone() if params.since else None
-    return service.update(supplier_id, since)
+    if supplier_id is None:
+        suppliers = supplier_service.get_all()
+        data = []
+        for supplier in suppliers:
+            data.append(update_service.update(supplier_id=supplier.id, since=since))
+        return data
+
+    return update_service.update(supplier_id, since)

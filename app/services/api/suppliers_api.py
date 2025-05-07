@@ -1,17 +1,27 @@
 from yarl import URL
 from typing import Dict, List, Sequence, Any, Tuple
 from app.models.supplier.dto import SupplierDto
-from app.services_new.api.api_service import ApiService
+from app.services.api.api_service import ApiService
+
 
 class SupplierProvider:
-    def __init__(self, supplier_urls: List[Tuple[str,str,str]]|None = None, supplier_provider_url: str|None = None) -> None:
+    def __init__(
+        self,
+        supplier_urls: List[Tuple[str, str, str]] | None = None,
+        supplier_provider_url: str | None = None,
+    ) -> None:
         self._supplier_urls = supplier_urls
         self._supplier_provider_url = supplier_provider_url
         if self._supplier_urls is None and self._supplier_provider_url is None:
-            raise ValueError("Either supplier_urls or supplier_provider_url must be provided")
+            raise ValueError(
+                "Either supplier_urls or supplier_provider_url must be provided"
+            )
+
 
 class SuppliersApi(ApiService):
-    def __init__(self, timeout: int, backoff: float, supplier_provider: SupplierProvider) -> None:
+    def __init__(
+        self, timeout: int, backoff: float, supplier_provider: SupplierProvider
+    ) -> None:
         super().__init__(timeout, backoff, 5)
         self.__supplier_provider_url = supplier_provider._supplier_provider_url
         self.__supplier_urls = supplier_provider._supplier_urls

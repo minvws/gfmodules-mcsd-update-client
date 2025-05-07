@@ -5,7 +5,7 @@ from app.container import (
     get_supplier_api,
 )
 from app.models.supplier.dto import SupplierDto
-from app.services_new.api.suppliers_api import SuppliersApi
+from app.services.api.suppliers_api import SuppliersApi
 
 router = APIRouter(prefix="/supplier", tags=["Supplier"])
 
