@@ -40,24 +40,24 @@ services:
     networks:
       - mcsd_update_client_net
 
-  hapi-client:
+  hapi-client-directory:
     image: "hapiproject/hapi:latest"
     ports:
       - "8081:8081"
     configs:
-      - source: hapi_client_config
+      - source: hapi_client_directory_config
         target: /app/config/application.yaml
     depends_on:
       - postgres
     networks:
       - mcsd_update_client_net
 
-  hapi-supplier:
+  hapi-supplier-directory:
     image: "hapiproject/hapi:latest"
     ports:
       - "8080:8080"
     configs:
-      - source: hapi_supplier_config
+      - source: hapi_supplier_directory_config
         target: /app/config/application.yaml
     depends_on:
       - postgres
@@ -76,7 +76,7 @@ services:
       start_period: 100s
       start_interval: 5s
     depends_on:
-      - hapi-client
+      - hapi-client-directory
     stop_signal: SIGKILL
     networks:
       - mcsd_update_client_net
