@@ -3,7 +3,7 @@
         {
             "id": "hapi-supplier", 
             "name": "HAPI supplier", 
-            "url": "http://hapi-supplier:8080/fhir"
+            "url": "http://hapi-supplier-directory:8080/fhir"
         }
     ]
 }
