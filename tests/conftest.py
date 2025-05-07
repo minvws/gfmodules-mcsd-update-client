@@ -16,7 +16,7 @@ from app.services.fhir.fhir_service import FhirService
 import os
 import shutil
 
-from get_test_config import get_test_config
+from tests.get_test_config import get_test_config
 
 
 def pytest_ignore_collect(collection_path: pathlib.Path, config: Any) -> bool:

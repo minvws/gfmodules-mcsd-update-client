@@ -2,7 +2,7 @@ from random import choice
 from typing import Any, Dict
 from uuid import uuid4
 
-from app.services.request_services.supplier_request_service import McsdResources
+from app.services.update.update_consumer_service import McsdResources
 from seeds.generate_data import DataGenerator
 import os
 import json

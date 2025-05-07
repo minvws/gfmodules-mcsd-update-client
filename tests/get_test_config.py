@@ -55,7 +55,7 @@ def get_test_config() -> Config:
             enabled=True,
             host=None,
             port=None,
-            module_name=None,
+            module_name="test_stats",
         ),
         azure_oauth2=None,
         aws=None,

@@ -9,7 +9,6 @@ from app.container import (
 )
 from app.services.api.suppliers_api import SuppliersApi
 from app.services.update.update_consumer_service import UpdateConsumerService
-from app.stats import get_stats
 
 router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"])
 
@@ -17,7 +16,7 @@ router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"
 class UpdateQueryParams(BaseModel):
     since: datetime | None = Field(default=None)
 
-@get_stats().timer("update_resources")
+
 @router.post("/{supplier_id}", response_model=None, summary="Update by supplier ID")
 @router.post("", response_model=None, summary="Update all suppliers")
 def update_supplier(
