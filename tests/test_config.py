@@ -12,7 +12,7 @@ from app.config import (
 )
 
 
-def test_config() -> Config:
+def get_test_config() -> Config:
     return Config(
         app=ConfigApp(
             loglevel=LogLevel.error,
@@ -69,5 +69,6 @@ def test_config() -> Config:
             automatic_background_update=False,
             delay_input="0s",
             max_logs_entries=10,
+            supplier_stale_timeout="120s"
         ),
     )

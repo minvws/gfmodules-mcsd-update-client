@@ -8,9 +8,9 @@ from app.services.api.authenticators.aws_v4_authenticator import AwsV4Authentica
 from app.services.api.authenticators.azure_oauth2_authenticator import (
     AzureOAuth2Authenticator,
 )
-from tests.get_test_config import test_config
+from tests.test_config import get_test_config
 
-config: Final[Config] = test_config()
+config: Final[Config] = get_test_config()
 
 
 @pytest.fixture()

@@ -24,6 +24,7 @@ def container_config(binder: inject.Binder) -> None:
 
     supplier_provider_factory = SupplierProviderFactory(config=config, database=db)
     supplier_provider = supplier_provider_factory.create()
+    binder.bind(SupplierProvider, supplier_provider)
     
     update_service = UpdateConsumerService(
         consumer_url=config.mcsd.consumer_url,
@@ -38,6 +39,7 @@ def container_config(binder: inject.Binder) -> None:
     binder.bind(UpdateConsumerService, update_service)
 
     supplier_info_service = SupplierInfoService(db)
+    binder.bind(SupplierInfoService, supplier_info_service)
 
     update_all_service = UpdateAllConsumersService(
         update_consumer_service=update_service,
@@ -46,7 +48,7 @@ def container_config(binder: inject.Binder) -> None:
     )
     scheduler = Scheduler(
         function=update_all_service.update_all,
-        delay=config.scheduler.delay,
+        delay=config.scheduler.delay_input_in_sec, # type: ignore
         max_logs_entries=config.scheduler.max_logs_entries,
     )
     binder.bind(Scheduler, scheduler)
@@ -70,6 +72,9 @@ def get_scheduler() -> Scheduler:
 
 def get_update_consumer_service() -> UpdateConsumerService:
     return inject.instance(UpdateConsumerService)
+
+def get_supplier_info_service() -> SupplierInfoService:
+    return inject.instance(SupplierInfoService)
 
 
 def setup_container() -> None:
