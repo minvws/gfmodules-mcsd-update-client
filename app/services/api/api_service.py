@@ -83,7 +83,7 @@ class ApiService(RequestService, ABC):
         raise Exception("Failed to make request after too many retries")
 
 
-class AuthenticationBasedApi(RequestService, ABC):
+class AuthenticationBasedApiService(RequestService, ABC):
     def __init__(self, auth: Authenticator, timeout: int, backoff: float, retries: int):
         super().__init__(timeout, backoff, retries)
         self.__auth = auth

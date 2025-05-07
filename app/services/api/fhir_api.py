@@ -6,7 +6,7 @@ import logging
 from fhir.resources.R4B.bundle import BundleEntry
 from yarl import URL
 from app.services.fhir.bundle.bundle_utils import filter_history_entries
-from app.services.api.api_service import AuthenticationBasedApi
+from app.services.api.api_service import AuthenticationBasedApiService
 from app.services.api.authenticators.authenticator import Authenticator
 from app.services.fhir.fhir_service import FhirService
 
@@ -15,7 +15,7 @@ from fhir.resources.R4B.bundle import Bundle
 logger = logging.getLogger(__name__)
 
 
-class FhirApi(AuthenticationBasedApi):
+class FhirApi(AuthenticationBasedApiService):
     def __init__(
         self,
         timeout: int,
