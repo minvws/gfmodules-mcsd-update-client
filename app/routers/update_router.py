@@ -1,14 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.container import (
-    get_supplier_api,
+    get_supplier_provider,
     get_update_consumer_service,
 )
-from app.services.api.suppliers_api import SuppliersApi
 from app.services.update.update_consumer_service import UpdateConsumerService
+from app.services.supplier_provider.supplier_provider import SupplierProvider
 
 router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"])
 
@@ -21,16 +21,15 @@ class UpdateQueryParams(BaseModel):
 @router.post("", response_model=None, summary="Update all suppliers")
 def update_supplier(
     supplier_id: str | None = None,
-    params: UpdateQueryParams = Depends(),
-    update_service: UpdateConsumerService = Depends(get_update_consumer_service),
-    supplier_service: SuppliersApi = Depends(get_supplier_api),
+    query_params: UpdateQueryParams = Depends(),
+    service: UpdateConsumerService = Depends(get_update_consumer_service),
+    supplier_provider: SupplierProvider = Depends(get_supplier_provider),
 ) -> Any:
-    since = params.since.astimezone() if params.since else None
+    since = query_params.since.astimezone(timezone.utc) if query_params.since else None
     if supplier_id is None:
-        suppliers = supplier_service.get_all()
-        data = []
-        for supplier in suppliers:
-            data.append(update_service.update(supplier_id=supplier.id, since=since))
+        all_suppliers = supplier_provider.get_all_suppliers()            
+        data: list[dict[str, Any]] = []
+        for supplier in all_suppliers:
+            data.append(service.update(supplier.id, since))
         return data
-
-    return update_service.update(supplier_id, since)
+    return service.update(supplier_id, since)

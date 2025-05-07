@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from app.services.entity.supplier_info_service import SupplierInfoService
-from app.services.api.suppliers_api import SuppliersApi
+from app.services.supplier_provider.supplier_provider import SupplierProvider
 from app.services.update.update_consumer_service import UpdateConsumerService
 
 logger = logging.getLogger(__name__)
@@ -13,15 +13,19 @@ class UpdateAllConsumersService:
     def __init__(
         self,
         update_consumer_service: UpdateConsumerService,
-        supplier_service: SuppliersApi,
+        supplier_provider: SupplierProvider,
         supplier_info_service: SupplierInfoService,
     ) -> None:
-        self.__supplier_service = supplier_service
+        self.__supplier_service = supplier_provider
         self.__update_consumer_service = update_consumer_service
         self.__supplier_info_service = supplier_info_service
 
     def update_all(self) -> list[dict[str, Any]]:
-        all_suppliers = self.__supplier_service.get_all()
+        try:
+            all_suppliers = self.__supplier_service.get_all_suppliers()
+        except Exception as e:
+            logging.error(f"Failed to retrieve suppliers: {e}")
+            return []
         data: list[dict[str, Any]] = []
         for supplier in all_suppliers:
 
