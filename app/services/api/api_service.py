@@ -3,6 +3,7 @@ import logging
 import time
 from typing import Dict, Any
 import requests
+from requests.exceptions import RequestException, Timeout, ConnectionError
 from yarl import URL
 
 from app.services.api.authenticators.authenticator import Authenticator
@@ -71,10 +72,11 @@ class ApiService(RequestService, ABC):
                 return response
             except (
                 ConnectionError,
-                TimeoutError,
-                requests.exceptions.RequestException,
+                Timeout,
+                RequestException,
             ):
                 logger.warning(f"Failed to make request to {url} on attempt {attempt}")
+
                 if attempt < self.retries - 1:
                     logger.info(f"Retrying in {self.backoff * (2**attempt)} seconds")
                     time.sleep(self.backoff * (2**attempt))
@@ -83,7 +85,7 @@ class ApiService(RequestService, ABC):
         raise Exception("Failed to make request after too many retries")
 
 
-class AuthenticationBasedApi(RequestService, ABC):
+class AuthenticationBasedApiService(RequestService, ABC):
     def __init__(self, auth: Authenticator, timeout: int, backoff: float, retries: int):
         super().__init__(timeout, backoff, retries)
         self.__auth = auth
@@ -119,8 +121,8 @@ class AuthenticationBasedApi(RequestService, ABC):
                 return response
             except (
                 ConnectionError,
-                TimeoutError,
-                requests.exceptions.RequestException,
+                Timeout,
+                RequestException,
             ):
                 logger.warning(f"Failed to make request to {url} on attempt {attempt}")
                 if attempt < self.retries - 1:
