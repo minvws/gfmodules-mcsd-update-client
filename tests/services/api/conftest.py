@@ -4,9 +4,9 @@ from yarl import URL
 
 from app.config import Config
 from app.services.api.api_service import ApiService
-from tests.get_test_config import test_config
+from tests.get_test_config import get_test_config
 
-config: Final[Config] = test_config()
+config: Final[Config] = get_test_config()
 
 
 @pytest.fixture()

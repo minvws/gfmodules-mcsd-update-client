@@ -110,7 +110,6 @@ class ConfigStats(BaseModel):
     port: int | None
     module_name: str | None
 
-
 class ConfigMcsd(BaseModel):
     consumer_url: str
     authentication: Union[str] = Field(

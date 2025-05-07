@@ -11,7 +11,7 @@ from app.services.entity.resource_map_service import ResourceMapService
 from app.services.api.authenticators.factory import AuthenticatorFactory
 from app.services.api.suppliers_api import SupplierProvider, SuppliersApi
 from app.services.update.update_consumer_service import UpdateConsumerService
-
+from app.stats import get_stats
 
 def container_config(binder: inject.Binder) -> None:
     config = get_config()
@@ -55,6 +55,7 @@ def container_config(binder: inject.Binder) -> None:
         update_consumer_service=update_service,
         supplier_service=suppliers_api,
         supplier_info_service=supplier_info_service,
+        stats=get_stats(),
     )
     scheduler = Scheduler(
         function=update_all_service.update_all,
