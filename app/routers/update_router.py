@@ -19,9 +19,10 @@ router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"
 class UpdateQueryParams(BaseModel):
     since: datetime | None = Field(default=None)
 
-@get_stats().timer("update_resources")
+
 @router.post("/{supplier_id}", response_model=None, summary="Update by supplier ID")
 @router.post("", response_model=None, summary="Update all suppliers")
+@get_stats().timer("update_resources")
 def update_supplier(
     supplier_id: str | None = None,
     query_params: UpdateQueryParams = Depends(),

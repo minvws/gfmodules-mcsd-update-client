@@ -9,7 +9,7 @@ import numpy as np
 from app.container import get_database
 from app.db.db import Database
 from app.db.repositories.resource_map_repository import ResourceMapRepository
-from app.services.request_services.supplier_request_service import McsdResources
+from app.services.update.update_consumer_service import McsdResources
 from .mcsd_resource_gen import generate_history_bundles, generate_post_bundle, setup_fhir_resource
 
 def create_file_structure(

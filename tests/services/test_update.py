@@ -12,7 +12,7 @@ import requests
 from yarl import URL
 from app.container import get_database
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
-from utils.utils import (
+from tests.utils.utils import (
     check_if_in_db,
     create_file_structure,
     generate_report,
@@ -21,7 +21,7 @@ from utils.utils import (
 from app.stats import Stats, get_stats
 
 MOCK_DATA_PATH = "tests/mock_data"
-TEST_RESULTS_PATH = "tests/new_testing_results"
+TEST_RESULTS_PATH = "tests/testing_results"
 
 monitor_data = []
 monitoring = False
@@ -150,11 +150,11 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
     ],
 )
 @patch(
-    "app.services_new.api.fhir_api.FhirApi.get_history_batch",
+    "app.services.api.fhir_api.FhirApi.get_history_batch",
     side_effect=mock_get_history_batch,
 )
 @patch(
-    "app.services_new.api.api_service.AuthenticationBasedApi.do_request",
+    "app.services.api.api_service.AuthenticationBasedApiService.do_request",
     side_effect=mock_do_request,
 )
 def test_consumer_update_with_timing(
@@ -189,7 +189,8 @@ def test_consumer_update_with_timing(
         monitor_thread.start()
         for iteration in range(iterations):
             print(f"Iteration {iteration + 1}/{iterations}")
-            _response = api_client.post("/update_resources/new/test-supplier")
+            with get_stats().timer("mcsd.update_supplier"):
+                _response = api_client.post("/update_resources/test-supplier")
             print("Update done: mCSD resources are updated")
     finally:
         monitoring = False
