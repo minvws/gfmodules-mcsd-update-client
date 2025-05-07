@@ -7,13 +7,13 @@ from app.services.api.fhir_api import FhirApi
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
-from tests.get_test_config import test_config
+from tests.test_config import get_test_config
 from tests.services.mock_data import organization, endpoint
 
 
 @pytest.fixture()
 def config() -> Config:
-    return test_config()
+    return get_test_config()
 
 
 @pytest.fixture
