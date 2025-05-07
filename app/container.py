@@ -25,7 +25,6 @@ def container_config(binder: inject.Binder) -> None:
 
     supplier_provider_factory = SupplierProviderFactory(config=config, database=db)
     supplier_provider = supplier_provider_factory.create()
-
     binder.bind(SupplierProvider, supplier_provider)
     
     update_service = UpdateConsumerService(
