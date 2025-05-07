@@ -61,7 +61,7 @@ def test_config() -> Config:
         aws=None,
         supplier_api=ConfigSupplierApi(
             suppliers_provider_url="http://testserver/test",
-            supplier_urls=None,
+            supplier_urls_path=None,
             timeout=1,
             backoff=0.1,
         ),

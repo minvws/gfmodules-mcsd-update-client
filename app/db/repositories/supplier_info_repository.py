@@ -26,7 +26,7 @@ class SupplierInfoRepository(RepositoryBase):
             return info
         except DatabaseError as e:
             self.db_session.rollback()
-            logging.error(f"Failed to update supplier info {info.id}: {e}")
+            logging.error(f"Failed to update supplier info {info.supplier_id}: {e}")
             raise
 
     def create(self, supplier_id: str) -> SupplierInfo:
@@ -37,5 +37,5 @@ class SupplierInfoRepository(RepositoryBase):
             return info
         except DatabaseError as e:
             self.db_session.rollback()
-            logging.error(f"Failed to add suppler info {info.id}: {e}")
+            logging.error(f"Failed to add suppler info {info.supplier_id}: {e}")
             raise

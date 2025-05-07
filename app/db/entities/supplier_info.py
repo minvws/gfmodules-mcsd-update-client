@@ -1,12 +1,10 @@
 from datetime import datetime
-from uuid import UUID, uuid4
 
 from sqlalchemy import (
     String,
     TIMESTAMP,
     PrimaryKeyConstraint,
     Integer,
-    types,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,14 +14,7 @@ from app.db.entities.base import Base
 class SupplierInfo(Base):
     __tablename__ = "supplier_info"
     __table_args__ = (
-        PrimaryKeyConstraint("id"),
-    )
-
-    id: Mapped[UUID] = mapped_column(
-        "id",
-        types.Uuid,
-        nullable=False,
-        default=uuid4,
+        PrimaryKeyConstraint("supplier_id"),
     )
     supplier_id: Mapped[str] = mapped_column(
         "supplier_id",

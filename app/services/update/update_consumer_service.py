@@ -12,6 +12,7 @@ from app.models.adjacency.node import (
     Node,
 )
 from app.models.supplier.dto import SupplierDto
+from app.services.supplier_provider.supplier_provider import SupplierProvider
 from app.services.update.adjacency_map_service import (
     AdjacencyMapService,
 )
@@ -19,7 +20,6 @@ from app.services.entity.resource_map_service import (
     ResourceMapService,
 )
 from app.services.api.authenticators.authenticator import Authenticator
-from app.services.api.suppliers_api import SuppliersApi
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.fhir_api import FhirApi
 
@@ -45,7 +45,7 @@ class UpdateConsumerService:
         backoff: float,
         request_count: int,
         resource_map_service: ResourceMapService,
-        suppliers_api: SuppliersApi,
+        supplier_provider: SupplierProvider,
         auth: Authenticator,
     ) -> None:
         self.strict_validation = strict_validation
@@ -55,7 +55,7 @@ class UpdateConsumerService:
         self.request_count = request_count
         self.auth = auth
         self.__resource_map_service = resource_map_service
-        self.__suppliers_register_api = suppliers_api
+        self.__suppliers_register_api = supplier_provider
         self.__consumer_fhir_api = FhirApi(
             timeout, backoff, auth, consumer_url, request_count, strict_validation
         )
@@ -67,7 +67,7 @@ class UpdateConsumerService:
         if len(self.__cache) > 0:
             self.__cache = []
 
-        supplier = self.__suppliers_register_api.get_one(supplier_id)
+        supplier = self.__suppliers_register_api.get_one_supplier(supplier_id)
         if supplier is None:
             raise Exception(
                 f"Supplier with id {supplier_id} not found in supplier provider"

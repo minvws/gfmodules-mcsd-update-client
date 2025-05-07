@@ -1,14 +1,14 @@
 import logging
-from collections.abc import Sequence
+from typing import List
 
 from app.models.supplier.dto import SupplierDto
-from app.services.api.suppliers_api import SuppliersApi
+from app.services.supplier_provider.supplier_provider import SupplierProvider
 
 logger = logging.getLogger(__name__)
 
 
-class MockApi(SuppliersApi):
-    def get_one(self, supplier_id: str) -> SupplierDto | None:
+class MockApi(SupplierProvider):
+    def get_one_supplier(self, supplier_id: str) -> SupplierDto:
         if supplier_id == "1":
             return SupplierDto(
                 id="1",
@@ -21,12 +21,10 @@ class MockApi(SuppliersApi):
                 name="Test Supplier 2",
                 endpoint="http://test2.supplier.example.org",
             )
-        elif supplier_id == "3":
-            return None
         else:
             raise ValueError(f"SupplierDto with ID {supplier_id} not found")
 
-    def get_all(self) -> Sequence[SupplierDto]:
+    def get_all_suppliers(self) -> List[SupplierDto]:
         return [
             SupplierDto(
                 id="1",
