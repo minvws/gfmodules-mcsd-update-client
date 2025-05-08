@@ -60,6 +60,12 @@ class FhirApi(AuthenticationBasedApiService):
         url: URL,
     ) -> tuple[URL | None, List[BundleEntry]]:
         response = self.do_request("GET", url)
+        if response.status_code > 300:
+            logger.error(
+                f"An error with status code {response.status_code} has occurred from server. See response:\n{response.json()}"
+            )
+            raise HTTPException(status_code=500, detail=response.json())
+
         page_bundle = self.__fhir_service.create_bundle(response.json())
         next_url = None
         entries = filter_history_entries(page_bundle.entry) if page_bundle.entry else []
