@@ -2,12 +2,13 @@ from typing import Any, Dict
 import pytest
 import copy
 
+from app.services.fhir.fhir_service import FhirService
 from app.services.fhir.model_factory import create_resource
 from app.services.fhir.references.reference_extractor import get_references
 from app.services.fhir.references.reference_namespacer import (
     namespace_resource_reference,
 )
-from tests.services.fhir.mock_data import (
+from tests.services.mock_data import (
     endpoint,
     endpoint_incomplete,
     healthcare_service,
@@ -68,16 +69,6 @@ def non_mcsd_resource() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def mock_org() -> Dict[str, Any]:
-    return copy.deepcopy(organization)
-
-
-@pytest.fixture
-def mock_ep() -> Dict[str, Any]:
-    return copy.deepcopy(endpoint)
-
-
-@pytest.fixture
 def resource_with_contained_refs() -> Dict[str, Any]:
     return {
         "resourceType": "Organization",
@@ -90,27 +81,6 @@ def resource_with_contained_refs() -> Dict[str, Any]:
             {"resourceType": "Organization", "id": "org-id-2", "name": "Parent-org"}
         ],
     }
-
-
-@pytest.fixture()
-def mock_bundle(mock_org: Dict[str, Any]) -> Dict[str, Any]:
-    bundle = {
-        "type": "history",
-        "entry": [
-            {
-                "fullUrl": f"http://example-service.com/fhir/Organization/{mock_org['id']}",
-                "resource": mock_org,
-                "request": {"method": "PUT", "url": f"Organization/{mock_org['id']}"},
-            },
-            {
-                "fullUrl": f"http://example-service.com/fhir/Organization/{mock_org['id']}",
-                "resource": mock_org,
-                "request": {"method": "POST", "url": f"Organization/{mock_org['id']}"},
-            },
-        ],
-    }
-
-    return bundle
 
 
 @pytest.fixture
@@ -144,3 +114,8 @@ def mock_bundle_of_bundles(
             },
         ],
     }
+
+
+@pytest.fixture()
+def fhir_service_strict_validation() -> FhirService:
+    return FhirService(strict_validation=True)

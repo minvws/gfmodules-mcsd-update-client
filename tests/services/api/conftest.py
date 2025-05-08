@@ -1,4 +1,4 @@
-from typing import Any, Dict, Final
+from typing import Any, Dict
 import pytest
 from yarl import URL
 
@@ -8,9 +8,6 @@ from app.services.api.authenticators.aws_v4_authenticator import AwsV4Authentica
 from app.services.api.authenticators.azure_oauth2_authenticator import (
     AzureOAuth2Authenticator,
 )
-from tests.get_test_config import test_config
-
-config: Final[Config] = test_config()
 
 
 @pytest.fixture()
@@ -29,7 +26,7 @@ def mock_body() -> Dict[str, Any]:
 
 
 @pytest.fixture()
-def api_service() -> ApiService:
+def api_service(config: Config) -> ApiService:
     return ApiService(
         timeout=config.supplier_api.timeout,
         backoff=config.supplier_api.backoff,
@@ -54,7 +51,7 @@ def azure_oauth_authenticator() -> AzureOAuth2Authenticator:
 
 @pytest.fixture()
 def aws_based_api_service(
-    aws_v4_authenticator: AwsV4Authenticator,
+    aws_v4_authenticator: AwsV4Authenticator, config: Config
 ) -> AuthenticationBasedApiService:
     return AuthenticationBasedApiService(
         auth=aws_v4_authenticator,
@@ -66,7 +63,7 @@ def aws_based_api_service(
 
 @pytest.fixture()
 def azure_base_api_service(
-    azure_oauth_authenticator: AzureOAuth2Authenticator,
+    azure_oauth_authenticator: AzureOAuth2Authenticator, config: Config
 ) -> AuthenticationBasedApiService:
     return AuthenticationBasedApiService(
         auth=azure_oauth_authenticator,
