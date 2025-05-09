@@ -16,7 +16,7 @@ jobs:
         run: echo "PKG_NAME=$GITHUB_REPOSITORY" >> $GITHUB_ENV
 
       - name: Build venv package
-        uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/python-venv-package@main
+        uses: ./.github/actions/python-venv-package
         with:
           python_version: ${{ matrix.python_version }}
           package_file_name: ${{ env.PKG_NAME }}
