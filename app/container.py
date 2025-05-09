@@ -10,6 +10,7 @@ from app.services.entity.resource_map_service import ResourceMapService
 from app.services.api.authenticators.factory import AuthenticatorFactory
 from app.services.update.update_consumer_service import UpdateConsumerService
 
+
 def container_config(binder: inject.Binder) -> None:
     config = get_config()
 
@@ -24,7 +25,7 @@ def container_config(binder: inject.Binder) -> None:
 
     supplier_provider_factory = SupplierProviderFactory(config=config, database=db)
     supplier_provider = supplier_provider_factory.create()
-    
+
     update_service = UpdateConsumerService(
         consumer_url=config.mcsd.consumer_url,
         strict_validation=config.mcsd.strict_validation,
@@ -32,7 +33,6 @@ def container_config(binder: inject.Binder) -> None:
         backoff=config.supplier_api.backoff,
         request_count=config.mcsd.request_count,
         resource_map_service=resource_map_service,
-        supplier_provider=supplier_provider,
         auth=auth,
     )
     binder.bind(UpdateConsumerService, update_service)

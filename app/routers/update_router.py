@@ -27,9 +27,11 @@ def update_supplier(
 ) -> Any:
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
     if supplier_id is None:
-        all_suppliers = supplier_provider.get_all_suppliers()            
+        all_suppliers = supplier_provider.get_all_suppliers()
         data: list[dict[str, Any]] = []
         for supplier in all_suppliers:
-            data.append(service.update(supplier.id, since))
+            data.append(service.update(supplier, since))
         return data
-    return service.update(supplier_id, since)
+
+    supplier = supplier_provider.get_one_supplier(supplier_id)
+    return service.update(supplier, since)
