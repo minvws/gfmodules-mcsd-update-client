@@ -9,7 +9,7 @@ from app.services.update.update_consumer_service import UpdateConsumerService
 logger = logging.getLogger(__name__)
 
 
-class UpdateAllConsumersService:
+class MassUpdateConsumerService:
     def __init__(
         self,
         update_consumer_service: UpdateConsumerService,
@@ -34,7 +34,7 @@ class UpdateAllConsumersService:
             try:
                 data.append(
                     self.__update_consumer_service.update(
-                        supplier.id, info.last_success_sync
+                        supplier, info.last_success_sync
                     )
                 )
 

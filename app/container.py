@@ -1,7 +1,7 @@
 from app.services.entity.supplier_info_service import SupplierInfoService
 from app.services.supplier_provider.factory import SupplierProviderFactory
 from app.services.supplier_provider.supplier_provider import SupplierProvider
-from app.services.update.update_all_consumers_service import UpdateAllConsumersService
+from app.services.update.mass_update_consumer_service import MassUpdateConsumerService
 from app.services.scheduler import Scheduler
 import inject
 from app.db.db import Database
@@ -9,6 +9,7 @@ from app.config import get_config
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.api.authenticators.factory import AuthenticatorFactory
 from app.services.update.update_consumer_service import UpdateConsumerService
+
 
 def container_config(binder: inject.Binder) -> None:
     config = get_config()
@@ -24,7 +25,7 @@ def container_config(binder: inject.Binder) -> None:
 
     supplier_provider_factory = SupplierProviderFactory(config=config, database=db)
     supplier_provider = supplier_provider_factory.create()
-    
+
     update_service = UpdateConsumerService(
         consumer_url=config.mcsd.consumer_url,
         strict_validation=config.mcsd.strict_validation,
@@ -32,14 +33,13 @@ def container_config(binder: inject.Binder) -> None:
         backoff=config.supplier_api.backoff,
         request_count=config.mcsd.request_count,
         resource_map_service=resource_map_service,
-        supplier_provider=supplier_provider,
         auth=auth,
     )
     binder.bind(UpdateConsumerService, update_service)
 
     supplier_info_service = SupplierInfoService(db)
 
-    update_all_service = UpdateAllConsumersService(
+    update_all_service = MassUpdateConsumerService(
         update_consumer_service=update_service,
         supplier_provider=supplier_provider,
         supplier_info_service=supplier_info_service,
