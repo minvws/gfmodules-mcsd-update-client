@@ -1,9 +1,11 @@
 import logging
+from typing import Sequence
 
 from sqlalchemy.exc import DatabaseError
 from app.db.decorator import repository
 from app.db.entities.supplier_info import SupplierInfo
 from app.db.repositories.repository_base import RepositoryBase
+from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
@@ -12,11 +14,15 @@ logger = logging.getLogger(__name__)
 class SupplierInfoRepository(RepositoryBase):
 
     def get(self, supplier_id: str) -> SupplierInfo:
-        info = self.db_session.session.query(SupplierInfo).filter_by(supplier_id=supplier_id).first()
+        query = select(SupplierInfo).filter_by(supplier_id=supplier_id)
+        info = self.db_session.session.execute(query).scalars().first()
         if info is None:
             info = self.create(supplier_id)
-
         return info
+    
+    def get_all(self) -> Sequence[SupplierInfo]:
+        query = select(SupplierInfo).order_by(SupplierInfo.supplier_id)
+        return self.db_session.session.execute(query).scalars().all()
 
     def update(self, info: SupplierInfo) -> SupplierInfo:
         try:
