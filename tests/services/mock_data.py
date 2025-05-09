@@ -175,4 +175,8 @@ organization_affiliation: Final[Dict[str, Any]] = {
     "participatingOrganization": {"reference": "Organization/org-id-2"},
     "code": [{"coding": [{"system": "example", "code": "example"}]}],
     "location": [{"reference": "Location/loc-id"}],
+    "network": [
+        {"reference": "Organization/some-org-id"},
+        {"reference": "Organization/some-other-org-id"},
+    ],
 }

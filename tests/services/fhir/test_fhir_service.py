@@ -147,6 +147,17 @@ def test_namespace_references_should_succeed(
     assert expected == actual
 
 
+@pytest.mark.parametrize(
+    "data, expected", zip(incomplete_resources, incomplete_resources)
+)
+def test_namespace_references_should_not_change_anything_in_resource_when_refs_are_missing(
+    fhir_service: FhirService, data: Dict[str, Any], expected: Dict[str, Any]
+) -> None:
+    resource = fhir_service.create_resource(data)
+    actual = fhir_service.namespace_resource_references(resource, "example")
+    assert fhir_service.create_resource(expected) == actual
+
+
 def test_split_reference_should_succeed(fhir_service: FhirService) -> None:
     expected = ("Organization", "org-id")
     actual_relative = fhir_service.split_reference(
