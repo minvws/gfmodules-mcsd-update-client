@@ -1,7 +1,7 @@
 from app.services.entity.supplier_info_service import SupplierInfoService
 from app.services.supplier_provider.factory import SupplierProviderFactory
 from app.services.supplier_provider.supplier_provider import SupplierProvider
-from app.services.update.update_all_consumers_service import UpdateAllConsumersService
+from app.services.update.mass_update_consumer_service import MassUpdateConsumerService
 from app.services.scheduler import Scheduler
 import inject
 from app.db.db import Database
@@ -39,7 +39,7 @@ def container_config(binder: inject.Binder) -> None:
 
     supplier_info_service = SupplierInfoService(db)
 
-    update_all_service = UpdateAllConsumersService(
+    update_all_service = MassUpdateConsumerService(
         update_consumer_service=update_service,
         supplier_provider=supplier_provider,
         supplier_info_service=supplier_info_service,
