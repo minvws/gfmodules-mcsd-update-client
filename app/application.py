@@ -5,15 +5,17 @@ from typing import Any
 from fastapi import FastAPI
 import uvicorn
 
-from app.container import get_scheduler, setup_container
+from app.container import get_cleanup_scheduler, get_update_scheduler, setup_container
 from app.routers.default import router as default_router
 from app.routers.health import router as health_router
 from app.routers.supplier_router import router as supplier_router
 from app.routers.resource_map_router import router as resource_map_router
 from app.routers.update_router import router as update_router
 from app.routers.consumer import router as consumer_router
-from app.routers.scheduler_router import router as scheduler_router
+from app.routers.update_scheduler_router import router as update_scheduler_router
 from app.routers.directory_health import router as directory_health_router
+from app.routers.cleanup_scheduler_router import router as cleanup_scheduler_router
+from app.routers.ignore_list_router import router as ignore_list_router
 from app.config import get_config
 from app.stats import setup_stats
 from app.telemetry import setup_telemetry
@@ -66,8 +68,11 @@ def application_init() -> None:
     setup_logging()
     setup_container()
     if config.scheduler.automatic_background_update:
-        scheduler = get_scheduler()
-        scheduler.start()
+        update_scheduler = get_update_scheduler()
+        update_scheduler.start()
+    if config.scheduler.automatic_background_cleanup:
+        cleanup_scheduler = get_cleanup_scheduler()
+        cleanup_scheduler.start()
 
 
 def setup_logging() -> None:
@@ -97,8 +102,10 @@ def setup_fastapi() -> FastAPI:
         resource_map_router,
         update_router,
         consumer_router,
-        scheduler_router,
+        update_scheduler_router,
         directory_health_router,
+        cleanup_scheduler_router,
+        ignore_list_router,
     ]
     for router in routers:
         fastapi.include_router(router)

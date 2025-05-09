@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from app.container import (
+    get_supplier_directory_ignore_service,
     get_supplier_provider,
     get_update_consumer_service,
 )
+from app.services.entity.supplier_directory_ignore_service import SupplierDirectoryIgnoreService
 from app.services.update.update_consumer_service import UpdateConsumerService
 from app.services.supplier_provider.supplier_provider import SupplierProvider
 
@@ -24,12 +26,14 @@ def update_supplier(
     query_params: UpdateQueryParams = Depends(),
     service: UpdateConsumerService = Depends(get_update_consumer_service),
     supplier_provider: SupplierProvider = Depends(get_supplier_provider),
+    supplier_directory_ignore_service: SupplierDirectoryIgnoreService = Depends(get_supplier_directory_ignore_service),
 ) -> Any:
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
     if supplier_id is None:
-        all_suppliers = supplier_provider.get_all_suppliers()            
+        all_suppliers = supplier_provider.get_all_suppliers()
+        filtered_suppliers = supplier_directory_ignore_service.filter_ignored_supplier_dto(all_suppliers)          
         data: list[dict[str, Any]] = []
-        for supplier in all_suppliers:
+        for supplier in filtered_suppliers:
             data.append(service.update(supplier.id, since))
         return data
     return service.update(supplier_id, since)
