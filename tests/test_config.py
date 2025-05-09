@@ -67,8 +67,10 @@ def get_test_config() -> Config:
         ),
         scheduler=Scheduler(
             automatic_background_update=False,
+            automatic_background_cleanup=False,
             delay_input="0s",
             max_logs_entries=10,
-            supplier_stale_timeout="120s"
+            supplier_stale_timeout="120s",
+            cleanup_client_directory_after_success_timeout="3d",
         ),
     )

@@ -5,7 +5,7 @@ from enum import Enum
 import logging
 from typing import List, Any
 from uuid import uuid4
-from fhir.resources.R4B.bundle import Bundle, BundleEntry
+from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from yarl import URL
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.models.adjacency.node import (
@@ -58,6 +58,23 @@ class UpdateConsumerService:
         )
         self.__fhir_service = FhirService(strict_validation)
         self.__cache: List[str] = []
+
+    def cleanup(self, supplier_id: str) -> None:
+        for res_type in McsdResources:
+            delete_bundle = Bundle(id=str(uuid4()), type="transaction", entry=[], total=0)
+            resource_map = self.__resource_map_service.find(supplier_id=supplier_id, resource_type=res_type.value)
+            for res_map_item in resource_map:
+                delete_bundle.entry.append(
+                    BundleEntry(
+                        request=BundleEntryRequest(
+                            method="DELETE",
+                            url=f"{res_type.value}/{res_map_item.consumer_resource_id}"
+                        )
+                    )
+                )
+                delete_bundle.total += 1
+            logging.info(f"Removing {delete_bundle.total} items from consumer originating from stale supplier {supplier_id}")
+            self.__consumer_fhir_api.post_bundle(delete_bundle)
 
     def update(self, supplier: SupplierDto, since: datetime | None = None) -> Any:
         start_time = time.time()

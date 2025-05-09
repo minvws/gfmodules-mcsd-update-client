@@ -26,19 +26,25 @@ class Scheduler(BaseModel):
     delay_input: str
     max_logs_entries: int
     automatic_background_update: bool = Field(default=True)
+    automatic_background_cleanup: bool = Field(default=True)
     supplier_stale_timeout: str
+    cleanup_client_directory_after_success_timeout: str
 
     @computed_field
     def delay_input_in_sec(self) -> int:
         return self._convert_to_sec(self.delay_input)
-
+    
     @computed_field
     def supplier_stale_timeout_in_sec(self) -> int:
         return self._convert_to_sec(self.supplier_stale_timeout)
+    
+    @computed_field
+    def cleanup_client_directory_after_success_timeout_in_sec(self) -> int:
+        return self._convert_to_sec(self.cleanup_client_directory_after_success_timeout)
 
     def _convert_to_sec(self, value: str) -> int:
-        conversion_map = {"s": 1, "m": 60, "h": 3600}
-        match = re.match(r"^(\d+)([smh])$", value)
+        conversion_map = {"s": 1, "m": 60, "h": 3600, "d": 86400}	
+        match = re.match(r"^(\d+)([smhd])$", value)
         if not match:
             raise ValidationError(
                 f"Incorrect input, must be digits with {conversion_map.keys()}"

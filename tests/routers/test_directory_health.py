@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 import pytest
 from app.container import get_database
 from app.db.db import Database
+from app.db.entities.supplier_ignored_directory import SupplierIgnoredDirectory
 from app.db.entities.supplier_info import SupplierInfo
 
 def __insert_info(
@@ -12,6 +13,7 @@ def __insert_info(
         last_success_sync: datetime,
         failed_sync_count: int = 0,
         failed_attempts: int = 0,
+        in_ignore_list: bool = False,
     ) -> SupplierInfo:
     """Insert a supplier info record into the database."""
     with db.get_db_session() as db_session:
@@ -22,31 +24,50 @@ def __insert_info(
             last_success_sync=last_success_sync,
         )
         db_session.add(info)
+        if in_ignore_list:
+            ignore = SupplierIgnoredDirectory(
+                directory_id=supplier_id,
+            )
+            db_session.add(ignore)
         db_session.commit()
     return info
 
 @pytest.mark.parametrize(
-    "supplier_syncs, expected_status",
+    "supplier_syncs, in_ignore_list, expected_status",
     [
         (
             [60, 100],  # All healthy
-            {"status": "ok"},
+            False, # No ignore list
+            {"status": "ok"}, # OK because all suppliers are healthy
         ),
         (
             [60, 150],  # One unhealthy
-            {"status": "error"},
+            False, # No ignore list
+            {"status": "error"}, # Error because one supplier is unhealthy
+        ),
+        (
+            [60, 100],  # All healthy
+            True, # In ignore list
+            {"status": "ok"}, # OK because in ignore list
+        ),
+        (
+            [60, 150],  # One unhealthy
+            True, # In ignore list
+            {"status": "ok"}, # OK because in ignore list
         ),
     ]
 )
-def test_directory_health_matrix(api_client: TestClient, supplier_syncs: List[str], expected_status: Dict[str,str]) -> None:
+def test_directory_health_matrix(api_client: TestClient, supplier_syncs: List[str], in_ignore_list: bool, expected_status: Dict[str,str]) -> None:
     for idx, sync_seconds in enumerate(supplier_syncs, start=1):
         __insert_info(
             db=get_database(),
             supplier_id=f"supplier_{idx}",
             last_success_sync=datetime.now() - timedelta(seconds=float(sync_seconds)),
+            in_ignore_list=in_ignore_list,
         )
     
     response = api_client.get("/directory_health")
+    print(f"Response: {response.json()}")
     assert response.status_code == 200
     assert response.json() == expected_status
     
