@@ -29,7 +29,7 @@ def _namespace_reference(data: Any, namespace: str) -> Reference | None:
 def _namesapce_organization_references(
     data: Organization, namespace: str
 ) -> Organization:
-    endpoints = deepcopy(data.endpoint)
+    endpoints = data.endpoint
     part_of = data.partOf
     if endpoints is not None:
         for i, ep in enumerate(endpoints):
