@@ -53,7 +53,7 @@ organization_affiliation_incomplete: Final[Dict[str, Any]] = {
 
 organization: Final[Dict[str, Any]] = {
     "resourceType": "Organization",
-    "id": "example",
+    "id": "org-id",
     "identifier": [{"system": "example", "value": "example"}],
     "active": True,
     "type": [
@@ -89,7 +89,7 @@ organization: Final[Dict[str, Any]] = {
 
 endpoint: Final[Dict[str, Any]] = {
     "resourceType": "Endpoint",
-    "id": "example",
+    "id": "ep-id",
     "status": "example",
     "connectionType": {"system": "example", "code": "example", "display": "example"},
     "name": "example",

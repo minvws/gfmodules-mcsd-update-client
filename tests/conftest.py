@@ -1,5 +1,5 @@
-from typing import Any
-
+from typing import Any, Dict
+import copy
 from collections.abc import Generator
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -13,6 +13,7 @@ from app.db.db import Database
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
 from tests.test_config import get_test_config
+from tests.mock_data import organization, endpoint, location
 
 
 @pytest.fixture()
@@ -30,6 +31,7 @@ def resource_map_service(database: Database) -> ResourceMapService:
     set_config(get_test_config())
     return ResourceMapService(database=database)
 
+
 @pytest.fixture()
 def fhir_service() -> FhirService:
     return FhirService(strict_validation=False)
@@ -38,6 +40,7 @@ def fhir_service() -> FhirService:
 @pytest.fixture()
 def fhir_service_strict_validation() -> FhirService:
     return FhirService(strict_validation=True)
+
 
 @pytest.fixture
 def fastapi_app() -> Generator[FastAPI, None, None]:
@@ -52,3 +55,18 @@ def fastapi_app() -> Generator[FastAPI, None, None]:
 @pytest.fixture
 def api_client(fastapi_app: FastAPI) -> TestClient:
     return TestClient(fastapi_app)
+
+
+@pytest.fixture()
+def mock_org() -> Dict[str, Any]:
+    return copy.deepcopy(organization)
+
+
+@pytest.fixture()
+def mock_ep() -> Dict[str, Any]:
+    return copy.deepcopy(endpoint)
+
+
+@pytest.fixture()
+def mock_location() -> Dict[str, Any]:
+    return copy.deepcopy(location)

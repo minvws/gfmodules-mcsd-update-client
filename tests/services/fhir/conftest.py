@@ -8,7 +8,7 @@ from app.services.fhir.references.reference_extractor import get_references
 from app.services.fhir.references.reference_namespacer import (
     namespace_resource_reference,
 )
-from tests.services.mock_data import (
+from tests.mock_data import (
     endpoint,
     endpoint_incomplete,
     healthcare_service,
