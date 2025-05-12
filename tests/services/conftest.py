@@ -1,6 +1,5 @@
 from fhir.resources.R4B.bundle import Bundle
 import pytest
-import copy
 from typing import Dict, Any
 from app.config import Config
 from app.services.api.fhir_api import FhirApi
@@ -8,22 +7,11 @@ from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
 from tests.test_config import get_test_config
-from tests.services.mock_data import organization, endpoint
 
 
 @pytest.fixture()
 def config() -> Config:
     return get_test_config()
-
-
-@pytest.fixture
-def mock_org() -> Dict[str, Any]:
-    return copy.deepcopy(organization)
-
-
-@pytest.fixture
-def mock_ep() -> Dict[str, Any]:
-    return copy.deepcopy(endpoint)
 
 
 @pytest.fixture()

@@ -216,7 +216,7 @@ def test_create_bundle_should_fail_when_strict_mode_is_on(
 def test_get_resource_type_and_id_from_entry_should_succeed(
     fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
 ) -> None:
-    expected = ("Organization", "example")
+    expected = ("Organization", "org-id")
     bundle = fhir_service.create_bundle(mock_history_bundle)
 
     assert bundle.entry is not None
@@ -229,7 +229,7 @@ def test_get_resource_type_and_id_from_entry_should_succeed_from_url(
     fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
 ) -> None:
 
-    expected = ("Organization", "example")
+    expected = ("Organization", "org-id")
     mock_history_bundle["entry"][0].pop("resource")
     bundle = fhir_service.create_bundle(mock_history_bundle)
 
@@ -242,7 +242,7 @@ def test_get_resource_type_and_id_from_entry_should_succeed_from_url(
 def test_get_resource_type_and_id_from_entry_should_succeed_from_entry_request(
     fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
 ) -> None:
-    expected = ("Organization", "example")
+    expected = ("Organization", "org-id")
     mock_history_bundle["entry"][0].pop("resource")
     mock_history_bundle["entry"][0].pop("fullUrl")
 
