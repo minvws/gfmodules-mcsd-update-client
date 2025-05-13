@@ -191,33 +191,33 @@ def test_split_refernece_should_fail_with_invalid_refs(
 
 
 def test_create_bundle_should_succeed_when_strict_mode_is_off(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
-    mock_history_bundle.pop("type")
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    mock_org_history_bundle.pop("type")
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
     assert isinstance(bundle, Bundle)
 
 
 def test_create_bundle_should_succeed_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service_strict_validation: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
-    bundle = fhir_service_strict_validation.create_bundle(mock_history_bundle)
+    bundle = fhir_service_strict_validation.create_bundle(mock_org_history_bundle)
     assert isinstance(bundle, Bundle)
 
 
 def test_create_bundle_should_fail_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service_strict_validation: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
-    mock_history_bundle.pop("type")
+    mock_org_history_bundle.pop("type")
     with pytest.raises(ValidationError):
-        fhir_service_strict_validation.create_bundle(mock_history_bundle)
+        fhir_service_strict_validation.create_bundle(mock_org_history_bundle)
 
 
 def test_get_resource_type_and_id_from_entry_should_succeed(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
     expected = ("Organization", "org-id")
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
 
     assert bundle.entry is not None
     actual = fhir_service.get_resource_type_and_id_from_entry(bundle.entry[0])
@@ -226,12 +226,12 @@ def test_get_resource_type_and_id_from_entry_should_succeed(
 
 
 def test_get_resource_type_and_id_from_entry_should_succeed_from_url(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
 
     expected = ("Organization", "org-id")
-    mock_history_bundle["entry"][0].pop("resource")
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    mock_org_history_bundle["entry"][0].pop("resource")
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
 
     assert bundle.entry is not None
     actual = fhir_service.get_resource_type_and_id_from_entry(bundle.entry[0])
@@ -240,13 +240,13 @@ def test_get_resource_type_and_id_from_entry_should_succeed_from_url(
 
 
 def test_get_resource_type_and_id_from_entry_should_succeed_from_entry_request(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
     expected = ("Organization", "org-id")
-    mock_history_bundle["entry"][0].pop("resource")
-    mock_history_bundle["entry"][0].pop("fullUrl")
+    mock_org_history_bundle["entry"][0].pop("resource")
+    mock_org_history_bundle["entry"][0].pop("fullUrl")
 
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
     assert bundle.entry is not None
     actual = fhir_service.get_resource_type_and_id_from_entry(bundle.entry[0])
 
@@ -254,13 +254,13 @@ def test_get_resource_type_and_id_from_entry_should_succeed_from_entry_request(
 
 
 def test_get_resource_type_and_id_from_entry_should_fail(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
-    mock_history_bundle["entry"][0].pop("resource")
-    mock_history_bundle["entry"][0].pop("fullUrl")
-    mock_history_bundle["entry"][0].pop("request")
+    mock_org_history_bundle["entry"][0].pop("resource")
+    mock_org_history_bundle["entry"][0].pop("fullUrl")
+    mock_org_history_bundle["entry"][0].pop("request")
 
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
     assert bundle.entry is not None
 
     with pytest.raises(ValueError):
@@ -268,11 +268,11 @@ def test_get_resource_type_and_id_from_entry_should_fail(
 
 
 def test_get_request_method_from_entry_should_succeed(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
     expected = "PUT"
 
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
     assert bundle.entry is not None
     actual = fhir_service.get_request_method_from_entry(bundle.entry[0])
 
@@ -280,10 +280,10 @@ def test_get_request_method_from_entry_should_succeed(
 
 
 def test_get_resource_type_and_id_from_entry_should_fail_when_request_is_missing(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
-    mock_history_bundle["entry"][0].pop("request")
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    mock_org_history_bundle["entry"][0].pop("request")
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
     assert bundle.entry is not None
 
     with pytest.raises(ValueError):
@@ -291,10 +291,10 @@ def test_get_resource_type_and_id_from_entry_should_fail_when_request_is_missing
 
 
 def test_get_resource_type_and_id_should_fail_with_incorrect_method(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
-    mock_history_bundle["entry"][0]["request"]["method"] = "INCORRECT"
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    mock_org_history_bundle["entry"][0]["request"]["method"] = "INCORRECT"
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
     assert bundle.entry is not None
 
     with pytest.raises(ValueError):
@@ -302,12 +302,12 @@ def test_get_resource_type_and_id_should_fail_with_incorrect_method(
 
 
 def test_filter_history_entries_should_succeed(
-    fhir_service: FhirService, mock_history_bundle: Dict[str, Any]
+    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
-    mock_entry = mock_history_bundle["entry"][0]
+    mock_entry = mock_org_history_bundle["entry"][0]
     expected = [create_bundle_entry(mock_entry)]
 
-    bundle = fhir_service.create_bundle(mock_history_bundle)
+    bundle = fhir_service.create_bundle(mock_org_history_bundle)
     assert bundle.entry is not None
     actual = fhir_service.filter_history_entries(bundle.entry)
 

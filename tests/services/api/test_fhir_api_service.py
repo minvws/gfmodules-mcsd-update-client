@@ -80,15 +80,15 @@ def test_build_base_history_url_should_succeed_with_since_param(
 def test_get_history_batch_should_succeed(
     mock_response: MagicMock,
     fhir_api: FhirApi,
-    mock_history_bundle: Dict[str, Any],
-    history_entry_1: Dict[str, Any],
+    mock_org_history_bundle: Dict[str, Any],
+    org_history_entry_1: Dict[str, Any],
 ) -> None:
     mock_request = MagicMock()
     mock_request.status_code = 200
-    mock_request.json.return_value = mock_history_bundle
+    mock_request.json.return_value = mock_org_history_bundle
     mock_response.return_value = mock_request
     expected_next_url, expected_entries = None, [
-        create_bundle_entry(history_entry_1),
+        create_bundle_entry(org_history_entry_1),
     ]
 
     url = fhir_api.build_base_history_url("Organization")
@@ -102,20 +102,20 @@ def test_get_history_batch_should_succeed(
 def test_get_history_batch_should_succeed_and_return_next_url(
     mock_response: MagicMock,
     fhir_api: FhirApi,
-    mock_history_bundle: Dict[str, Any],
-    history_entry_1: Dict[str, Any],
+    mock_org_history_bundle: Dict[str, Any],
+    org_history_entry_1: Dict[str, Any],
 ) -> None:
     expected_next_url = URL("some-next-url")
     expected_entries = [
-        create_bundle_entry(history_entry_1),
+        create_bundle_entry(org_history_entry_1),
     ]
-    mock_history_bundle["link"] = [
+    mock_org_history_bundle["link"] = [
         {"relation": "next", "url": expected_next_url.with_query(None)}
     ]
 
     mock_request = MagicMock()
     mock_request.status_code = 200
-    mock_request.json.return_value = mock_history_bundle
+    mock_request.json.return_value = mock_org_history_bundle
     mock_response.return_value = mock_request
 
     url = fhir_api.build_base_history_url("Organization")

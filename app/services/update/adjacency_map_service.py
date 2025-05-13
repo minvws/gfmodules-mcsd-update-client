@@ -35,6 +35,8 @@ class AdjacencyMapService:
         nodes = [self.create_node(entry) for entry in entries]
         adj_map = AdjacencyMap(nodes, updated_ids)
         missing_refs = adj_map.get_missing_refs()
+        print("I AM HERE")
+        print(missing_refs)
         while missing_refs:
             missing_entries = self.get_entries(missing_refs, self.__supplier_api)
             missing_nodes = [self.create_node(entry) for entry in missing_entries]
