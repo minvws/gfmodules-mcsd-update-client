@@ -2,17 +2,19 @@ from datetime import datetime, timezone
 import logging
 from typing import List, Sequence
 
-from app.config import get_config
 from app.db.db import Database
 from app.db.entities.supplier_info import SupplierInfo
 from app.db.repositories.supplier_info_repository import SupplierInfoRepository
+from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 
 logger = logging.getLogger(__name__)
 
 
 class SupplierInfoService:
-    def __init__(self, database: Database) -> None:
+    def __init__(self, database: Database, supplier_ignored_directory_service: SupplierIgnoredDirectoryService, supplier_stale_timeout_seconds: int) -> None:
         self.__database = database
+        self.__supplier_ignored_directory_service = supplier_ignored_directory_service
+        self.__supplier_stale_timeout_seconds = supplier_stale_timeout_seconds
 
     def get_supplier_info(self, supplier_id: str) -> SupplierInfo:
         with self.__database.get_db_session() as session:
@@ -30,17 +32,16 @@ class SupplierInfoService:
             repository.update(info)
     
     def health_check(self) -> bool:
-        supplier_stale_timeout_seconds = get_config().scheduler.supplier_stale_timeout_in_sec
-
         def is_supplier_healthy(supplier_info: SupplierInfo) -> bool:
             if not supplier_info.last_success_sync:
                 return False
             time_since_last_success = (datetime.now(timezone.utc) - supplier_info.last_success_sync.astimezone(timezone.utc)).total_seconds()
-            return time_since_last_success < supplier_stale_timeout_seconds  # type: ignore
+            return time_since_last_success < self.__supplier_stale_timeout_seconds
 
+        filtered_suppliers = self.__supplier_ignored_directory_service.filter_ignored_supplier_info(self.get_all_suppliers_info())
         return all([
             is_supplier_healthy(supplier_info)
-            for supplier_info in self.get_all_suppliers_info()
+            for supplier_info in filtered_suppliers
         ])
     
     def get_prometheus_metrics(self) -> List[str]:

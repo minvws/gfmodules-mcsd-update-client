@@ -1,8 +1,11 @@
 from fhir.resources.R4B.bundle import Bundle
 import pytest
 from typing import Dict, Any
-from app.config import Config
+from app.config import Config, set_config
+from app.db.db import Database
 from app.services.api.fhir_api import FhirApi
+from app.services.entity.resource_map_service import ResourceMapService
+from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
@@ -13,6 +16,16 @@ from tests.test_config import get_test_config
 def config() -> Config:
     return get_test_config()
 
+@pytest.fixture
+def supplier_ignored_directory_service(database: Database, config: Config) -> SupplierIgnoredDirectoryService:
+    set_config(config)
+    return SupplierIgnoredDirectoryService(database=database)
+
+
+@pytest.fixture()
+def resource_map_service(database: Database, config: Config) -> ResourceMapService:
+    set_config(config)
+    return ResourceMapService(database=database)
 
 @pytest.fixture()
 def mock_bundle_request(
