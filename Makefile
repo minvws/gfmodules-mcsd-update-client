@@ -11,16 +11,10 @@ endif
 all: help
 
 container-build: ## Build the container
-	docker compose build --build-arg="NEW_UID=${NEW_UID}" --build-arg="NEW_GID=${NEW_GID}"
+	docker build --build-arg="NEW_UID=${NEW_UID}" --build-arg="NEW_GID=${NEW_GID}" -f docker/Dockerfile .
 
 container-build-sa: ## Build the container for standalone mode
-	docker compose build --build-arg="NEW_UID=${NEW_UID}" --build-arg="NEW_GID=${NEW_GID}" --build-arg="standalone=true"
-
-up: ## Start the container
-	docker compose up
-
-bash: ## Runs a bash prompt inside the container
-	docker compose run --rm app bash
+	docker build --build-arg="standalone=true" -f docker/Dockerfile .
 
 lint: ## Check for linting errors
 	$(RUN_PREFIX) ruff check

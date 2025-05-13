@@ -8,6 +8,8 @@ services:
         NEW_GID: ${NEW_GID:-1000}
     ports:
       - "8509:8509"
+    environment:
+      DO_NOT_USE_ON_PRODUCTION: "I'm a fool if I run this application on a production environment."
     volumes:
       - ../app:/src/app
       - ../docker:/src/docker
