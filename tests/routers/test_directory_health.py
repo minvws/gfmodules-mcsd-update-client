@@ -67,7 +67,6 @@ def test_directory_health_matrix(api_client: TestClient, supplier_syncs: List[st
         )
     
     response = api_client.get("/directory_health")
-    print(f"Response: {response.json()}")
     assert response.status_code == 200
     assert response.json() == expected_status
     
