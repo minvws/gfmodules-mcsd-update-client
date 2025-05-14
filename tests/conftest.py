@@ -68,17 +68,17 @@ def fhir_service_strict_validation() -> FhirService:
 
 @pytest.fixture()
 def mock_org() -> Dict[str, Any]:
-    return copy.deepcopy(organization)
+    return organization
 
 
 @pytest.fixture()
 def mock_ep() -> Dict[str, Any]:
-    return copy.deepcopy(endpoint)
+    return endpoint
 
 
 @pytest.fixture()
 def mock_location() -> Dict[str, Any]:
-    return copy.deepcopy(location)
+    return location
 
 # Disable this if you want the mock data to persist after tests
 @pytest.fixture(scope="session", autouse=True)

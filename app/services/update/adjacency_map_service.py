@@ -1,7 +1,7 @@
 from typing import List
 from fhir.resources.R4B.bundle import BundleEntry
 
-from app.models.adjacency.adjacency_map import AdjacencyData, AdjacencyMap
+from app.models.adjacency.adjacency_map import AdjacencyMap
 from app.models.adjacency.node import (
     ConsumerNodeData,
     Node,
@@ -35,16 +35,25 @@ class AdjacencyMapService:
         nodes = [self.create_node(entry) for entry in entries]
         adj_map = AdjacencyMap(nodes, updated_ids)
         missing_refs = adj_map.get_missing_refs()
-        print("I AM HERE")
-        print(missing_refs)
         while missing_refs:
-            missing_entries = self.get_entries(missing_refs, self.__supplier_api)
+            missing_entries = self.get_supplier_data(missing_refs)
             missing_nodes = [self.create_node(entry) for entry in missing_entries]
             adj_map.add_nodes(missing_nodes)
             missing_refs = adj_map.get_missing_refs()
 
-        self.get_consumer_data(adj_map.data)
-
+        consumer_targets = [
+            NodeReference(
+                id=f"{self.supplier_id}-{node.resource_id}",
+                resource_type=node.resource_type,
+            )
+            for node in adj_map.data.values()
+        ]
+        consumer_entries = self.get_consumer_data(consumer_targets)
+        for entry in consumer_entries:
+            _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
+            supplier_id = id.replace(f"{self.supplier_id}-", "")
+            node = adj_map.data[supplier_id]
+            node.consumer_data = ConsumerNodeData(resource=entry.resource)
         return adj_map
 
     def get_entries(
@@ -57,6 +66,12 @@ class AdjacencyMapService:
             )
         )
         return res
+
+    def get_supplier_data(self, refs: List[NodeReference]) -> List[BundleEntry]:
+        return self.get_entries(refs, self.__supplier_api)
+
+    def get_consumer_data(self, refs: List[NodeReference]) -> List[BundleEntry]:
+        return self.get_entries(refs, self.__consumer_api)
 
     def create_node(self, entry: BundleEntry) -> Node:
         res_type, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
@@ -95,20 +110,20 @@ class AdjacencyMapService:
             entry=entry,
         )
 
-    def get_consumer_data(self, adj_map: AdjacencyData) -> None:
-        consumer_targets = [
-            NodeReference(
-                id=f"{self.supplier_id}-{node.resource_id}",
-                resource_type=node.resource_type,
-            )
-            for node in adj_map.values()
-        ]
-        res = self.get_entries(consumer_targets, self.__consumer_api)
-        for entry in res:
-            _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
-            if id is not None:
-                sup_id = id.replace(f"{self.supplier_id}-", "")
-                node = adj_map[sup_id]
-                node.consumer_data = ConsumerNodeData(
-                    resource=entry.resource,
-                )
+    # def get_consumer_data(self, adj_map: AdjacencyData) -> None:
+    #     consumer_targets = [
+    #         NodeReference(
+    #             id=f"{self.supplier_id}-{node.resource_id}",
+    #             resource_type=node.resource_type,
+    #         )
+    #         for node in adj_map.values()
+    #     ]
+    #     res = self.get_entries(consumer_targets, self.__consumer_api)
+    #     for entry in res:
+    #         _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
+    #         if id is not None:
+    #             sup_id = id.replace(f"{self.supplier_id}-", "")
+    #             node = adj_map[sup_id]
+    #             node.consumer_data = ConsumerNodeData(
+    #                 resource=entry.resource,
+    #             )

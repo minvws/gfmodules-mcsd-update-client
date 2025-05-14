@@ -27,35 +27,33 @@ from tests.mock_data import (
 
 
 incomplete_resources = [
-    organization_incomplete,
-    endpoint_incomplete,
-    location_incomplete,
-    practitioner_incomplete,
-    practitioner_role_incomplete,
-    healthcare_service_incomplete,
-    organization_affiliation_incomplete,
+    copy.deepcopy(organization_incomplete),
+    copy.deepcopy(endpoint_incomplete),
+    copy.deepcopy(location_incomplete),
+    copy.copy(practitioner_incomplete),
+    copy.deepcopy(practitioner_role_incomplete),
+    copy.deepcopy(healthcare_service_incomplete),
+    copy.deepcopy(organization_affiliation_incomplete),
 ]
 
 incomplete_resources_with_required_fields = [
-    endpoint_incomplete,
-    healthcare_service_incomplete,
+    copy.deepcopy(endpoint_incomplete),
+    copy.deepcopy(healthcare_service_incomplete),
 ]
 
 complete_resources = [
-    organization,
-    endpoint,
-    practitioner,
-    practitioner_role,
-    location,
-    healthcare_service,
-    organization_affiliation,
+    copy.deepcopy(organization),
+    copy.deepcopy(endpoint),
+    copy.deepcopy(practitioner),
+    copy.deepcopy(practitioner_role),
+    copy.deepcopy(location),
+    copy.deepcopy(healthcare_service),
+    copy.deepcopy(organization_affiliation),
 ]
 
-complete_fhir_resource = [
-    create_resource(res) for res in copy.deepcopy(complete_resources)
-]
+complete_fhir_resource = [create_resource(res) for res in complete_resources]
 
-fhir_references = [get_references(res) for res in copy.deepcopy(complete_fhir_resource)]
+fhir_references = [get_references(res) for res in complete_fhir_resource]
 
 namespaced_resources = [
     namespace_resource_reference(res, "example")
