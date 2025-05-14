@@ -68,7 +68,7 @@ def fhir_service_strict_validation() -> FhirService:
 
 @pytest.fixture()
 def mock_org() -> Dict[str, Any]:
-    return organization
+    return copy.deepcopy(organization)
 
 
 @pytest.fixture()

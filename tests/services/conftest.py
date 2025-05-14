@@ -103,6 +103,35 @@ def mock_org_history_bundle(
     return bundle
 
 
+@pytest.fixture
+def mock_bundle_of_bundles(
+    mock_org_bundle_entry: Dict[str, Any], mock_ep_bundle_entry: Dict[str, Any]
+) -> Dict[str, Any]:
+    return {
+        "type": "batch",
+        "entry": [
+            {
+                "resource": {
+                    "resourceType": "Bundle",
+                    "type": "history",
+                    "entry": [
+                        mock_org_bundle_entry,
+                    ],
+                }
+            },
+            {
+                "resource": {
+                    "resourceType": "Bundle",
+                    "type": "history",
+                    "entry": [
+                        mock_ep_bundle_entry,
+                    ],
+                }
+            },
+        ],
+    }
+
+
 @pytest.fixture()
 def mock_ep_history_bundle(ep_history_entry: Dict[str, Any]) -> Dict[str, Any]:
     return {"type": "history", "entry": [ep_history_entry]}

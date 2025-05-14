@@ -81,39 +81,6 @@ def resource_with_contained_refs() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture
-def mock_bundle_of_bundles(
-    mock_org: Dict[str, Any], mock_ep: Dict[str, Any]
-) -> Dict[str, Any]:
-    return {
-        "type": "batch",
-        "entry": [
-            {
-                "resource": {
-                    "resourceType": "Bundle",
-                    "type": "history",
-                    "entry": [
-                        {
-                            "resource": mock_org,
-                        }
-                    ],
-                }
-            },
-            {
-                "resource": {
-                    "resourceType": "Bundle",
-                    "type": "history",
-                    "entry": [
-                        {
-                            "resource": mock_ep,
-                        }
-                    ],
-                }
-            },
-        ],
-    }
-
-
 @pytest.fixture()
 def fhir_service_strict_validation() -> FhirService:
     return FhirService(strict_validation=True)

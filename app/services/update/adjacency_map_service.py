@@ -109,21 +109,3 @@ class AdjacencyMapService:
             references=refs,
             entry=entry,
         )
-
-    # def get_consumer_data(self, adj_map: AdjacencyData) -> None:
-    #     consumer_targets = [
-    #         NodeReference(
-    #             id=f"{self.supplier_id}-{node.resource_id}",
-    #             resource_type=node.resource_type,
-    #         )
-    #         for node in adj_map.values()
-    #     ]
-    #     res = self.get_entries(consumer_targets, self.__consumer_api)
-    #     for entry in res:
-    #         _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
-    #         if id is not None:
-    #             sup_id = id.replace(f"{self.supplier_id}-", "")
-    #             node = adj_map[sup_id]
-    #             node.consumer_data = ConsumerNodeData(
-    #                 resource=entry.resource,
-    #             )

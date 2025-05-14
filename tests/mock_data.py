@@ -71,7 +71,6 @@ organization: Final[Dict[str, Any]] = {
             "state": "example",
         }
     ],
-    "partOf": {"reference": "Organization/org-id"},
     "contact": [
         {
             "purpose": {

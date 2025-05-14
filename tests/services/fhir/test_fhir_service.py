@@ -330,11 +330,11 @@ def test_create_bundle_request_should_succeed(fhir_service: FhirService) -> None
 def test_get_entries_from_bundle_of_bundles_should_succeed(
     fhir_service: FhirService,
     mock_bundle_of_bundles: Dict[str, Any],
-    mock_org: Dict[str, Any],
-    mock_ep: Dict[str, Any],
+    mock_org_bundle_entry: Dict[str, Any],
+    mock_ep_bundle_entry: Dict[str, Any],
 ) -> None:
-    entry_1 = create_bundle_entry({"resource": mock_org})
-    entry_2 = create_bundle_entry({"resource": mock_ep})
+    entry_1 = create_bundle_entry(mock_org_bundle_entry)
+    entry_2 = create_bundle_entry(mock_ep_bundle_entry)
     expected = [entry_1, entry_2]
 
     bundle = fhir_service.create_bundle(mock_bundle_of_bundles)
