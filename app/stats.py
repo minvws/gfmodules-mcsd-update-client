@@ -1,6 +1,7 @@
+from contextlib import contextmanager
 from datetime import timedelta
 import time
-from typing import Any, Callable, Awaitable
+from typing import Any, Callable, Awaitable, Generator
 
 import statsd
 from statsd.client.timer import Timer
@@ -43,7 +44,10 @@ class NoopStats(Stats):
         pass
 
     def timer(self, key: str) -> Timer:
-        raise NotImplementedError
+        @contextmanager
+        def noop_context_manager() -> Generator[Any, Any, Any]:
+            yield
+        return noop_context_manager()
 
 
 class MemoryClient:

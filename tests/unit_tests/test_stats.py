@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from app.config import set_config
 from app.stats import MemoryClient, Statsd, StatsdMiddleware, setup_stats, get_stats
-from tests.get_test_config import get_test_config
+from tests.test_config import get_test_config
+
 
 @pytest.fixture
 def memory_client() -> MemoryClient:

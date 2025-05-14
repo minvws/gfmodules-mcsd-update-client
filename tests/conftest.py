@@ -1,7 +1,6 @@
 from typing import Any, Dict
 import copy
 import pathlib
-from typing import Any
 
 from collections.abc import Generator
 from fastapi import FastAPI
@@ -26,8 +25,8 @@ def pytest_ignore_collect(collection_path: pathlib.Path, config: Any) -> bool:
 # Disable the test if running in GitHub Actions
 def pytest_collection_modifyitems(config: Any, items: Any) -> None:
     if os.getenv('GITHUB_ACTIONS') == 'true':
-        if "test_consumer_update_with_timing" in str(items):
-            items[:] = [item for item in items if "test_consumer_update_with_timing" not in str(item)]
+        if "test_stress_test_update" in str(items):
+            items[:] = [item for item in items if "test_stress_test_update" not in str(item)]
 
 @pytest.fixture
 def database() -> Generator[Database, Any, None]:

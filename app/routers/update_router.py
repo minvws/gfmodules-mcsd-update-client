@@ -11,7 +11,6 @@ from app.container import (
 from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.update.update_consumer_service import UpdateConsumerService
 from app.services.supplier_provider.supplier_provider import SupplierProvider
-from app.stats import get_stats
 
 router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"])
 
@@ -22,7 +21,6 @@ class UpdateQueryParams(BaseModel):
 
 @router.post("/{supplier_id}", response_model=None, summary="Update by supplier ID")
 @router.post("", response_model=None, summary="Update all suppliers")
-@get_stats().timer("update_resources")
 def update_supplier(
     supplier_id: str | None = None,
     query_params: UpdateQueryParams = Depends(),

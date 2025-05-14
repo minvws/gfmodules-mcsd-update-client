@@ -12,6 +12,7 @@ import requests
 from yarl import URL
 from app.container import get_database
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
+from app.models.supplier.dto import SupplierDto
 from tests.utils.utils import (
     check_if_in_db,
     create_file_structure,
@@ -157,9 +158,19 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
     "app.services.api.api_service.AuthenticationBasedApiService.do_request",
     side_effect=mock_do_request,
 )
-def test_consumer_update_with_timing(
+@patch(
+    "app.services.supplier_provider.api_provider.SupplierApiProvider.get_all_suppliers",
+    return_value=[SupplierDto(id="test-supplier", name="Test Supplier", endpoint="http://testserver/test", is_deleted=False)],
+)
+@patch(
+    "app.services.supplier_provider.api_provider.SupplierApiProvider.get_one_supplier",
+    return_value=SupplierDto(id="test-supplier", name="Test Supplier", endpoint="http://testserver/test", is_deleted=False),
+)
+def test_stress_test_update(
     mock_do_request: requests.Response,
     mock_get_history_batch: Bundle,
+    mock_get_all_suppliers: List[SupplierDto],
+    mock_get_one_supplier: SupplierDto,
     api_client: TestClient, resource_count: int, version_count: int, max_depth: int, test_name: str
 ) -> None:
     global monitoring

@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import StaticPool, create_engine, text
+from sqlalchemy import MetaData, StaticPool, create_engine, text
 from sqlalchemy.orm import Session
 
 from app.db.entities.base import Base
