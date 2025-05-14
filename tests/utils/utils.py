@@ -7,7 +7,6 @@ from uuid import uuid4
 
 import numpy as np
 from app.container import get_database
-from app.db.db import Database
 from app.db.repositories.resource_map_repository import ResourceMapRepository
 from app.services.update.update_consumer_service import McsdResources
 from .mcsd_resource_gen import generate_history_bundles, generate_post_bundle, setup_fhir_resource
@@ -36,7 +35,7 @@ def create_file_structure(
     generate_history_bundles(base_path)
     generate_post_bundle(base_path)
 
-def generate_report(test_name: str, durations: List[float], iterations: int, monitor_data: List[Dict[str, Any]], total_resources: int) -> Dict[str, Any]:
+def generate_report(test_name: str, durations: Dict[str, List[float]], iterations: int, monitor_data: List[Dict[str, Any]], total_resources: int) -> Dict[str, Any]:
     memory = [x["memory_mb"] for x in monitor_data]
     cpu = [x["cpu_percent"] for x in monitor_data]
     reads = [x["read_bytes"] for x in monitor_data]
@@ -50,7 +49,7 @@ def generate_report(test_name: str, durations: List[float], iterations: int, mon
             "p99": np.percentile(values, 99),
             "max": max(values),
         }
-
+    
     return {
         "test_name": test_name,
         "hardware": {
@@ -61,7 +60,11 @@ def generate_report(test_name: str, durations: List[float], iterations: int, mon
             "platform": platform.platform(),
         },
         "iterations": iterations,
-        "duration_milliseconds": summarize(durations),
+        "duration_milliseconds": {
+            "total_with_patch": summarize(durations["total"]),
+            "true_update": summarize(durations["true_update"]),
+            "patch": summarize(durations["patch"]),
+        },
         "total_resources": total_resources,
         "resource_usage_summary": {
             "cpu_percent": summarize(cpu),
@@ -72,20 +75,17 @@ def generate_report(test_name: str, durations: List[float], iterations: int, mon
     }
 
 
-def check_if_in_db(ids_set: Set[str]) -> int:
+def check_if_in_db(supplier_id: str, ids_set: Set[str]) -> int:
     errors = 0
     print("Checking if all resources are in the database")
     db = get_database()
-    for _id in ids_set:
-        if not check_if_id_in_database(_id, db):
-            errors += 1
-    return errors
-
-def check_if_id_in_database(id: str, db: Database) -> bool:
     with db.get_db_session() as session:
         repo = session.get_repository(ResourceMapRepository)
-        result = repo.find(supplier_resource_id=id)
-        for resource_map in result:
-            if id == resource_map.supplier_resource_id:
-                return True
-    return False
+        result = repo.find(supplier_id=supplier_id)
+        for resource_item in result:
+            if resource_item.supplier_resource_id in ids_set: # Ids set does not contain deleted resources as latest version
+                ids_set.discard(resource_item.supplier_resource_id)
+    if ids_set:
+        print(f"Resource {ids_set} not found in the database")
+        errors += len(ids_set)
+    return errors

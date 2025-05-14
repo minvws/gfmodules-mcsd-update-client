@@ -33,7 +33,7 @@ def test_cleanup_old_directories() -> None:
         supplier_info_service=mock_supplier_info_service,
         supplier_ignored_directory_service=mock_supplier_ignored_directory_service,
         cleanup_client_directory_after_success_timeout_seconds=3600, # less than 2 hours
-        stats=NoopStats(), # Assuming NoopStats is a mock or a real class that does nothing
+        stats=NoopStats(),
     )
 
     service.cleanup_old_directories()

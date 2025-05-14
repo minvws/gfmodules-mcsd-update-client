@@ -1,3 +1,4 @@
+import shutil
 from typing import Any, Dict
 import copy
 import pathlib
@@ -16,7 +17,6 @@ from app.services.fhir.fhir_service import FhirService
 from tests.test_config import get_test_config
 from tests.mock_data import organization, endpoint, location
 import os
-import shutil
 
 # Don't search for tests in the mock_data directory
 def pytest_ignore_collect(collection_path: pathlib.Path, config: Any) -> bool:
