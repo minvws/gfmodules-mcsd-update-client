@@ -29,6 +29,7 @@ monitor_data = []
 monitoring = False
 iteration = 0
 
+
 def mock_bundles_cache() -> Dict[str, Any]:
     global CACHE
     if CACHE:
@@ -60,82 +61,98 @@ def monitor_resources(interval: float = 0.1) -> None:
         )
         time.sleep(interval)
 
-def mock_do_request(method: str, url: URL, json_data: Dict[str, Any] | None = None) -> requests.Response:
+
+def mock_do_request(
+    method: str, url: URL, json_data: Dict[str, Any] | None = None
+) -> requests.Response:
     global iteration
     with get_stats().timer(f"{iteration}.patch_timing"):
         if str(url) == "http://testserver/test":
             return_bundle = Bundle(type="batch-response", entry=[])
             assert json_data is not None
-            for entry in json_data.get('entry', []):
-                if not entry.get('request'):
+            for entry in json_data.get("entry", []):
+                if not entry.get("request"):
                     continue
-                if entry['request'].get('method') == 'GET':
-                    resource_type = entry['request'].get('url').split('/')[1]
-                    file_path = f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
+                if entry["request"].get("method") == "GET":
+                    resource_type = entry["request"].get("url").split("/")[1]
+                    file_path = (
+                        f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
+                    )
                     bundle = Bundle(**CACHE[file_path])
                     return_bundle.entry.append(BundleEntry(resource=bundle))
             response = requests.Response()
             response.status_code = 200
-            response._content = return_bundle.model_dump_json(indent=4).encode('utf-8')
+            response._content = return_bundle.model_dump_json(indent=4).encode("utf-8")
             return response
         if str(url) == "http://testserver/consumer/test":
             response = requests.Response()
             assert json_data is not None
-            for entry in json_data.get('entry', []):
-                if not entry.get('request'):
+            for entry in json_data.get("entry", []):
+                if not entry.get("request"):
                     continue
-                if entry['request'].get('method') == 'POST' or entry['request'].get('method') == 'PUT':
-                    resource = entry['resource']
+                if (
+                    entry["request"].get("method") == "POST"
+                    or entry["request"].get("method") == "PUT"
+                ):
+                    resource = entry["resource"]
                     store_consumer(resource)
                     response._content = b'{"resourceType": "Bundle", "type": "batch-response", "entry": []}'
                     response.status_code = 200
-                if entry['request'].get('method') == 'GET':
-                    resource_type = entry['request'].get('url').split('/')[1]
-                    resource_id = entry['request'].get('url').split('/')[2]
+                if entry["request"].get("method") == "GET":
+                    resource_type = entry["request"].get("url").split("/")[1]
+                    resource_id = entry["request"].get("url").split("/")[2]
                     resource = get_from_consumer(resource_type, resource_id)
 
                     if resource is not None:
                         return_bundle = Bundle(type="batch-response", entry=[])
                         return_bundle.entry.append(BundleEntry(resource=resource))
-                        response._content = return_bundle.model_dump_json(indent=4).encode('utf-8')
+                        response._content = return_bundle.model_dump_json(
+                            indent=4
+                        ).encode("utf-8")
                         response.status_code = 200
-            
+
             if response.status_code != 200:
                 response = requests.Response()
                 response.status_code = 200
-                response._content = json.dumps({
-                    "resourceType": "OperationOutcome",
-                    "issue": [
-                        {
-                            "severity": "information",
-                            "code": "informational",
-                            "details": {
-                                "text": f"Resource not found: method {method}, url {url}, json_data {json_data}"
+                response._content = json.dumps(
+                    {
+                        "resourceType": "OperationOutcome",
+                        "issue": [
+                            {
+                                "severity": "information",
+                                "code": "informational",
+                                "details": {
+                                    "text": f"Resource not found: method {method}, url {url}, json_data {json_data}"
+                                },
                             }
-                        }
-                    ]
-                }).encode('utf-8')
+                        ],
+                    }
+                ).encode("utf-8")
             return response
         assert False, "Should not reach here"
+
 
 def store_consumer(resource: Dict[str, Any]) -> None:
     key = f"consumer_data/{resource['resourceType']}/{resource['id']}.json"
     CACHE[key] = resource
 
+
 def get_from_consumer(resource_type: str, resource_id: str) -> Any | None:
     key = f"consumer_data/{resource_type}/{resource_id}.json"
     return CACHE.get(key)
 
+
 def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
     global iteration
     with get_stats().timer(f"{iteration}.patch_timing"):
-        resource_type = url.path.split("/")[2] # type:ignore
+        resource_type = url.path.split("/")[2]  # type:ignore
         file_path = f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
         if file_path not in CACHE:
             assert False, f"File {file_path} not found in cache"
         bundle = Bundle(**CACHE[file_path])
         return None, bundle.entry
-            
+
+
 @pytest.mark.filterwarnings("ignore:Pydantic serializer warnings")
 @pytest.mark.parametrize(
     "resource_count, version_count, max_depth, test_name",
@@ -156,7 +173,7 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
 )
 @patch(
     "app.services.api.fhir_api.FhirApi.get_history_batch",
-    side_effect=mock_get_history_batch
+    side_effect=mock_get_history_batch,
 )
 @patch(
     "app.services.api.api_service.AuthenticationBasedApiService.do_request",
@@ -164,18 +181,34 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
 )
 @patch(
     "app.services.supplier_provider.api_provider.SupplierApiProvider.get_all_suppliers",
-    return_value=[SupplierDto(id="test-supplier", name="Test Supplier", endpoint="http://testserver/test", is_deleted=False)],
+    return_value=[
+        SupplierDto(
+            id="test-supplier",
+            name="Test Supplier",
+            endpoint="http://testserver/test",
+            is_deleted=False,
+        )
+    ],
 )
 @patch(
     "app.services.supplier_provider.api_provider.SupplierApiProvider.get_one_supplier",
-    return_value=SupplierDto(id="test-supplier", name="Test Supplier", endpoint="http://testserver/test", is_deleted=False),
+    return_value=SupplierDto(
+        id="test-supplier",
+        name="Test Supplier",
+        endpoint="http://testserver/test",
+        is_deleted=False,
+    ),
 )
 def test_stress_test_update(
     mock_do_request: requests.Response,
     mock_get_history_batch: Tuple[URL | None, List[BundleEntry]],
     mock_get_all_suppliers: List[SupplierDto],
     mock_get_one_supplier: SupplierDto,
-    api_client: TestClient, resource_count: int, version_count: int, max_depth: int, test_name: str
+    api_client: TestClient,
+    resource_count: int,
+    version_count: int,
+    max_depth: int,
+    test_name: str,
 ) -> None:
     global monitoring
     monitoring = True
@@ -185,7 +218,6 @@ def test_stress_test_update(
 
     iterations = 10
     global iteration
-
 
     print(f"Running test: {test_name}")
     db = get_database()
@@ -234,7 +266,9 @@ def test_stress_test_update(
             latest_entries[res_id] = (version, method)
 
     final_resources = {
-        res_id for res_id, (version, method) in latest_entries.items() if method != "DELETE"
+        res_id
+        for res_id, (version, method) in latest_entries.items()
+        if method != "DELETE"
     }
 
     assert check_if_in_db(supplier_id="test-supplier", ids_set=final_resources) == 0
@@ -259,7 +293,11 @@ def test_stress_test_update(
     }
 
     report = generate_report(
-        test_name, durations, iterations, monitor_data, total_resources=len(final_resources)
+        test_name,
+        durations,
+        iterations,
+        monitor_data,
+        total_resources=len(final_resources),
     )
 
     if not os.path.exists(TEST_RESULTS_PATH):

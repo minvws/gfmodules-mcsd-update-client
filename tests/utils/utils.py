@@ -1,15 +1,29 @@
 import os
 import platform
 import shutil
+from fhir.resources.R4B.bundle import BundleEntry
 import psutil
 from typing import Any, Dict, List, Set
 from uuid import uuid4
 
+from app.models.adjacency.node import (
+    ConsumerNodeData,
+    Node,
+    NodeReference,
+    SupplierNodeData,
+)
+from app.models.resource_map.dto import ResourceMapDto
+from app.services.fhir.fhir_service import FhirService
 import numpy as np
 from app.container import get_database
 from app.db.repositories.resource_map_repository import ResourceMapRepository
 from app.services.update.update_consumer_service import McsdResources
-from .mcsd_resource_gen import generate_history_bundles, generate_post_bundle, setup_fhir_resource
+from .mcsd_resource_gen import (
+    generate_history_bundles,
+    generate_post_bundle,
+    setup_fhir_resource,
+)
+
 
 def create_file_structure(
     base_path: str, resource_count: int, version_count: int, max_depth: int = 1
@@ -35,7 +49,14 @@ def create_file_structure(
     generate_history_bundles(base_path)
     generate_post_bundle(base_path)
 
-def generate_report(test_name: str, durations: Dict[str, List[float]], iterations: int, monitor_data: List[Dict[str, Any]], total_resources: int) -> Dict[str, Any]:
+
+def generate_report(
+    test_name: str,
+    durations: Dict[str, List[float]],
+    iterations: int,
+    monitor_data: List[Dict[str, Any]],
+    total_resources: int,
+) -> Dict[str, Any]:
     memory = [x["memory_mb"] for x in monitor_data]
     cpu = [x["cpu_percent"] for x in monitor_data]
     reads = [x["read_bytes"] for x in monitor_data]
@@ -49,7 +70,7 @@ def generate_report(test_name: str, durations: Dict[str, List[float]], iteration
             "p99": np.percentile(values, 99),
             "max": max(values),
         }
-    
+
     return {
         "test_name": test_name,
         "hardware": {
@@ -83,9 +104,42 @@ def check_if_in_db(supplier_id: str, ids_set: Set[str]) -> int:
         repo = session.get_repository(ResourceMapRepository)
         result = repo.find(supplier_id=supplier_id)
         for resource_item in result:
-            if resource_item.supplier_resource_id in ids_set: # Ids set does not contain deleted resources as latest version
+            if (
+                resource_item.supplier_resource_id in ids_set
+            ):  # Ids set does not contain deleted resources as latest version
                 ids_set.discard(resource_item.supplier_resource_id)
     if ids_set:
         print(f"Resource {ids_set} not found in the database")
         errors += len(ids_set)
     return errors
+
+
+def create_mock_node(
+    bundle_entry: BundleEntry,
+    node_refs: List[NodeReference],
+    supplier_id: str,
+    fhir_service: FhirService,
+) -> Node:
+    """
+    Helper function to create mock nodes
+    """
+    res_type, id = fhir_service.get_resource_type_and_id_from_entry(bundle_entry)
+    method = fhir_service.get_request_method_from_entry(bundle_entry)
+    supplier_data = SupplierNodeData(
+        supplier_id=supplier_id, references=node_refs, method=method, entry=bundle_entry
+    )
+    resource_map = ResourceMapDto(
+        supplier_id=supplier_id,
+        resource_type=res_type,
+        supplier_resource_id=id,
+        consumer_resource_id=f"{supplier_id}-{id}",
+        history_size=1,
+    )
+
+    return Node(
+        resource_id=id,
+        resource_type=res_type,
+        supplier_data=supplier_data,
+        consumer_data=ConsumerNodeData(resource=None),
+        resource_map=resource_map,
+    )
