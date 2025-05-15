@@ -32,12 +32,10 @@ def _get_org_references(model: Organization) -> List[Reference]:
             ref = extract_references(endpoint)
             if ref is not None:
                 refs.append(ref)
-
     if part_of is not None:
         new_ref = extract_references(part_of)
         if new_ref is not None:
             refs.append(new_ref)
-
     return refs
 
 

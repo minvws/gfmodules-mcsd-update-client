@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import StaticPool, create_engine, text
+from sqlalchemy import MetaData, StaticPool, create_engine, text
 from sqlalchemy.orm import Session
 
 from app.db.entities.base import Base
@@ -29,6 +29,20 @@ class Database:
     def generate_tables(self) -> None:
         logger.info("Generating tables...")
         Base.metadata.create_all(self.engine)
+
+    def truncate_tables(self) -> None:
+        logger.info("Truncating all tables...")
+        try:
+            metadata = MetaData()
+            metadata.reflect(bind=self.engine)
+            with Session(self.engine) as session:
+                for table in reversed(metadata.sorted_tables):
+                    session.execute(text(f"DELETE FROM {table.name}"))
+                session.commit()
+            logger.info("All tables truncated successfully.")
+        except Exception as e:
+            logger.error("Error while truncating tables: %s", e)
+            raise e
 
     def is_healthy(self) -> bool:
         """

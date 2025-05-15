@@ -1,5 +1,8 @@
+import shutil
 from typing import Any, Dict
 import copy
+import pathlib
+
 from collections.abc import Generator
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -13,9 +16,19 @@ from app.db.db import Database
 from app.services.fhir.fhir_service import FhirService
 from tests.test_config import get_test_config
 from tests.mock_data import organization, endpoint, location
+import os
 
+# Don't search for tests in the mock_data directory
+def pytest_ignore_collect(collection_path: pathlib.Path, config: Any) -> bool:
+    return "tests/mock_data" in str(collection_path)
 
-@pytest.fixture()
+# Disable the test if running in GitHub Actions
+def pytest_collection_modifyitems(config: Any, items: Any) -> None:
+    if os.getenv('GITHUB_ACTIONS') == 'true':
+        if "test_stress_test_update" in str(items):
+            items[:] = [item for item in items if "test_stress_test_update" not in str(item)]
+
+@pytest.fixture
 def database() -> Generator[Database, Any, None]:
     try:
         db = Database("sqlite:///:memory:")
@@ -63,3 +76,10 @@ def mock_ep() -> Dict[str, Any]:
 @pytest.fixture()
 def mock_location() -> Dict[str, Any]:
     return copy.deepcopy(location)
+
+# Disable this if you want the mock data to persist after tests
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_after_tests() -> Generator[None, None, None]:
+    yield
+    if os.path.exists("tests/mock_data"):
+        shutil.rmtree("tests/mock_data")

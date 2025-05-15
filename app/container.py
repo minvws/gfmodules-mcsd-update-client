@@ -12,6 +12,8 @@ from app.services.api.authenticators.factory import AuthenticatorFactory
 from app.services.update.update_consumer_service import UpdateConsumerService
 from typing import cast
 
+from app.stats import get_stats
+
 
 
 def container_config(binder: inject.Binder) -> None:
@@ -57,7 +59,8 @@ def container_config(binder: inject.Binder) -> None:
         supplier_provider=supplier_provider,
         supplier_info_service=supplier_info_service,
         supplier_ignored_directory_service=supplier_ignored_directory_service,
-        cleanup_client_directory_after_success_timeout_seconds=config.scheduler.cleanup_client_directory_after_success_timeout_in_sec # type: ignore
+        cleanup_client_directory_after_success_timeout_seconds=config.scheduler.cleanup_client_directory_after_success_timeout_in_sec, # type: ignore
+        stats=get_stats(),
     )
     
 

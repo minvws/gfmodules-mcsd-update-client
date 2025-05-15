@@ -16,7 +16,7 @@ from app.routers.scheduler_router import router as scheduler_router
 from app.routers.directory_health import router as directory_health_router
 from app.routers.ignore_list_router import router as ignore_list_router
 from app.config import get_config
-from app.stats import setup_stats
+from app.stats import StatsdMiddleware, setup_stats
 from app.telemetry import setup_telemetry
 
 
@@ -50,11 +50,11 @@ def run() -> None:
 
 
 def create_fastapi_app() -> FastAPI:
-    application_init()
-    fastapi = setup_fastapi()
-
     if get_config().stats.enabled:
         setup_stats()
+
+    application_init()
+    fastapi = setup_fastapi()
 
     if get_config().telemetry.enabled:
         setup_telemetry(fastapi)
@@ -107,5 +107,10 @@ def setup_fastapi() -> FastAPI:
     ]
     for router in routers:
         fastapi.include_router(router)
+
+    stats_conf = get_config().stats
+    keep_in_memory = not (stats_conf.enabled and stats_conf.host is not None and stats_conf.port is not None) or False
+    if keep_in_memory:
+        fastapi.add_middleware(StatsdMiddleware, module_name=stats_conf.module_name)
 
     return fastapi

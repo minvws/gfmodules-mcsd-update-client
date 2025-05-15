@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 from datetime import datetime, timedelta, timezone
 from app.services.update.mass_update_consumer_service import MassUpdateConsumerService
 from app.db.entities.supplier_info import SupplierInfo
+from app.stats import NoopStats
 
 
 
@@ -32,6 +33,7 @@ def test_cleanup_old_directories() -> None:
         supplier_info_service=mock_supplier_info_service,
         supplier_ignored_directory_service=mock_supplier_ignored_directory_service,
         cleanup_client_directory_after_success_timeout_seconds=3600, # less than 2 hours
+        stats=NoopStats(),
     )
 
     service.cleanup_old_directories()

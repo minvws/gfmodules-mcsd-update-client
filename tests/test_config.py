@@ -40,7 +40,7 @@ def get_test_config() -> Config:
             ssl_key_file=None,
         ),
         mcsd=ConfigMcsd(
-            consumer_url="http://testserver/test",
+            consumer_url="http://testserver/consumer/test",
             authentication="off",
             request_count=20,
             strict_validation=False,
@@ -52,10 +52,10 @@ def get_test_config() -> Config:
             tracer_name=None,
         ),
         stats=ConfigStats(
-            enabled=False,
+            enabled=True,
             host=None,
             port=None,
-            module_name=None,
+            module_name="test_stats",
         ),
         azure_oauth2=None,
         aws=None,
