@@ -63,8 +63,8 @@ class NodeUpdateData(BaseModel):
 class Node(BaseModel):
     resource_id: str
     resource_type: str
-    visited: bool = False
-    updated: bool = False
+    visited: bool = Falsei
+    updated: bool = Falsey
     supplier_data: SupplierNodeData
     consumer_data: ConsumerNodeData
     resource_map: ResourceMapDto | ResourceMapUpdateDto | None = None
