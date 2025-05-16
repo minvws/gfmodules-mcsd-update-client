@@ -5,6 +5,7 @@ from enum import Enum
 import logging
 from typing import List, Any
 from uuid import uuid4
+from app.services.update.cache.caching_service import InMemoryCachingService
 from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from yarl import URL
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
@@ -57,34 +58,40 @@ class UpdateConsumerService:
             timeout, backoff, auth, consumer_url, request_count, strict_validation
         )
         self.__fhir_service = FhirService(strict_validation)
-        self.__cache: List[str] = []
+        self.__cache = InMemoryCachingService()
 
     def cleanup(self, supplier_id: str) -> None:
         for res_type in McsdResources:
-            delete_bundle = Bundle(id=str(uuid4()), type="transaction", entry=[], total=0)
-            resource_map = self.__resource_map_service.find(supplier_id=supplier_id, resource_type=res_type.value)
+            delete_bundle = Bundle(
+                id=str(uuid4()), type="transaction", entry=[], total=0
+            )
+            resource_map = self.__resource_map_service.find(
+                supplier_id=supplier_id, resource_type=res_type.value
+            )
             for res_map_item in resource_map:
                 delete_bundle.entry.append(
                     BundleEntry(
                         request=BundleEntryRequest(
                             method="DELETE",
-                            url=f"{res_type.value}/{res_map_item.consumer_resource_id}"
+                            url=f"{res_type.value}/{res_map_item.consumer_resource_id}",
                         )
                     )
                 )
                 delete_bundle.total += 1
-            logging.info(f"Removing {delete_bundle.total} items from consumer originating from stale supplier {supplier_id}")
+            logging.info(
+                f"Removing {delete_bundle.total} items from consumer originating from stale supplier {supplier_id}"
+            )
             self.__consumer_fhir_api.post_bundle(delete_bundle)
 
     def update(self, supplier: SupplierDto, since: datetime | None = None) -> Any:
         start_time = time.time()
-        if len(self.__cache) > 0:
-            self.__cache = []
+        if not self.__cache.is_empty():
+            self.__cache.clear()
 
         for res in McsdResources:
             self.update_resource(supplier, res.value, since)
-        results = copy.deepcopy(self.__cache)
-        self.__cache = []
+        results = copy.deepcopy([id for id in self.__cache.data.keys()])
+        self.__cache.clear()
         end_time = time.time()
 
         return {"log": f"updated {len(results)}", "time": end_time - start_time}
@@ -106,6 +113,7 @@ class UpdateConsumerService:
             supplier_api=supplier_fhir_api,
             consumer_api=self.__consumer_fhir_api,
             resource_map_service=self.__resource_map_service,
+            cache_service=self.__cache,
         )
         next_url: URL | None = supplier_fhir_api.build_base_history_url(
             resource_type, since
@@ -117,7 +125,7 @@ class UpdateConsumerService:
             for e in history:
                 _, id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
                 if id is not None:
-                    if id in self.__cache:
+                    if self.__cache.key_exists(id):
                         logger.info(
                             f"{id} {resource_type} already processed.. skipping.. "
                         )
@@ -126,8 +134,11 @@ class UpdateConsumerService:
 
             updated_nodes = self.update_page(targets, adjacency_map_service)
             for node in updated_nodes:
-                if node.resource_id not in self.__cache:
-                    self.__cache.append(node.resource_id)
+                if not self.__cache.key_exists(node.resource_id):
+                    self.__cache.add_node(node)
+
+                # if node.resource_id not in self.__cache:
+                #     self.__cache.append(node.resource_id)
 
     def update_page(
         self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService

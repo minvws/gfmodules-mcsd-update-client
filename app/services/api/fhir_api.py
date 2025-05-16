@@ -37,7 +37,7 @@ class FhirApi(AuthenticationBasedApiService):
                 "POST", url, jsonable_encoder(bundle.model_dump())
             )
             if response.status_code > 300:
-                logger.error(response.json())
+                logger.error(response.text)
                 raise HTTPException(status_code=500, detail=response.json())
             data = response.json()
             return self.__fhir_service.create_bundle(data)

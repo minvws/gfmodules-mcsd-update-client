@@ -1,4 +1,5 @@
 from typing import List
+from app.services.update.cache.caching_service import CachingService
 from fhir.resources.R4B.bundle import BundleEntry
 
 from app.models.adjacency.adjacency_map import AdjacencyMap
@@ -22,20 +23,49 @@ class AdjacencyMapService:
         supplier_api: FhirApi,
         consumer_api: FhirApi,
         resource_map_service: ResourceMapService,
+        cache_service: CachingService,
     ) -> None:
         self.supplier_id = supplier_id
         self.__fhir_service = fhir_service
         self.__supplier_api = supplier_api
         self.__consumer_api = consumer_api
         self.__resource_map_service = resource_map_service
+        self.__cache_service = cache_service
 
     def build_adjacency_map(
         self, entries: List[BundleEntry], updated_ids: List[str] | None = None
     ) -> AdjacencyMap:
         nodes = [self.create_node(entry) for entry in entries]
-        adj_map = AdjacencyMap(nodes, updated_ids)
+        adj_map = AdjacencyMap(nodes)
         missing_refs = adj_map.get_missing_refs()
+
+        # missing_nodes = list(
+        #     filter(
+        #         lambda x: x is not None,
+        #         [self.__cache_service.get_node(ref.id) for ref in missing_refs],
+        #     )
+        # )
         while missing_refs:
+            missing_nodes = list(
+                filter(
+                    lambda x: x is not None,
+                    [self.__cache_service.get_node(ref.id) for ref in missing_refs],
+                )
+            )
+            if len(missing_nodes) > 0:
+                adj_map.add_nodes(missing_nodes)
+                missing_refs = adj_map.get_missing_refs()
+                # missing_nodes = list(
+                #     filter(
+                #         lambda x: x is not None,
+                #         [self.__cache_service.get_node(ref.id) for ref in missing_refs],
+                #     )
+                # )
+                continue
+
+            # if len(missing_refs) == 0:
+            #     continue
+            #
             missing_entries = self.get_supplier_data(missing_refs)
             missing_nodes = [self.create_node(entry) for entry in missing_entries]
             adj_map.add_nodes(missing_nodes)
