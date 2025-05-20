@@ -5,7 +5,6 @@ from fhir.resources.R4B.bundle import BundleEntry
 from app.models.adjacency.adjacency_map import AdjacencyMap
 from app.models.adjacency.node import (
     ConsumerNodeData,
-    Node,
     NodeReference,
     SupplierNodeData,
 )

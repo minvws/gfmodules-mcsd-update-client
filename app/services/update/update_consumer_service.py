@@ -10,7 +10,7 @@ from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from yarl import URL
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.models.adjacency.node import (
-    Node,
+    AlreadyPushedNode,
 )
 from app.models.supplier.dto import SupplierDto
 from app.services.update.adjacency_map_service import (
@@ -132,7 +132,11 @@ class UpdateConsumerService:
                         continue
                     targets.append(e)
 
-            updated_nodes = self.update_page(targets, adjacency_map_service)
+            updated_nodes = self.update_page(
+                targets,
+                adjacency_map_service,
+                supplier.id
+            )
             for node in updated_nodes:
                 if not self.__cache.key_exists(node.resource_id):
                     self.__cache.add_node(node)
@@ -141,7 +145,7 @@ class UpdateConsumerService:
                 #     self.__cache.append(node.resource_id)
 
     def update_page(
-        self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
+        self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService, supplier_id: str
     ) -> List[Node]:
         updated = []
         adj_map = adjacency_map_service.build_adjacency_map(entries, self.__cache)
@@ -153,12 +157,12 @@ class UpdateConsumerService:
                 continue
 
             group = adj_map.get_group(node)
-            results = self.update_with_bundle(group)
+            results = self.update_with_bundle(group, supplier_id)
             updated.extend(results)
 
         return updated
 
-    def update_with_bundle(self, nodes: List[Node]) -> List[Node]:
+    def update_with_bundle(self, nodes: List[Node], supplier_id: str) -> List[Node]:
         bundle = Bundle.model_construct(id=uuid4(), type="transaction")
         bundle.entry = []
         dtos = []
@@ -174,12 +178,28 @@ class UpdateConsumerService:
                     f"{node.resource_id} {node.resource_type} is not needed, ignoring..."
                 )
 
+            ## TODO: Create updateData from Node
             if node.update_data is not None:
                 if node.update_data.bundle_entry is not None:
                     bundle.entry.append(node.update_data.bundle_entry)
 
                 if node.update_data.resource_map_dto is not None:
-                    dtos.append(node.update_data.resource_map_dto)
+                    if node.status == "delete" or node.status == "update":
+                        dtos.append(ResourceMapUpdateDto(
+                            supplier_id=supplier_id,
+                            supplier_resource_id=node.resource_id,
+                            resource_type=node.resource_type,
+                            history_size=0,
+                        ))
+                    elif node.status == "new":
+                        dtos.append(ResourceMapDto(
+                            supplier_id=supplier_id,
+                            supplier_resource_id=node.resource_id,
+                            consumer_resource_id=f"{supplier_id}-{node.resource_id}",
+                            resource_type=node.resource_type,
+                            history_size=0,
+                        ))
+
 
         self.__consumer_fhir_api.post_bundle(bundle)
 
