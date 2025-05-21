@@ -25,10 +25,10 @@ class MockSupplierProvider(SupplierProvider):
 def mock_suppliers() -> list[SupplierDto]:
     return [
         SupplierDto(
-            id="1", name="Supplier 1", endpoint="http://supplier1.com", is_deleted=False
+            id="1", name="Supplier 1", endpoint="http://supplier1.com", is_deleted=False, ura_number="12345678"
         ),
         SupplierDto(
-            id="2", name="Supplier 2", endpoint="http://supplier2.com", is_deleted=False
+            id="2", name="Supplier 2", endpoint="http://supplier2.com", is_deleted=False, ura_number="87654321"
         ),
     ]
 

@@ -26,15 +26,16 @@ class SupplierCacheService:
             repository = session.get_repository(SupplierCacheRepository)
             return [self._hydrate_to_supplier_dto(cache) for cache in repository.get_all_include_ignored_ids(with_deleted=with_deleted, include_ignored_ids=include_ignored_ids)]
 
-    def set_supplier_cache(self, supplier_id: str, endpoint: str, is_deleted: bool|None = None) -> None:
+    def set_supplier_cache(self, supplier: SupplierDto) -> None:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(SupplierCacheRepository)
-            cache = repository.get(supplier_id, with_deleted=True)
+            cache = repository.get(supplier.id, with_deleted=True)
             if cache is None:
-                session.add(SupplierCache(supplier_id=supplier_id, endpoint=endpoint))
+                session.add(SupplierCache(supplier_id=supplier.id, endpoint=supplier.endpoint, ura_number=supplier.ura_number))
             else:
-                cache.endpoint = endpoint
-                cache.is_deleted = is_deleted if is_deleted is not None else cache.is_deleted
+                cache.endpoint = supplier.endpoint
+                cache.ura_number = supplier.ura_number
+                cache.is_deleted = supplier.is_deleted if supplier.is_deleted is not None else cache.is_deleted
             session.commit()
 
     def delete_supplier_cache(self, supplier_id: str) -> None:
@@ -50,6 +51,7 @@ class SupplierCacheService:
     def _hydrate_to_supplier_dto(self, supplier_cache: SupplierCache) -> SupplierDto:
         return SupplierDto(
             id=supplier_cache.supplier_id,
+            ura_number= supplier_cache.ura_number,
             name= "",
             endpoint=supplier_cache.endpoint,
             is_deleted=supplier_cache.is_deleted,

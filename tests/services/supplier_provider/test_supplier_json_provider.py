@@ -6,10 +6,10 @@ from app.services.supplier_provider.json_provider import SupplierJsonProvider
 
 
 @pytest.fixture
-def json_data() -> list[tuple[str, str, str]]:
+def json_data() -> list[tuple[str, str, str, str]]:
     return [
-        ("1", "Supplier 1", "http://supplier1.com"),
-        ("2", "Supplier 2", "http://supplier2.com"),
+        ("1", "Supplier 1", "http://supplier1.com", "12345678"),
+        ("2", "Supplier 2", "http://supplier2.com", "87654321"),
     ]
 
 

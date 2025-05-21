@@ -15,7 +15,7 @@ def supplier_cache_service(mock_database: MagicMock) -> SupplierCacheService:
 def test_get_supplier_cache_found(supplier_cache_service: SupplierCacheService, mock_database: MagicMock) -> None:
     mock_session = MagicMock()
     mock_repository = MagicMock()
-    mock_cache = SupplierCache(supplier_id="123", endpoint="http://example.com", is_deleted=False)
+    mock_cache = SupplierCache(supplier_id="123", endpoint="http://example.com", is_deleted=False, ura_number="12345678")
     mock_repository.get.return_value = mock_cache
     mock_session.get_repository.return_value = mock_repository
     mock_database.get_db_session.return_value.__enter__.return_value = mock_session
@@ -26,6 +26,7 @@ def test_get_supplier_cache_found(supplier_cache_service: SupplierCacheService, 
     assert result.id == "123"
     assert result.endpoint == "http://example.com"
     assert result.is_deleted is False
+    assert result.ura_number == "12345678"
     mock_repository.get.assert_called_once_with("123", with_deleted=False)
 
 def test_get_supplier_cache_not_found(supplier_cache_service: SupplierCacheService, mock_database: MagicMock) -> None:
@@ -47,7 +48,7 @@ def test_set_supplier_cache_create_new(supplier_cache_service: SupplierCacheServ
     mock_session.get_repository.return_value = mock_repository
     mock_database.get_db_session.return_value.__enter__.return_value = mock_session
 
-    supplier_cache_service.set_supplier_cache("123", "http://example.com")
+    supplier_cache_service.set_supplier_cache(SupplierDto(id="123", name="Supplier 1", endpoint="http://example.com", is_deleted=False, ura_number="12345678"))
 
     mock_session.add.assert_called_once()
 
@@ -59,7 +60,7 @@ def test_set_supplier_cache_update_existing(supplier_cache_service: SupplierCach
     mock_session.get_repository.return_value = mock_repository
     mock_database.get_db_session.return_value.__enter__.return_value = mock_session
 
-    supplier_cache_service.set_supplier_cache("123", "http://new.com", is_deleted=True)
+    supplier_cache_service.set_supplier_cache(SupplierDto(id="123", name="Supplier 1", endpoint="http://new.com", is_deleted=True, ura_number="12345678"))
 
     assert mock_cache.endpoint == "http://new.com"
     assert mock_cache.is_deleted is True

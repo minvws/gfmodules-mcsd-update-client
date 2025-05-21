@@ -42,16 +42,13 @@ class CachingSupplierProvider(SupplierProvider):
                 detail="Failed to retrieve supplier from the supplier provider and no cached data was available.",
             )
             if self.__supplierProvider.check_if_supplier_is_deleted(supplier_id):
+                original_supplier.is_deleted = True
                 self.__supplier_cache_service.set_supplier_cache(
-                    supplier_id=supplier_id,
-                    endpoint=original_supplier.endpoint,
-                    is_deleted=True,
+                    original_supplier
                 )
             return original_supplier
         self.__supplier_cache_service.set_supplier_cache(
-            supplier_id=supplier.id,
-            endpoint=supplier.endpoint,
-            is_deleted=supplier.is_deleted,
+            supplier
         )
         return supplier
 
