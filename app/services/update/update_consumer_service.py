@@ -10,7 +10,7 @@ from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from yarl import URL
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.models.adjacency.node import (
-    AlreadyPushedNode,
+    Node, CachedNode
 )
 from app.models.supplier.dto import SupplierDto
 from app.services.update.adjacency_map_service import (
@@ -96,6 +96,19 @@ class UpdateConsumerService:
 
         return {"log": f"updated {len(results)}", "time": end_time - start_time}
 
+    def filter_out_cached(self, history: List[BundleEntry]) -> List[BundleEntry]:
+        targets = []
+        for e in history:
+            resource_type, id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
+            if id is not None:
+                if self.__cache.key_exists(id):
+                    logger.info(
+                        f"{id} {resource_type} already processed.. skipping.. "
+                    )
+                    continue
+                targets.append(e)
+        return targets
+
     def update_resource(
         self, supplier: SupplierDto, resource_type: str, since: datetime | None = None
     ) -> None:
@@ -118,37 +131,34 @@ class UpdateConsumerService:
         next_url: URL | None = supplier_fhir_api.build_base_history_url(
             resource_type, since
         )
-
         while next_url is not None:
             next_url, history = supplier_fhir_api.get_history_batch(next_url)
-            targets = []
-            for e in history:
-                _, id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
-                if id is not None:
-                    if self.__cache.key_exists(id):
-                        logger.info(
-                            f"{id} {resource_type} already processed.. skipping.. "
-                        )
-                        continue
-                    targets.append(e)
+            to_process = self.filter_out_cached(history)
 
             updated_nodes = self.update_page(
-                targets,
+                to_process,
                 adjacency_map_service,
                 supplier.id
             )
+
             for node in updated_nodes:
+                if self.__cache.key_exists(node.resource_id):
+                    raise Exception("GB says it should not happen")
+
                 if not self.__cache.key_exists(node.resource_id):
-                    self.__cache.add_node(node)
+                    self.__cache.add_node(CachedNode(**node.model_dump()))
 
                 # if node.resource_id not in self.__cache:
                 #     self.__cache.append(node.resource_id)
 
     def update_page(
-        self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService, supplier_id: str
+        self,
+        entries: List[BundleEntry],
+        adjacency_map_service: AdjacencyMapService,
+        supplier_id: str
     ) -> List[Node]:
         updated = []
-        adj_map = adjacency_map_service.build_adjacency_map(entries, self.__cache)
+        adj_map = adjacency_map_service.build_adjacency_map(entries)
         for node in adj_map.data.values():
             if node.updated is True:
                 logger.info(
@@ -199,7 +209,6 @@ class UpdateConsumerService:
                             resource_type=node.resource_type,
                             history_size=0,
                         ))
-
 
         self.__consumer_fhir_api.post_bundle(bundle)
 

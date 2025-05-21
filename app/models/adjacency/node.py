@@ -60,6 +60,25 @@ class NodeUpdateData(BaseModel):
     resource_map_dto: ResourceMapDto | ResourceMapUpdateDto | None = None
 
 
+class CachedNode(BaseModel):
+    resource_id: str
+    resource_type: str
+
+
+class Node(BaseModel):
+    resource_id: str
+    resource_type: str
+
+    # When the item comes from the cache, the references is always empty because the references are already pushed before.
+    references: List[NodeReference]
+
+    visited: bool = False
+
+    # Means, is coming from the cache and should not be updated in the update_page func
+    updated: bool = False
+
+    update_status: Literal["ignore", "equal", "delete", "update", "new"]
+
 class BaseNode(BaseModel):
     resource_id: str
     resource_type: str

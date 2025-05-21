@@ -1,18 +1,18 @@
 from abc import ABC, abstractmethod
 from typing import Dict
-from app.models.adjacency.node import Node
+from app.models.adjacency.node import CachedNode
 
 
 class CachingService(ABC):
 
     @abstractmethod
-    def get_node(self, id: str) -> Node | None: ...
+    def get_node(self, id: str) -> CachedNode | None: ...
 
     # @abstractmethod
     # def get_nodes(self, id: str) -> List[Node]: ...
 
     @abstractmethod
-    def add_node(self, node: Node) -> None: ...
+    def add_node(self, node: CachedNode) -> None: ...
 
     # @abstractmethod
     # def add_nodes(self, nodes: List[Node]) -> None: ...
@@ -32,15 +32,15 @@ class CachingService(ABC):
 
 class InMemoryCachingService(CachingService):
     def __init__(self) -> None:
-        self.data: Dict[str, Node] = {}
+        self.data: Dict[str, CachedNode] = {}
 
-    def get_node(self, id: str) -> Node | None:
+    def get_node(self, id: str) -> CachedNode | None:
         if id not in self.data:
             return None
         print(f"\nfound {id} in Cache, fetting...\n")
         return self.data[id]
 
-    def add_node(self, node: Node) -> None:
+    def add_node(self, node: CachedNode) -> None:
         if node.resource_id not in self.data.keys():
             self.data[node.resource_id] = node
 
