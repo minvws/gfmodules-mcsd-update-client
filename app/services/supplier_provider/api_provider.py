@@ -127,16 +127,14 @@ class SupplierApiProvider(SupplierProvider):
     ) -> SupplierDto | None:
         name = org.get("name")
         id = supplier_id or org.get("id")
-        ura_number = self.__extract_ura_number(org.get("identifier", []))
         endpoint_address = self.__get_endpoint_address(org, endpoint_map)
 
-        if not all(isinstance(val, str) and val for val in [name, id, ura_number, endpoint_address]):
+        if not all(isinstance(val, str) and val for val in [name, id, endpoint_address]):
             logger.warning(f"Invalid supplier data for ID {id}. Skipping.")
             return None
 
         return SupplierDto(
             id=id, # type:ignore
-            ura_number=ura_number, # type:ignore
             name=name, # type:ignore
             endpoint=endpoint_address, # type:ignore
             is_deleted=False,
@@ -148,9 +146,6 @@ class SupplierApiProvider(SupplierProvider):
             endpoint = endpoint_map.get(ref.split("/")[-1])
             return endpoint.get("address") if endpoint else None
         return None
-
-    def __extract_ura_number(self, identifiers: List[Dict[str, Any]]) -> str | None:
-        return next((i.get("value") for i in identifiers if i.get("system") == "http://fhir.nl/fhir/NamingSystem/ura"), None)
 
     def __get_next_page_url(self, bundle: Dict[str, Any]) -> URL | None:
         for link in bundle.get("link", []):

@@ -31,10 +31,9 @@ class SupplierCacheService:
             repository = session.get_repository(SupplierCacheRepository)
             cache = repository.get(supplier.id, with_deleted=True)
             if cache is None:
-                session.add(SupplierCache(supplier_id=supplier.id, endpoint=supplier.endpoint, ura_number=supplier.ura_number))
+                session.add(SupplierCache(supplier_id=supplier.id, endpoint=supplier.endpoint))
             else:
                 cache.endpoint = supplier.endpoint
-                cache.ura_number = supplier.ura_number
                 cache.is_deleted = supplier.is_deleted if supplier.is_deleted is not None else cache.is_deleted
             session.commit()
 
@@ -51,7 +50,6 @@ class SupplierCacheService:
     def _hydrate_to_supplier_dto(self, supplier_cache: SupplierCache) -> SupplierDto:
         return SupplierDto(
             id=supplier_cache.supplier_id,
-            ura_number= supplier_cache.ura_number,
             name= "",
             endpoint=supplier_cache.endpoint,
             is_deleted=supplier_cache.is_deleted,

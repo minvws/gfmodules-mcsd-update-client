@@ -20,12 +20,6 @@ class SupplierCache(Base):
         nullable=False,
     )
 
-    ura_number: Mapped[str] = mapped_column(
-        "ura_number",
-        String,
-        nullable=False,
-    )
-
     # The endpoint URL for the supplier
     endpoint: Mapped[str] = mapped_column(
         "endpoint",

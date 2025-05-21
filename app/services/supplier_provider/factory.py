@@ -61,8 +61,7 @@ class SupplierProviderFactory:
                         SupplierDto(
                             id=supplier["id"],
                             name=supplier["name"],
-                            endpoint=supplier["endpoint"],
-                            ura_number=supplier["ura_number"],
+                            endpoint=supplier["endpoint"]
                         )
                     )
                 return supplier_urls

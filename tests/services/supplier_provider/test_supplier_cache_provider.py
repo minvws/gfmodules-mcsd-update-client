@@ -75,14 +75,12 @@ def test_get_all_suppliers_should_return_api_suppliers(
             name="Supplier 1",
             endpoint="http://example.com/supplier1",
             is_deleted=False,
-            ura_number="12345678"
         ),
         SupplierDto(
             id="2",
             name="Supplier 2",
             endpoint="http://example.com/supplier2",
             is_deleted=False,
-            ura_number="87654321"
         ),
     ]
     mock_cache_service.get_all_suppliers_caches.return_value = []
@@ -110,14 +108,12 @@ def test_get_all_suppliers_should_return_cached_suppliers_when_api_returns_none(
             name="Cached Supplier 1",
             endpoint="http://example.com/supplier1",
             is_deleted=False,
-            ura_number="12345678"
         ),
         SupplierDto(
             id="2",
             name="Cached Supplier 2",
             endpoint="http://example.com/supplier2",
             is_deleted=False,
-            ura_number="87654321"
         ),
     ]
     result = caching_service.get_all_suppliers()
@@ -140,7 +136,6 @@ def test_get_all_suppliers_should_update_cache(
             name="API Supplier",
             endpoint="http://example.com/supplier2",
             is_deleted=False,
-            ura_number="87654321"
         )
     ]
     result = caching_service.get_all_suppliers()
@@ -162,7 +157,6 @@ def test_get_one_supplier_should_return_cached_supplier(
         name="Cached Supplier",
         endpoint="http://example.com/supplier1",
         is_deleted=False,
-        ura_number="12345678"
     )
     result = caching_service.get_one_supplier("1")
     assert result is not None
@@ -176,7 +170,7 @@ def test_get_one_supplier_should_update_cache(
     mock_cache_service: MagicMock,
 ) -> None:
     mock_api_provider.get_one_supplier.return_value = SupplierDto(
-        id="2", name="API Supplier", endpoint="http://api.com", is_deleted=False, ura_number="87654321"
+        id="2", name="API Supplier", endpoint="http://api.com", is_deleted=False
     )
     result = caching_service.get_one_supplier("2")
     assert result is not None

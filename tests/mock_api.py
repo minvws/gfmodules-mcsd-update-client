@@ -13,14 +13,12 @@ class MockApi(SupplierProvider):
             return SupplierDto(
                 id="1",
                 name="Test Supplier",
-                ura_number="12345678",
                 endpoint="http://test1.supplier.example.org",
             )
         elif supplier_id == "2":
             return SupplierDto(
                 id="2",
                 name="Test Supplier 2",
-                ura_number="87654321",
                 endpoint="http://test2.supplier.example.org",
             )
         else:
@@ -31,13 +29,11 @@ class MockApi(SupplierProvider):
             SupplierDto(
                 id="1",
                 name="Test Supplier",
-                ura_number="12345678",
                 endpoint="http://test1.supplier.example.org",
             ),
             SupplierDto(
                 id="2",
                 name="Test Supplier 2",
-                ura_number="87654321",
                 endpoint="http://test2.supplier.example.org",
             ),
         ]

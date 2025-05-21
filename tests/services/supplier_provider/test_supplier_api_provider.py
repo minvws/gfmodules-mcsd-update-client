@@ -97,7 +97,6 @@ def test_get_all_suppliers_should_return_suppliers(
     assert isinstance(result, list)
     assert isinstance(result[0], SupplierDto)
     assert result[0].id == "test-org-12345"
-    assert result[0].ura_number == "12345678"
     assert result[0].name == "Example Organization"
     assert result[0].endpoint == "http://example.com/fhir"
 
@@ -211,7 +210,6 @@ def test_get_one_supplier_should_return_supplier(
     assert isinstance(result, SupplierDto)
     assert result.id == "test-org-12345"
     assert result.name == "Example Organization"
-    assert result.ura_number == "12345678"
     assert result.endpoint == "http://example.com/fhir"
     assert not result.is_deleted
 

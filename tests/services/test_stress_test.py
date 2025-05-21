@@ -187,7 +187,6 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
             name="Test Supplier",
             endpoint="http://testserver/test",
             is_deleted=False,
-            ura_number="12345678",
         )
     ],
 )
@@ -198,7 +197,6 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
         name="Test Supplier",
         endpoint="http://testserver/test",
         is_deleted=False,
-        ura_number="12345678",
     ),
 )
 def test_stress_test_update(
