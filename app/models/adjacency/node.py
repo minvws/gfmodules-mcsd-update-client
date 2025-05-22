@@ -79,6 +79,10 @@ class Node(BaseModel):
 
     update_status: Literal["ignore", "equal", "delete", "update", "new"]
 
+    supplier_hash: str | None = None
+    consumer_hash: str | None = None 
+
+
 class BaseNode(BaseModel):
     resource_id: str
     resource_type: str

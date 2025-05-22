@@ -42,6 +42,7 @@ class AdjacencyMapService:
         missing_refs = adj_map.get_missing_refs()
 
         while missing_refs:
+            # this is not exhausting cash
             for ref in missing_refs:
                 cached_node = self.__cache_service.get_node(ref.id)
                 if cached_node is not None:
@@ -51,6 +52,16 @@ class AdjacencyMapService:
                         references=[],
                         updated=True
                     ))
+                missing_refs.remove(ref)
+
+
+                # [1,2,3,4,5]
+                # [1,4,5]
+                # call supplier [1,4,5]
+                # [9,6,784,125]
+                # [9,6]
+                #
+
 
             missing_entries = self.get_supplier_data(missing_refs)
             missing_nodes = [self.create_node(entry) for entry in missing_entries]
@@ -69,6 +80,7 @@ class AdjacencyMapService:
             _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
             supplier_id = id.replace(f"{self.supplier_id}-", "")
             node = adj_map.data[supplier_id]
+            node.consumer_hash = hash(entry.resource.)
             # node.consumer_data = ConsumerNodeData(resource=entry.resource)
         return adj_map
 
@@ -94,13 +106,14 @@ class AdjacencyMapService:
         references = self.get_references_for_resource(entry)
 
         update_status = self.__node_service.determine_status()
-
+        supplier_hash = self.__node_service.get_supplier_hash(entry)
 
         return Node(
             resource_id=id,
             resource_type=res_type,
             references=references,
-            update_status=update_status
+            update_status=update_status,
+            supplier_hash=supplier_hash
         )
 
         # node = Node(
