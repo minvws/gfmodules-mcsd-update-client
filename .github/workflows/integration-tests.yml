@@ -1,0 +1,14 @@
+name: Integration tests
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  call-ti-suite:
+    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger a run on the ti-suite
+        run: |
+          curl -X POST -u "${{ secrets.ORAC_HTPASSWD }}" https://orac.test.gf.irealisatie.nl/run
