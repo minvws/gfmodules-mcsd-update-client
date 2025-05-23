@@ -61,6 +61,5 @@ def test_statsd_middleware() -> None:
     assert isinstance(stats, Statsd)
     assert isinstance(stats.client, MemoryClient)
     memory = stats.client.get_memory()
-    print(memory)
     assert "test_module.http.request.get./test" in memory
     assert "test_module.http.response_time" in memory
