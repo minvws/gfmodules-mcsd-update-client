@@ -28,7 +28,7 @@ def container_config(binder: inject.Binder) -> None:
     auth_factory = AuthenticatorFactory(config=config)
     auth = auth_factory.create_authenticator()
 
-    supplier_provider_factory = SupplierProviderFactory(config=config, database=db)
+    supplier_provider_factory = SupplierProviderFactory(config=config, database=db, auth=auth)
     supplier_provider = supplier_provider_factory.create()
     binder.bind(SupplierProvider, supplier_provider)
     

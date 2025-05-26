@@ -1,9 +1,10 @@
 from datetime import datetime
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from typing import List
+from typing import Any, List
 import logging
 from fhir.resources.R4B.bundle import BundleEntry
+from fhir.resources.R4B.domainresource import DomainResource
 from yarl import URL
 from app.services.fhir.bundle.bundle_utils import filter_history_entries
 from app.services.api.api_service import AuthenticationBasedApiService
@@ -44,6 +45,47 @@ class FhirApi(AuthenticationBasedApiService):
         except Exception as e:
             logging.error(e)
             raise e
+        
+    def search_resource(
+        self, resource_type: str, params: dict[str, Any]
+    ) -> tuple[URL | None, List[BundleEntry]]:
+        url = URL(f"{self.__base_url}/{resource_type}/_search").with_query(params)
+        print(f"Searching FHIR resource at URL: {url}")
+        response = self.do_request("GET", url)
+        if response.status_code > 300:
+            logger.error(
+                f"An error with status code {response.status_code} has occurred from server. See response:\n{response.json()}"
+            )
+            raise HTTPException(status_code=500, detail=response.json())
+        
+        page_bundle = self.__fhir_service.create_bundle(response.json())
+        next_url = None
+        entries = page_bundle.entry if page_bundle.entry else []
+        if page_bundle.link is not None and len(page_bundle.link) > 0:
+            for link in page_bundle.link:
+                if link.relation == "next":
+                    next_url = URL(link.url)
+
+        return next_url, entries
+    
+    def get_resource_by_id(
+        self, resource_type: str, resource_id: str
+    ) -> DomainResource:
+        url = URL(f"{self.__base_url}/{resource_type}/{resource_id}")
+        response = self.do_request("GET", url)
+        if response.status_code == 410:
+            logger.warning(
+                f"Resource {resource_type}/{resource_id} has been deleted from the server."
+            )
+            raise HTTPException(status_code=410, detail="Resource has been deleted.")
+        if response.status_code > 300:
+            logger.error(
+                f"An error with status code {response.status_code} has occurred from server. See response:\n{response.json()}"
+            )
+            raise HTTPException(status_code=500, detail=response.json())
+        
+        data = response.json()
+        return self.__fhir_service.create_resource(data)
 
     def build_base_history_url(
         self, resource_type: str, since: datetime | None = None

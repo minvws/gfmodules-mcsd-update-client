@@ -1,7 +1,8 @@
 import json
 from typing import List
 from app.models.supplier.dto import SupplierDto
-from app.services.api.api_service import ApiService
+from app.services.api.authenticators.authenticator import Authenticator
+from app.services.api.fhir_api import FhirApi
 from app.services.entity.supplier_cache_service import SupplierCacheService
 from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.supplier_provider.api_provider import SupplierApiProvider
@@ -13,9 +14,10 @@ from app.db.db import Database
 
 
 class SupplierProviderFactory:
-    def __init__(self, config: Config, database: Database) -> None:
+    def __init__(self, config: Config, database: Database, auth: Authenticator) -> None:
         self.__supplier_config = config.supplier_api
         self.__db = database
+        self.__auth = auth
 
     def create(self) -> SupplierProvider:
         if self.__supplier_config.supplier_urls_path is not None and len(
@@ -30,11 +32,14 @@ class SupplierProviderFactory:
             )
         elif self.__supplier_config.suppliers_provider_url is not None:
             supplier_api_provider = SupplierApiProvider(
-                supplier_provider_url=self.__supplier_config.suppliers_provider_url,
-                api_service=ApiService(
+                fhir_api=FhirApi(
                     timeout=self.__supplier_config.timeout,
                     backoff=self.__supplier_config.backoff,
                     retries=5,
+                    auth=self.__auth,
+                    url=self.__supplier_config.suppliers_provider_url,
+                    request_count=5,
+                    strict_validation=False
                 ),
                 supplier_ignored_directory_service=SupplierIgnoredDirectoryService(self.__db)
             )

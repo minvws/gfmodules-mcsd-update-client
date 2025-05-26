@@ -1,20 +1,72 @@
-from typing import Any
+from typing import List
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+from fhir.resources.R4B.bundle import BundleEntry
+from fhir.resources.R4B.organization import Organization
+from fhir.resources.R4B.endpoint import Endpoint
+from yarl import URL
 from app.models.supplier.dto import SupplierDto
 from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
+from app.services.api.fhir_api import FhirApi
 from app.services.supplier_provider.api_provider import SupplierApiProvider
 
 
 @pytest.fixture
-def mock_api_service() -> MagicMock:
-    return MagicMock()
+def mock_fhir_api() -> MagicMock:
+    return MagicMock(spec=FhirApi)
 
 
 @pytest.fixture
-def api_provider(mock_api_service: MagicMock, supplier_ignored_directory_service: SupplierIgnoredDirectoryService
+def api_provider(mock_fhir_api: MagicMock, supplier_ignored_directory_service: SupplierIgnoredDirectoryService
 ) -> SupplierApiProvider:
-    return SupplierApiProvider("http://supplier-provider.com", mock_api_service, supplier_ignored_directory_service)
+    return SupplierApiProvider("http://supplier-provider.com", mock_fhir_api, supplier_ignored_directory_service)
+
+
+
+def __mock_bundle_entry() -> List[BundleEntry]:
+    return [
+        BundleEntry(
+            resource=Organization(
+                id="test-org-12345",
+                identifier=[
+                    {
+                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
+                        "value": "12345678",
+                    }
+                ],
+                name="Example Organization",
+                endpoint=[
+                    {
+                        "reference": "Endpoint/endpoint-test1",
+                    }
+                ],
+            )
+        ),
+        BundleEntry(
+            resource=Endpoint(
+                id="endpoint-test1",
+                status="active",
+                connectionType={
+                    "system": "http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
+                    "code": "hl7-fhir-rest",
+                    "display": "HL7 FHIR",
+                },
+                name="test endpoint 1",
+                payloadType=[
+                    {
+                        "coding": [
+                            {
+                                "system": "http://hl7.org/fhir/endpoint-payload-type",
+                                "code": "any",
+                                "display": "Any",
+                            }
+                        ]
+                    }
+                ],
+                address="http://example.com/fhir",
+            )
+        ),
+    ]
 
 
 def test_get_all_suppliers_should_ignore_ignored_if_specified(
@@ -42,55 +94,12 @@ def test_get_all_suppliers_should_ignore_ignored_if_specified(
     assert len(result) == 2
 
 def test_get_all_suppliers_should_return_suppliers(
-    api_provider: SupplierApiProvider, mock_api_service: MagicMock
+    api_provider: SupplierApiProvider, mock_fhir_api: MagicMock
 ) -> None:
-    mock_api_service.do_request.return_value.json.return_value = {
-        "entry": [
-            {
-                "resource": {
-                    "resourceType": "Organization",
-                    "id": "test-org-12345",
-                    "identifier": [
-                        {
-                            "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                            "value": "12345678",
-                        }
-                    ],
-                    "name": "Example Organization",
-                    "endpoint": [
-                        {
-                            "reference": "Endpoint/endpoint-test1",
-                        }
-                    ],
-                },
-            },
-            {
-                "resource": {
-                    "resourceType": "Endpoint",
-                    "id": "endpoint-test1",
-                    "status": "active",
-                    "connectionType": {
-                        "system": "http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
-                        "code": "hl7-fhir-rest",
-                        "display": "HL7 FHIR",
-                    },
-                    "name": "test endpoint 1",
-                    "payloadType": [
-                        {
-                            "coding": [
-                                {
-                                    "system": "http://hl7.org/fhir/endpoint-payload-type",
-                                    "code": "any",
-                                    "display": "Any",
-                                }
-                            ]
-                        }
-                    ],
-                    "address": "http://example.com/fhir"
-                },
-            },
-        ],
-    }
+    mock_fhir_api.search_resource.return_value = (
+        None,
+        __mock_bundle_entry(),
+    )
     result = api_provider.get_all_suppliers()
     assert result is not None
     assert len(result) == 1
@@ -102,109 +111,25 @@ def test_get_all_suppliers_should_return_suppliers(
 
 
 def test_get_all_suppliers_should_handle_pagination(
-    api_provider: SupplierApiProvider, mock_api_service: MagicMock
+    api_provider: SupplierApiProvider, mock_fhir_api: MagicMock
 ) -> None:
     # Mock both page responses using side_effect
-    mock_api_service.do_request.return_value.json.side_effect = [
-        {
-            "link": [ {
-                "relation": "self",
-                "url": "http://example.com/fhir/Organization/"
-            },
-             {"relation": "next",
-                "url": "http://example.com/fhir/Organization/?page=2"
-            } ],
-        },
-        {
-            "link": [ {
-                "relation": "self",
-                "url": "http://example.com/fhir/Organization?_include=Organization%3Aendpoint"
-            },
-                {"relation": "next",
-                    "url": "http://example.com/fhir/Organization/?page=3"
-                } ],
-            },
-        {
-            "link": [ {
-                "relation": "self",
-                "url": "http://example.com/fhir/Organization?_include=Organization%3Aendpoint"
-            } ],
-        },
+    mock_fhir_api.search_resource.side_effect = [
+        (URL("http://example.com/fhir/Organization/?page=2"),[]),
+        (URL("http://example.com/fhir/Organization/?page=3"),[]),
+        (None,[]),
     ]
-
-    return_values = []
-
-    original = api_provider._SupplierApiProvider__get_next_page_url # type: ignore
-
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
-        result = original(*args, **kwargs)
-        return_values.append(result)
-        return result
-
-    with patch.object(
-        SupplierApiProvider,
-        "_SupplierApiProvider__get_next_page_url",
-        side_effect=wrapper
-    ) as mock_get_next_page_url:
-
-        _ = api_provider.get_all_suppliers()
-
-        assert mock_get_next_page_url.call_count == 3
-        assert str(return_values[0]) == "http://example.com/fhir/Organization/?page=2"
-        assert str(return_values[1]) == "http://example.com/fhir/Organization/?page=3"
-        assert return_values[-1] is None
+    api_provider.get_all_suppliers()
+    assert mock_fhir_api.search_resource.call_count == 3
 
 
 def test_get_one_supplier_should_return_supplier(
-    api_provider: SupplierApiProvider, mock_api_service: MagicMock
+    api_provider: SupplierApiProvider, mock_fhir_api: MagicMock
 ) -> None:
-    mock_api_service.do_request.return_value.json.return_value = {
-        "entry": [
-            {
-                "resource": {
-                    "resourceType": "Organization",
-                    "id": "test-org-12345",
-                    "identifier": [
-                        {
-                            "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                            "value": "12345678",
-                        }
-                    ],
-                    "name": "Example Organization",
-                    "endpoint": [
-                        {
-                            "reference": "Endpoint/endpoint-test1",
-                        }
-                    ],
-                },
-            },
-            {
-                "resource": {
-                    "resourceType": "Endpoint",
-                    "id": "endpoint-test1",
-                    "status": "active",
-                    "connectionType": {
-                        "system": "http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
-                        "code": "hl7-fhir-rest",
-                        "display": "HL7 FHIR",
-                    },
-                    "name": "test endpoint 1",
-                    "payloadType": [
-                        {
-                            "coding": [
-                                {
-                                    "system": "http://hl7.org/fhir/endpoint-payload-type",
-                                    "code": "any",
-                                    "display": "Any",
-                                }
-                            ]
-                        }
-                    ],
-                    "address": "http://example.com/fhir"
-                },
-            },
-        ],
-    }
+    mock_fhir_api.search_resource.return_value = (
+        None,
+        __mock_bundle_entry()
+    )
     result = api_provider.get_one_supplier("test-org-12345")
     assert result is not None
     assert isinstance(result, SupplierDto)
@@ -215,8 +140,8 @@ def test_get_one_supplier_should_return_supplier(
 
 
 def test_get_one_supplier_should_return_none_if_not_found(
-    api_provider: SupplierApiProvider, mock_api_service: MagicMock
+    api_provider: SupplierApiProvider, mock_fhir_api: MagicMock
 ) -> None:
-    mock_api_service.do_request.side_effect = Exception("Not Found")
+    mock_fhir_api.search_resource.side_effect = Exception("Not Found")
     with pytest.raises(Exception):
         api_provider.get_one_supplier("non-existing-id")
