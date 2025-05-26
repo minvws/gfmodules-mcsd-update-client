@@ -5,15 +5,13 @@ from typing import List, Sequence
 from app.db.db import Database
 from app.db.entities.supplier_info import SupplierInfo
 from app.db.repositories.supplier_info_repository import SupplierInfoRepository
-from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 
 logger = logging.getLogger(__name__)
 
 
 class SupplierInfoService:
-    def __init__(self, database: Database, supplier_ignored_directory_service: SupplierIgnoredDirectoryService, supplier_stale_timeout_seconds: int) -> None:
+    def __init__(self, database: Database, supplier_stale_timeout_seconds: int) -> None:
         self.__database = database
-        self.__supplier_ignored_directory_service = supplier_ignored_directory_service
         self.__supplier_stale_timeout_seconds = supplier_stale_timeout_seconds
 
     def get_supplier_info(self, supplier_id: str) -> SupplierInfo:
@@ -21,10 +19,10 @@ class SupplierInfoService:
             repository = session.get_repository(SupplierInfoRepository)
             return repository.get(supplier_id)
         
-    def get_all_suppliers_info(self) -> Sequence[SupplierInfo]:
+    def get_all_suppliers_info(self, include_ignored: bool = False) -> Sequence[SupplierInfo]:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(SupplierInfoRepository)
-            return repository.get_all()
+            return repository.get_all(include_ignored=include_ignored)
 
     def update_supplier_info(self, info: SupplierInfo) -> None:
         with self.__database.get_db_session() as session:
@@ -38,10 +36,10 @@ class SupplierInfoService:
             time_since_last_success = (datetime.now(timezone.utc) - supplier_info.last_success_sync.astimezone(timezone.utc)).total_seconds()
             return time_since_last_success < self.__supplier_stale_timeout_seconds
 
-        filtered_suppliers = self.__supplier_ignored_directory_service.filter_ignored_supplier_info(self.get_all_suppliers_info())
+        suppliers = self.get_all_suppliers_info()
         return all([
             is_supplier_healthy(supplier_info)
-            for supplier_info in filtered_suppliers
+            for supplier_info in suppliers
         ])
     
     def get_prometheus_metrics(self) -> List[str]:

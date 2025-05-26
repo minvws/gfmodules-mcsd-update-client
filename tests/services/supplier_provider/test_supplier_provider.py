@@ -1,3 +1,4 @@
+from typing import List
 import pytest
 from app.models.supplier.dto import SupplierDto
 from app.services.supplier_provider.supplier_provider import SupplierProvider
@@ -7,7 +8,10 @@ class MockSupplierProvider(SupplierProvider):
     def __init__(self, suppliers: list[SupplierDto]) -> None:
         self.suppliers = suppliers
 
-    def get_all_suppliers(self) -> list[SupplierDto]:
+    def get_all_suppliers(self, include_ignored: bool = False) -> List[SupplierDto]:
+        return self.suppliers
+    
+    def get_all_suppliers_include_ignored(self, include_ignored_ids: List[str]) -> List[SupplierDto]:
         return self.suppliers
 
     def get_one_supplier(self, supplier_id: str) -> SupplierDto:

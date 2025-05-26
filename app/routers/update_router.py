@@ -19,39 +19,39 @@ router = APIRouter(prefix="/update_resources", tags=["Update consumer resources"
 class UpdateQueryParams(BaseModel):
     since: datetime | None = Field(default=None)
 
+@router.post("", response_model=None, summary="Update all suppliers")
+def update_all_suppliers(
+    override_ignore: Annotated[list[str] | None, Query()] = [],
+    query_params: UpdateQueryParams = Depends(),
+    service: UpdateConsumerService = Depends(get_update_consumer_service),
+    supplier_provider: SupplierProvider = Depends(get_supplier_provider),
+) -> Any:
+    since = query_params.since.astimezone(timezone.utc) if query_params.since else None
+
+    suppliers = supplier_provider.get_all_suppliers_include_ignored(include_ignored_ids=override_ignore if override_ignore else [])
+
+    return [service.update(supplier, since) for supplier in suppliers]
+
 
 @router.post("/{supplier_id}", response_model=None, summary="Update by supplier ID")
-@router.post("", response_model=None, summary="Update all suppliers")
-def update_supplier(
-    supplier_id: str | None = None,
-    override_ignore: Annotated[list[str] | None, Query()] = None,
+def update_single_supplier(
+    supplier_id: str,
+    override_ignore: bool = False,
     query_params: UpdateQueryParams = Depends(),
     service: UpdateConsumerService = Depends(get_update_consumer_service),
     supplier_provider: SupplierProvider = Depends(get_supplier_provider),
     supplier_ignored_directory_service: SupplierIgnoredDirectoryService = Depends(get_supplier_ignored_directory_service),
 ) -> Any:
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
-    if supplier_id is None:
-        all_suppliers = supplier_provider.get_all_suppliers()
-        ignored_ids = {
-            s.directory_id for s in supplier_ignored_directory_service.get_all_ignored_directories()
-        }
-
-        # Filter out ignored suppliers unless they are explicitly overridden
-        filtered_suppliers = [
-            s for s in all_suppliers if (s.id not in ignored_ids) or (override_ignore is not None and s.id in override_ignore)
-        ]
-
-        return [service.update(supplier, since) for supplier in filtered_suppliers]
-
     supplier = supplier_provider.get_one_supplier(supplier_id)
-    is_ignored = supplier_ignored_directory_service.get_ignored_directory(supplier_id) is not None
+    if not override_ignore:
+        is_ignored = supplier_ignored_directory_service.get_ignored_directory(supplier_id) is not None
 
-
-    if is_ignored and (not override_ignore or supplier_id not in override_ignore):
+        if is_ignored:
             raise HTTPException(
                 status_code=409,
                 detail=f"Supplier {supplier_id} is in the ignore list. Use override_ignore to update.",
             )
 
     return service.update(supplier, since)
+

@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from app.models.supplier.dto import SupplierDto
+from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.supplier_provider.api_provider import SupplierApiProvider
 
 
@@ -10,9 +11,34 @@ def mock_api_service() -> MagicMock:
 
 
 @pytest.fixture
-def api_provider(mock_api_service: MagicMock) -> SupplierApiProvider:
-    return SupplierApiProvider("http://supplier-provider.com", mock_api_service)
+def api_provider(mock_api_service: MagicMock, supplier_ignored_directory_service: SupplierIgnoredDirectoryService
+) -> SupplierApiProvider:
+    return SupplierApiProvider("http://supplier-provider.com", mock_api_service, supplier_ignored_directory_service)
 
+
+def test_get_all_suppliers_should_ignore_ignored_if_specified(
+    api_provider: SupplierApiProvider, mock_api_service: MagicMock, supplier_ignored_directory_service: SupplierIgnoredDirectoryService
+) -> None:
+    mock_api_service.do_request.return_value.json.return_value = {
+        "data": [
+            {"id": "1", "name": "Supplier 1", "endpoint": "http://supplier1.com"},
+            {"id": "2", "name": "Supplier 2", "endpoint": "http://supplier2.com"},
+        ],
+        "next_page_url": None,
+    }
+    supplier_ignored_directory_service.add_directory_to_ignore_list("1")
+    result = api_provider.get_all_suppliers()
+    assert result is not None
+    assert len(result) == 1
+    result = api_provider.get_all_suppliers(include_ignored=True)
+    assert result is not None
+    assert len(result) == 2
+    result = api_provider.get_all_suppliers_include_ignored(include_ignored_ids=[])
+    assert result is not None
+    assert len(result) == 1
+    result = api_provider.get_all_suppliers_include_ignored(include_ignored_ids=["1"])
+    assert result is not None
+    assert len(result) == 2
 
 def test_get_all_suppliers_should_return_suppliers(
     api_provider: SupplierApiProvider, mock_api_service: MagicMock

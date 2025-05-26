@@ -48,7 +48,6 @@ def container_config(binder: inject.Binder) -> None:
     
     supplier_info_service = SupplierInfoService(
         db, 
-        supplier_ignored_directory_service,
         supplier_stale_timeout_seconds=config.scheduler.supplier_stale_timeout_in_sec, # type: ignore
     )
     binder.bind(SupplierInfoService, supplier_info_service)
