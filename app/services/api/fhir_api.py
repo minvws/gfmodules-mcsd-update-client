@@ -50,7 +50,6 @@ class FhirApi(AuthenticationBasedApiService):
         self, resource_type: str, params: dict[str, Any]
     ) -> tuple[URL | None, List[BundleEntry]]:
         url = URL(f"{self.__base_url}/{resource_type}/_search").with_query(params)
-        print(f"Searching FHIR resource at URL: {url}")
         response = self.do_request("GET", url)
         if response.status_code > 300:
             logger.error(
