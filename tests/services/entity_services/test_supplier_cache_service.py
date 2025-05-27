@@ -47,7 +47,7 @@ def test_set_supplier_cache_create_new(supplier_cache_service: SupplierCacheServ
     mock_session.get_repository.return_value = mock_repository
     mock_database.get_db_session.return_value.__enter__.return_value = mock_session
 
-    supplier_cache_service.set_supplier_cache("123", "http://example.com")
+    supplier_cache_service.set_supplier_cache(SupplierDto(id="123", name="Supplier 1", endpoint="http://example.com", is_deleted=False))
 
     mock_session.add.assert_called_once()
 
@@ -59,7 +59,7 @@ def test_set_supplier_cache_update_existing(supplier_cache_service: SupplierCach
     mock_session.get_repository.return_value = mock_repository
     mock_database.get_db_session.return_value.__enter__.return_value = mock_session
 
-    supplier_cache_service.set_supplier_cache("123", "http://new.com", is_deleted=True)
+    supplier_cache_service.set_supplier_cache(SupplierDto(id="123", name="Supplier 1", endpoint="http://new.com", is_deleted=True))
 
     assert mock_cache.endpoint == "http://new.com"
     assert mock_cache.is_deleted is True

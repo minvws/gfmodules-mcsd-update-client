@@ -1,20 +1,25 @@
 import logging
 from typing import Any, Dict, List, Sequence
-
+from fastapi import HTTPException
 from yarl import URL
+
 from app.db.entities.supplier_ignored_directory import SupplierIgnoredDirectory
 from app.models.supplier.dto import SupplierDto
-from app.services.api.api_service import ApiService
 from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
+from app.services.api.fhir_api import FhirApi
+from app.services.fhir.fhir_service import FhirService
 from app.services.supplier_provider.supplier_provider import SupplierProvider
+from fhir.resources.R4B.bundle import BundleEntry
+from fhir.resources.R4B.organization import Organization
+from fhir.resources.R4B.endpoint import Endpoint
 
 logger = logging.getLogger(__name__)
 
 
 class SupplierApiProvider(SupplierProvider):
-    def __init__(self, supplier_provider_url: str, api_service: ApiService, supplier_ignored_directory_service: SupplierIgnoredDirectoryService) -> None:
-        self.__supplier_provider_url = supplier_provider_url
-        self.__api_service = api_service
+    def __init__(self, fhir_api: FhirApi, supplier_ignored_directory_service: SupplierIgnoredDirectoryService) -> None:
+        self.__fhir_api = fhir_api
+        self.__fhir_service = FhirService(strict_validation=False)
         self.__supplier_ignored_directory_service = supplier_ignored_directory_service
 
     def get_all_suppliers(self, include_ignored: bool = False) -> List[SupplierDto]:
@@ -31,83 +36,120 @@ class SupplierApiProvider(SupplierProvider):
         include_ignored_ids: List[str] | None = None
     ) -> List[SupplierDto]:
         suppliers: List[SupplierDto] = []
-
         ignored_directories: Sequence[SupplierIgnoredDirectory] = []
         if not include_ignored or include_ignored_ids:
             ignored_directories = self.__supplier_ignored_directory_service.get_all_ignored_directories()
 
-        url = URL(f"{self.__supplier_provider_url}/Endpoint")
-        while True:
+        params = {
+            "_include": "Organization:endpoint",
+        }
+        next_url: URL | None = URL("")
+        while next_url is not None:
+            next_url, entries = self.__fhir_api.search_resource(
+                resource_type="Organization",
+                params=params,
+            )
             try:
-                response = self.__api_service.do_request("GET", url)
-                response.raise_for_status()
+                orgs, endpoint_map = self.__parse_bundle(entries)
 
-                results: Dict[str, Any] = response.json()
-                if not results["data"]:
-                    raise ValueError("No data found in the supplier provider")
+                for org in orgs:
+                    supplier = self.__create_supplier_dto(org, endpoint_map)
+                    if supplier:
+                        is_ignored = any(dir.directory_id == supplier.id for dir in ignored_directories)
+                        is_included = include_ignored_ids and supplier.id in include_ignored_ids
 
-                for result in results["data"]:
-                    id = result["id"]
-                    name = result["name"]
-                    endpoint = result["endpoint"]
-
-                    is_ignored = any(dir.directory_id == id for dir in ignored_directories)
-                    is_included = include_ignored_ids and id in include_ignored_ids
-
-                    if is_ignored and not include_ignored and not is_included:
-                        continue
-
-                    suppliers.append(SupplierDto(
-                        id=id,
-                        name=name,
-                        endpoint=endpoint,
-                        is_deleted=False,
-                    ))
-
-                if results["next_page_url"] is None:
-                    break
-
-                url = URL(results["next_page_url"])
+                        if is_ignored and not include_ignored and not is_included:
+                            continue
+                        suppliers.append(supplier)
             except Exception as e:
-                logger.warning(f"Could not retrieve suppliers from provider due to {e}")
+                logger.exception(f"Failed to retrieve suppliers: {e}")
                 raise e
 
         return suppliers
 
 
     def get_one_supplier(self, supplier_id: str) -> SupplierDto:
-        url = URL(f"{self.__supplier_provider_url}/Endpoint/{supplier_id}")
+        params = {
+            "_id": supplier_id,
+            "_include": "Organization:endpoint",
+        }
         try:
-            response = self.__api_service.do_request("GET", url)
-            response.raise_for_status()
-
-            results: Dict[str, Any] = response.json()
-            return SupplierDto(
-                id=results["id"],
-                name=results["name"],
-                endpoint=results["endpoint"],
+            next_url, entries = self.__fhir_api.search_resource(
+                resource_type="Organization",
+                params=params,
             )
+            orgs, endpoint_map = self.__parse_bundle(entries)
+
+            org = next(iter(orgs), None)
+            if not org:
+                raise ValueError(f"No organization found with supplier_id {supplier_id}")
+
+            supplier = self.__create_supplier_dto(org, endpoint_map, supplier_id)
+            if not supplier:
+                raise ValueError(f"Invalid organization data for supplier_id {supplier_id}")
+
+            return supplier
+
         except Exception as e:
-            logger.warning(f"Could not retrieve supplier {supplier_id} from provider due to {e}")
+            logger.warning(f"Failed to retrieve supplier {supplier_id}: {e}")
             raise e
 
     def check_if_supplier_is_deleted(self, supplier_id: str) -> bool:
-        """
-        Check if the supplier is deleted by checking the deleted_at field in the supplier provider.
-        If the supplier provider is not reachable, we assume the supplier is not deleted.
-        """
-        url = URL(
-            f"{self.__supplier_provider_url}/Endpoint/{supplier_id}/_history"
-        )
         try:
-            response = self.__api_service.do_request("GET", url)
-            response.raise_for_status()
-            results: Dict[str, Any] = response.json()
-            if results["data"] and results["data"][0]["deleted_at"] is not None:
-                return True
-            return False
-        except Exception:
-            logger.warning(
-                f"Could not check if supplier {supplier_id} is deleted due to provider unavailability"
+            _org = self.__fhir_api.get_resource_by_id(
+                resource_type="Organization",
+                resource_id=supplier_id,
             )
+            return False # Organization resource exists, so supplier is not deleted
+        except HTTPException as e:
+            if e.status_code == 410:
+                return True
+            logger.warning(f"Check for deleted supplier {supplier_id} failed: {e}")
             return False
+        except Exception as e:
+            logger.warning(f"Check for deleted supplier {supplier_id} failed: {e}")
+            return False
+
+    def __parse_bundle(self, entries: BundleEntry) -> tuple[List[Organization], Dict[str, Endpoint]]:
+        orgs: List[Organization] = []
+        endpoint_map: Dict[str, Any] = {}
+
+        for entry in entries:
+            resource = entry.resource
+            if isinstance(resource, Organization):
+                orgs.append(resource)
+            elif isinstance(resource, Endpoint):
+                endpoint_map[resource.id] = resource
+
+        return orgs, endpoint_map
+
+    def __create_supplier_dto(
+        self, org: Organization, endpoint_map: Dict[str, Endpoint], supplier_id: str | None = None
+    ) -> SupplierDto | None:
+        name = org.name
+        id = supplier_id or org.id
+        endpoint_address = self.__get_endpoint_address(org, endpoint_map)
+
+        if not all(isinstance(val, str) and val for val in [name, id, endpoint_address]):
+            logger.warning(f"Invalid supplier data for ID {id}. Skipping.")
+            return None
+
+        return SupplierDto(
+            id=id,
+            name=name,
+            endpoint=endpoint_address, # type:ignore
+            is_deleted=False,
+        )
+
+    def __get_endpoint_address(self, org: Organization, endpoint_map: Dict[str, Endpoint]) -> str | None:
+        if org.endpoint is None:
+            return None
+        ref = self.__fhir_service.get_references(org) if org.endpoint else None
+        if ref:
+            first_ref = ref[0]
+            if not first_ref.reference.startswith("Endpoint/"):
+                logger.warning(f"Unexpected reference format: {first_ref.reference}")
+                return None
+            endpoint = endpoint_map.get(first_ref.reference.split("/")[-1])
+            return str(endpoint.address) if endpoint else None
+        return None
