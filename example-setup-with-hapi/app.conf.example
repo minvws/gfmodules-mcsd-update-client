@@ -87,7 +87,7 @@ region = eu-west-2
 
 [supplier_api]
 # Suppliers provider url url to fetch supplier endpoints
-suppliers_provider_url = http://supplier_api:8080/
+suppliers_provider_url = http://supplier_api:8080/fhir
 # OR use a relative path that points to file that specifies which suppliers to use. See example file supplier_urls.example.json
 supplier_urls_path = supplier_urls.json
 # Timeout for the supplier api
