@@ -19,7 +19,7 @@ def mock_fhir_api() -> MagicMock:
 @pytest.fixture
 def api_provider(mock_fhir_api: MagicMock, supplier_ignored_directory_service: SupplierIgnoredDirectoryService
 ) -> SupplierApiProvider:
-    return SupplierApiProvider("http://supplier-provider.com", mock_fhir_api, supplier_ignored_directory_service)
+    return SupplierApiProvider(mock_fhir_api, supplier_ignored_directory_service)
 
 
 
@@ -70,16 +70,33 @@ def __mock_bundle_entry() -> List[BundleEntry]:
 
 
 def test_get_all_suppliers_should_ignore_ignored_if_specified(
-    api_provider: SupplierApiProvider, mock_api_service: MagicMock, supplier_ignored_directory_service: SupplierIgnoredDirectoryService
+    api_provider: SupplierApiProvider, mock_fhir_api: MagicMock, supplier_ignored_directory_service: SupplierIgnoredDirectoryService
 ) -> None:
-    mock_api_service.do_request.return_value.json.return_value = {
-        "data": [
-            {"id": "1", "name": "Supplier 1", "endpoint": "http://supplier1.com"},
-            {"id": "2", "name": "Supplier 2", "endpoint": "http://supplier2.com"},
-        ],
-        "next_page_url": None,
-    }
-    supplier_ignored_directory_service.add_directory_to_ignore_list("1")
+    entries = __mock_bundle_entry()
+    entries.append(
+        BundleEntry(
+            resource=Organization(
+                id="test-org-6789",
+                identifier=[
+                    {
+                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
+                        "value": "87654321",
+                    }
+                ],
+                name="Example Organization",
+                endpoint=[
+                    {
+                        "reference": "Endpoint/endpoint-test1",
+                    }
+                ],
+            )
+        )
+    )
+    mock_fhir_api.search_resource.return_value = (
+        None,
+        entries
+    )
+    supplier_ignored_directory_service.add_directory_to_ignore_list("test-org-6789")
     result = api_provider.get_all_suppliers()
     assert result is not None
     assert len(result) == 1
@@ -89,7 +106,7 @@ def test_get_all_suppliers_should_ignore_ignored_if_specified(
     result = api_provider.get_all_suppliers_include_ignored(include_ignored_ids=[])
     assert result is not None
     assert len(result) == 1
-    result = api_provider.get_all_suppliers_include_ignored(include_ignored_ids=["1"])
+    result = api_provider.get_all_suppliers_include_ignored(include_ignored_ids=["test-org-6789"])
     assert result is not None
     assert len(result) == 2
 

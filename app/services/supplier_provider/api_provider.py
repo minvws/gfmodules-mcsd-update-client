@@ -1,8 +1,9 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 from fastapi import HTTPException
 from yarl import URL
 
+from app.db.entities.supplier_ignored_directory import SupplierIgnoredDirectory
 from app.models.supplier.dto import SupplierDto
 from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.api.fhir_api import FhirApi
@@ -35,6 +36,10 @@ class SupplierApiProvider(SupplierProvider):
         include_ignored_ids: List[str] | None = None
     ) -> List[SupplierDto]:
         suppliers: List[SupplierDto] = []
+        ignored_directories: Sequence[SupplierIgnoredDirectory] = []
+        if not include_ignored or include_ignored_ids:
+            ignored_directories = self.__supplier_ignored_directory_service.get_all_ignored_directories()
+
         params = {
             "_include": "Organization:endpoint",
         }
@@ -50,6 +55,11 @@ class SupplierApiProvider(SupplierProvider):
                 for org in orgs:
                     supplier = self.__create_supplier_dto(org, endpoint_map)
                     if supplier:
+                        is_ignored = any(dir.directory_id == supplier.id for dir in ignored_directories)
+                        is_included = include_ignored_ids and supplier.id in include_ignored_ids
+
+                        if is_ignored and not include_ignored and not is_included:
+                            continue
                         suppliers.append(supplier)
             except Exception as e:
                 logger.exception(f"Failed to retrieve suppliers: {e}")

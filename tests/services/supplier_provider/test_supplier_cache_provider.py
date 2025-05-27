@@ -35,14 +35,20 @@ def test_get_all_suppliers_should_ignore_ignored_if_specified(
     )
     mock_api_provider.get_all_suppliers.side_effect = ValueError("API error")
     supplier_cache_service.set_supplier_cache(
-        supplier_id="1",
-        endpoint="http://example.com/supplier1",
-        is_deleted=False,
+        SupplierDto(
+            id="1",
+            name="Supplier 1",
+            endpoint="http://example.com/supplier1",
+            is_deleted=False,
+        )
     )
     supplier_cache_service.set_supplier_cache(
-        supplier_id="2",
+        SupplierDto(
+        id="2",
+        name="Supplier 2",
         endpoint="http://example.com/supplier2",
         is_deleted=False,
+        )
     )
     supplier_ignored_directory_service.add_directory_to_ignore_list("1")
 

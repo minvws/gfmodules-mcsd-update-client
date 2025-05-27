@@ -60,15 +60,22 @@ class CachingSupplierProvider(SupplierProvider):
 
         for supplier in suppliers:
             self.__supplier_cache_service.set_supplier_cache(
-                supplier_id=supplier.id, endpoint=supplier.endpoint
+                SupplierDto(
+                    id=supplier.id,
+                    name=supplier.name,
+                    endpoint=supplier.endpoint,
+                )
             )
 
         for original_supplier in original_suppliers:
             if original_supplier.id not in [supplier.id for supplier in suppliers]:
                 if self.__supplierProvider.check_if_supplier_is_deleted(supplier.id):
                     self.__supplier_cache_service.set_supplier_cache(
-                        supplier_id=supplier.id,
-                        endpoint=supplier.endpoint,
-                        is_deleted=True,
+                        SupplierDto(
+                            id=supplier.id,
+                            name=supplier.name,
+                            endpoint=supplier.endpoint,
+                            is_deleted=True,
+                        )
                     )
         return suppliers

@@ -1,6 +1,7 @@
 import pytest
 from fastapi import HTTPException
 from app.db.entities.supplier_info import SupplierInfo
+from app.models.supplier.dto import SupplierDto
 from app.services.entity.supplier_cache_service import SupplierCacheService
 from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.entity.supplier_info_service import SupplierInfoService
@@ -31,8 +32,8 @@ def test_filter_ignored_supplier_info(supplier_ignored_directory_service: Suppli
 
 def test_filter_ignored_supplier_dto(supplier_ignored_directory_service: SupplierIgnoredDirectoryService, supplier_cache_service: SupplierCacheService) -> None:
     supplier_ignored_directory_service.add_directory_to_ignore_list("ignored_1")
-    supplier_cache_service.set_supplier_cache("ignored_1", "ignored")
-    supplier_cache_service.set_supplier_cache("not_ignored_1", "not_ignored")
+    supplier_cache_service.set_supplier_cache(SupplierDto(id="ignored_1", name="ignored", endpoint="ignored"))
+    supplier_cache_service.set_supplier_cache(SupplierDto(id="not_ignored_1", name="not_ignored", endpoint="not_ignored"))
     result = supplier_cache_service.get_all_suppliers_caches(with_deleted=True, include_ignored=False)
     assert len(result) == 1
     assert result[0].id == "not_ignored_1"

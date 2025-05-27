@@ -35,7 +35,6 @@ class SupplierProviderFactory:
                 fhir_api=FhirApi(
                     timeout=self.__supplier_config.timeout,
                     backoff=self.__supplier_config.backoff,
-                    retries=5,
                     auth=self.__auth,
                     url=self.__supplier_config.suppliers_provider_url,
                     request_count=5,
