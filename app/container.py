@@ -1,5 +1,6 @@
 from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.entity.supplier_info_service import SupplierInfoService
+from app.services.fhir.fhir_service import FhirService
 from app.services.supplier_provider.factory import SupplierProviderFactory
 from app.services.supplier_provider.supplier_provider import SupplierProvider
 from app.services.update.mass_update_consumer_service import MassUpdateConsumerService
@@ -9,6 +10,7 @@ from app.db.db import Database
 from app.config import get_config
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.api.authenticators.factory import AuthenticatorFactory
+from app.services.update.new_service import DataPreparationService
 from app.services.update.update_consumer_service import UpdateConsumerService
 from typing import cast
 
@@ -31,7 +33,9 @@ def container_config(binder: inject.Binder) -> None:
     supplier_provider_factory = SupplierProviderFactory(config=config, database=db, auth=auth)
     supplier_provider = supplier_provider_factory.create()
     binder.bind(SupplierProvider, supplier_provider)
-    
+
+    new_service = DataPreparationService(fhir_service=FhirService(config.mcsd.strict_validation))
+
     update_service = UpdateConsumerService(
         consumer_url=config.mcsd.consumer_url,
         strict_validation=config.mcsd.strict_validation,
@@ -40,14 +44,15 @@ def container_config(binder: inject.Binder) -> None:
         request_count=config.mcsd.request_count,
         resource_map_service=resource_map_service,
         auth=auth,
+        new_service=new_service
     )
     binder.bind(UpdateConsumerService, update_service)
 
     supplier_ignored_directory_service = SupplierIgnoredDirectoryService(db)
     binder.bind(SupplierIgnoredDirectoryService, supplier_ignored_directory_service)
-    
+
     supplier_info_service = SupplierInfoService(
-        db, 
+        db,
         supplier_stale_timeout_seconds=config.scheduler.supplier_stale_timeout_in_sec, # type: ignore
     )
     binder.bind(SupplierInfoService, supplier_info_service)
@@ -61,7 +66,7 @@ def container_config(binder: inject.Binder) -> None:
         cleanup_client_directory_after_success_timeout_seconds=config.scheduler.cleanup_client_directory_after_success_timeout_in_sec, # type: ignore
         stats=get_stats(),
     )
-    
+
 
     update_scheduler = Scheduler(
         function=update_all_service.update_all,

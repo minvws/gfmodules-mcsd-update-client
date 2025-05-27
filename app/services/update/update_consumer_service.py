@@ -3,15 +3,16 @@ import time
 import copy
 from enum import Enum
 import logging
-from typing import List, Any
+from typing import List, Any, Literal
 from uuid import uuid4
 from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from yarl import URL
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.models.adjacency.node import (
-    Node,
+    Node, NodeReference, NodeUpdateData,
 )
 from app.models.supplier.dto import SupplierDto
+from app.services.fhir.references.reference_namespacer import namespace_resource_reference
 from app.services.update.adjacency_map_service import (
     AdjacencyMapService,
 )
@@ -21,6 +22,7 @@ from app.services.entity.resource_map_service import (
 from app.services.api.authenticators.authenticator import Authenticator
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.fhir_api import FhirApi
+from app.services.update.new_service import DataPreparationService
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,7 @@ class UpdateConsumerService:
         request_count: int,
         resource_map_service: ResourceMapService,
         auth: Authenticator,
+        new_service: DataPreparationService
     ) -> None:
         self.strict_validation = strict_validation
         self.timeout = timeout
@@ -58,6 +61,7 @@ class UpdateConsumerService:
         )
         self.__fhir_service = FhirService(strict_validation)
         self.__cache: List[str] = []
+        self.__new_service = new_service
 
     def cleanup(self, supplier_id: str) -> None:
         for res_type in McsdResources:
@@ -124,13 +128,14 @@ class UpdateConsumerService:
                         continue
                     targets.append(e)
 
-            updated_nodes = self.update_page(targets, adjacency_map_service)
+            updated_nodes = self.update_page(targets, adjacency_map_service, supplier.id)
             for node in updated_nodes:
                 if node.resource_id not in self.__cache:
                     self.__cache.append(node.resource_id)
 
     def update_page(
-        self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
+        self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService,
+        supplier_id: str
     ) -> List[Node]:
         updated = []
         adj_map = adjacency_map_service.build_adjacency_map(entries, self.__cache)
@@ -142,33 +147,44 @@ class UpdateConsumerService:
                 continue
 
             group = adj_map.get_group(node)
-            results = self.update_with_bundle(group)
+            results = self.update_with_bundle(group,adjacency_map_service, supplier_id)
             updated.extend(results)
 
         return updated
 
-    def update_with_bundle(self, nodes: List[Node]) -> List[Node]:
+    def update_with_bundle(self, nodes: List[Node],adjacency_map_service: AdjacencyMapService, supplier_id: str) -> List[Node]:
         bundle = Bundle.model_construct(id=uuid4(), type="transaction")
         bundle.entry = []
         dtos = []
 
+        consumer_targets = [
+            NodeReference(
+                id=f"{supplier_id}-{node.resource_id}",
+                resource_type=node.resource_type,
+            )
+            for node in nodes
+        ]
+
+        consumer_entries = adjacency_map_service.get_consumer_data(consumer_targets)
+
+        consumer_data = {}
+        for entry in consumer_entries:
+            _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
+            supplier_id = id.replace(f"{supplier_id}-", "")
+            consumer_data[supplier_id] = entry
+
         for node in nodes:
-            if node.update_status == "equal":
-                logger.info(
-                    f"{node.resource_id} {node.resource_type} has not changed, ignoring..."
-                )
+            update_data = self.__new_service.prepare_update_data(
+                node,
+                supplier_id,
+                consumer_data.get(node.resource_id))
 
-            if node.update_status == "ignore":
-                logger.info(
-                    f"{node.resource_id} {node.resource_type} is not needed, ignoring..."
-                )
+            if update_data is not None:
+                if update_data.bundle_entry is not None:
+                    bundle.entry.append(update_data.bundle_entry)
 
-            if node.update_data is not None:
-                if node.update_data.bundle_entry is not None:
-                    bundle.entry.append(node.update_data.bundle_entry)
-
-                if node.update_data.resource_map_dto is not None:
-                    dtos.append(node.update_data.resource_map_dto)
+                if update_data.resource_map_dto is not None:
+                    dtos.append(update_data.resource_map_dto)
 
         self.__consumer_fhir_api.post_bundle(bundle)
 
