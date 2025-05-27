@@ -1,0 +1,20 @@
+{
+    "VEKTIS": {
+        "url": "http://lmr-oost:9501/fhir",
+        "identifier_system": "http://fhir.nl/fhir/NamingSystem/agb-z",
+        "authentic_on": ["type"]
+    },
+    "CIBG": {
+        "url": "http://portal-hapi:9505/fhir",
+        "identifier_system": "http://fhir.nl/fhir/NamingSystem/ura",
+        "authentic_on": ["name", "endpoint"]
+    },
+    "KVK": {
+        "url": "http://lmr-oost:9501/fhir",
+        "identifier_system": "http://fhir.nl/fhir/NamingSystem/kvk"
+    },
+    "BIG": {
+        "url": "http://lmr-zuid:9502/fhir",
+        "identifier_system": "http://fhir.nl/fhir/NamingSystem/big"
+    }
+}

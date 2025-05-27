@@ -19,6 +19,7 @@ class SupplierCache(Base):
         String,
         nullable=False,
     )
+
     # The endpoint URL for the supplier
     endpoint: Mapped[str] = mapped_column(
         "endpoint",

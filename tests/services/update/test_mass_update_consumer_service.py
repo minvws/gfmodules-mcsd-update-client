@@ -1,19 +1,20 @@
 from unittest.mock import MagicMock
 from datetime import datetime, timedelta, timezone
+from app.services.entity.supplier_info_service import SupplierInfoService
 from app.services.update.mass_update_consumer_service import MassUpdateConsumerService
 from app.db.entities.supplier_info import SupplierInfo
 from app.stats import NoopStats
 
 
 
-def test_cleanup_old_directories() -> None:
+def test_cleanup_old_directories(supplier_info_service: SupplierInfoService) -> None:
     mock_update_consumer_service = MagicMock()
     mock_supplier_provider = MagicMock()
     mock_supplier_info_service = MagicMock()
     mock_supplier_ignored_directory_service = MagicMock()
 
-    mock_supplier_info = SupplierInfo(
-        supplier_id="supplier_1",
+    mock_outdated_supplier_info = SupplierInfo(
+        supplier_id="outdated_supplier",
         last_success_sync=datetime.now(timezone.utc) - timedelta(hours=2), # more than 1 hour
         failed_attempts=0,
         failed_sync_count=0,
@@ -24,8 +25,7 @@ def test_cleanup_old_directories() -> None:
         failed_attempts=0,
         failed_sync_count=0,
     )
-    mock_supplier_info_service.get_all_suppliers_info.return_value = [mock_supplier_info, mock_success_supplier_info]
-    mock_supplier_ignored_directory_service.filter_ignored_supplier_info.return_value = [mock_supplier_info, mock_success_supplier_info] # Assuming no ignored suppliers for this test
+    mock_supplier_info_service.get_all_suppliers_info.return_value = [mock_outdated_supplier_info, mock_success_supplier_info]
 
     service = MassUpdateConsumerService(
         update_consumer_service=mock_update_consumer_service,
@@ -39,14 +39,12 @@ def test_cleanup_old_directories() -> None:
     service.cleanup_old_directories()
 
     mock_supplier_info_service.get_all_suppliers_info.assert_called_once()
-    mock_supplier_ignored_directory_service.filter_ignored_supplier_info.assert_called_once_with([mock_supplier_info, mock_success_supplier_info])
-    mock_update_consumer_service.cleanup.assert_called_once_with("supplier_1") # It should only call cleanup for the supplier that is older than 1 hour
-    mock_supplier_ignored_directory_service.add_directory_to_ignore_list.assert_called_once_with("supplier_1")
+    mock_update_consumer_service.cleanup.assert_called_once_with("outdated_supplier") # It should only call cleanup for the supplier that is older than 1 hour
+    mock_supplier_ignored_directory_service.add_directory_to_ignore_list.assert_called_once_with("outdated_supplier")
 
     # it is now ignored, so it should not be updated on the next call
-    mock_supplier_ignored_directory_service.filter_ignored_supplier_info.return_value = [] # Mock to return no suppliers
+    mock_supplier_info_service.get_all_suppliers_info.return_value = []
 
     service.cleanup_old_directories()
     mock_supplier_info_service.get_all_suppliers_info.assert_called()
-    mock_supplier_ignored_directory_service.filter_ignored_supplier_info.assert_called()
     assert mock_update_consumer_service.cleanup.call_count == 1 # it should not be called again

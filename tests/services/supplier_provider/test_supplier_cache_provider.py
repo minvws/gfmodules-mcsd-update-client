@@ -2,6 +2,7 @@ from fastapi import HTTPException
 import pytest
 from unittest.mock import MagicMock
 from app.models.supplier.dto import SupplierDto
+from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.supplier_provider.caching_provider import CachingSupplierProvider
 from app.services.supplier_provider.api_provider import SupplierApiProvider
 from app.services.entity.supplier_cache_service import SupplierCacheService
@@ -22,6 +23,51 @@ def caching_service(
     mock_api_provider: MagicMock, mock_cache_service: MagicMock
 ) -> CachingSupplierProvider:
     return CachingSupplierProvider(mock_api_provider, mock_cache_service)
+
+def test_get_all_suppliers_should_ignore_ignored_if_specified(
+    mock_api_provider: MagicMock,
+    supplier_cache_service: SupplierCacheService,
+    supplier_ignored_directory_service: SupplierIgnoredDirectoryService,
+) -> None:
+    caching_service = CachingSupplierProvider(
+        mock_api_provider,
+        supplier_cache_service,
+    )
+    mock_api_provider.get_all_suppliers.side_effect = ValueError("API error")
+    supplier_cache_service.set_supplier_cache(
+        SupplierDto(
+            id="1",
+            name="Supplier 1",
+            endpoint="http://example.com/supplier1",
+            is_deleted=False,
+        )
+    )
+    supplier_cache_service.set_supplier_cache(
+        SupplierDto(
+        id="2",
+        name="Supplier 2",
+        endpoint="http://example.com/supplier2",
+        is_deleted=False,
+        )
+    )
+    supplier_ignored_directory_service.add_directory_to_ignore_list("1")
+
+    # Test without ignored suppliers
+    result = caching_service.get_all_suppliers(include_ignored=False)
+    assert result is not None
+    assert len(result) == 1
+    
+    # Test with ignored suppliers
+    result = caching_service.get_all_suppliers(include_ignored=True)
+    assert result is not None
+    assert len(result) == 2
+
+    result = caching_service.get_all_suppliers_include_ignored(include_ignored_ids=[])
+    assert result is not None
+    assert len(result) == 1
+    result = caching_service.get_all_suppliers_include_ignored(include_ignored_ids=["1"])
+    assert result is not None
+    assert len(result) == 2
 
 
 def test_get_all_suppliers_should_return_api_suppliers(

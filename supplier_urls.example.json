@@ -3,22 +3,22 @@
         {
             "id": "cloud-supplier", 
             "name": "Cloud supplier", 
-            "url": "http://cloud-supplier:1234/fhir"
+            "endpoint": "http://cloud-supplier:1234/fhir",
         },
         {
             "id": "data-supplier", 
             "name": "data supplier", 
-            "url": "http://data-supplier:8080/fhir"
+            "endpoint": "http://data-supplier:8080/fhir",
         },
         {
             "id": "R5-hapi", 
             "name": "R5", 
-            "url": "http://r5-hapi:9876/fhir"
+            "endpoint": "http://r5-hapi:9876/fhir",
         },
         {
             "id": "R4-hapi", 
             "name": "R4", 
-            "url": "http://r4-supplier:80/fhir"
+            "endpoint": "http://r4-supplier:80/fhir",
         }
     ]
 }

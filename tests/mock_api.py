@@ -24,7 +24,7 @@ class MockApi(SupplierProvider):
         else:
             raise ValueError(f"SupplierDto with ID {supplier_id} not found")
 
-    def get_all_suppliers(self) -> List[SupplierDto]:
+    def get_all_suppliers(self, include_ignored: bool = False) -> List[SupplierDto]:
         return [
             SupplierDto(
                 id="1",

@@ -20,6 +20,7 @@ class LogLevel(str, Enum):
 class ConfigApp(BaseModel):
     loglevel: LogLevel = Field(default=LogLevel.info)
     override_authentication_ura: str | None
+    authentic_sources: str = Field(default="authentic_sources.json")
 
 
 class Scheduler(BaseModel):

@@ -12,6 +12,7 @@ from app.models.adjacency.node import (
     Node,
 )
 from app.models.supplier.dto import SupplierDto
+from app.services.authentic_source_service import AuthenticSourceService
 from app.services.update.adjacency_map_service import (
     AdjacencyMapService,
 )
@@ -45,6 +46,7 @@ class UpdateConsumerService:
         request_count: int,
         resource_map_service: ResourceMapService,
         auth: Authenticator,
+        authentic_source_service: AuthenticSourceService
     ) -> None:
         self.strict_validation = strict_validation
         self.timeout = timeout
@@ -58,6 +60,7 @@ class UpdateConsumerService:
         )
         self.__fhir_service = FhirService(strict_validation)
         self.__cache: List[str] = []
+        self.authentic_source_service = authentic_source_service
 
     def cleanup(self, supplier_id: str) -> None:
         for res_type in McsdResources:
@@ -106,6 +109,7 @@ class UpdateConsumerService:
             supplier_api=supplier_fhir_api,
             consumer_api=self.__consumer_fhir_api,
             resource_map_service=self.__resource_map_service,
+            authentic_source_service=self.authentic_source_service
         )
         next_url: URL | None = supplier_fhir_api.build_base_history_url(
             resource_type, since

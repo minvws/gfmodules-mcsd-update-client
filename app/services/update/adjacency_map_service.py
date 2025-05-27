@@ -9,10 +9,11 @@ from app.models.adjacency.node import (
     SupplierNodeData,
 )
 from app.models.resource_map.dto import ResourceMapDto
+from app.services.authentic_source_service import AuthenticSourceService
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.fhir_api import FhirApi
-
+from fhir.resources.R4B.organization import Organization
 
 class AdjacencyMapService:
     def __init__(
@@ -22,12 +23,14 @@ class AdjacencyMapService:
         supplier_api: FhirApi,
         consumer_api: FhirApi,
         resource_map_service: ResourceMapService,
+        authentic_source_service: AuthenticSourceService,
     ) -> None:
         self.supplier_id = supplier_id
         self.__fhir_service = fhir_service
         self.__supplier_api = supplier_api
         self.__consumer_api = consumer_api
         self.__resource_map_service = resource_map_service
+        self.authentic_source_service = authentic_source_service
 
     def build_adjacency_map(
         self, entries: List[BundleEntry], updated_ids: List[str] | None = None
@@ -103,6 +106,9 @@ class AdjacencyMapService:
             for ref in res_refs:
                 res_type, ref_id = self.__fhir_service.split_reference(ref)
                 refs.append(NodeReference(id=ref_id, resource_type=res_type))
+            
+            if isinstance(entry.resource, Organization):
+                entry.resource = self.authentic_source_service.merge_authentic_sources_with_supplier_org(entry.resource)
         return SupplierNodeData(
             supplier_id=supplier_id,
             method=method,

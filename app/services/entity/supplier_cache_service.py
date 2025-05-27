@@ -15,21 +15,26 @@ class SupplierCacheService:
             repository = session.get_repository(SupplierCacheRepository)
             cache = repository.get(supplier_id, with_deleted=with_deleted)
             return self._hydrate_to_supplier_dto(cache) if cache else None
-        
-    def get_all_suppliers_caches(self, with_deleted: bool = False) -> list[SupplierDto]:
-        with self.__database.get_db_session() as session:
-            repository = session.get_repository(SupplierCacheRepository)
-            return [self._hydrate_to_supplier_dto(cache) for cache in repository.get_all(with_deleted=with_deleted)]
 
-    def set_supplier_cache(self, supplier_id: str, endpoint: str, is_deleted: bool|None = None) -> None:
+    def get_all_suppliers_caches(self, with_deleted: bool = False, include_ignored: bool = False) -> list[SupplierDto]:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(SupplierCacheRepository)
-            cache = repository.get(supplier_id, with_deleted=True)
+            return [self._hydrate_to_supplier_dto(cache) for cache in repository.get_all(with_deleted=with_deleted, include_ignored=include_ignored)]
+        
+    def get_all_suppliers_caches_include_ignored_ids(self, include_ignored_ids: list[str], with_deleted: bool = False) -> list[SupplierDto]:
+        with self.__database.get_db_session() as session:
+            repository = session.get_repository(SupplierCacheRepository)
+            return [self._hydrate_to_supplier_dto(cache) for cache in repository.get_all_include_ignored_ids(with_deleted=with_deleted, include_ignored_ids=include_ignored_ids)]
+
+    def set_supplier_cache(self, supplier: SupplierDto) -> None:
+        with self.__database.get_db_session() as session:
+            repository = session.get_repository(SupplierCacheRepository)
+            cache = repository.get(supplier.id, with_deleted=True)
             if cache is None:
-                session.add(SupplierCache(supplier_id=supplier_id, endpoint=endpoint))
+                session.add(SupplierCache(supplier_id=supplier.id, endpoint=supplier.endpoint))
             else:
-                cache.endpoint = endpoint
-                cache.is_deleted = is_deleted if is_deleted is not None else cache.is_deleted
+                cache.endpoint = supplier.endpoint
+                cache.is_deleted = supplier.is_deleted if supplier.is_deleted is not None else cache.is_deleted
             session.commit()
 
     def delete_supplier_cache(self, supplier_id: str) -> None:

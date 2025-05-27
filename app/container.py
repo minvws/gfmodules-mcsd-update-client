@@ -1,3 +1,5 @@
+import json
+from app.services.authentic_source_service import AuthenticSourceService
 from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.entity.supplier_info_service import SupplierInfoService
 from app.services.supplier_provider.factory import SupplierProviderFactory
@@ -28,7 +30,14 @@ def container_config(binder: inject.Binder) -> None:
     auth_factory = AuthenticatorFactory(config=config)
     auth = auth_factory.create_authenticator()
 
-    supplier_provider_factory = SupplierProviderFactory(config=config, database=db)
+    with open(config.app.authentic_sources, 'r') as f:
+        authentic_sources = json.load(f)
+    authentic_source_system = AuthenticSourceService(
+        authentic_sources=authentic_sources,
+        authenticator=auth,  # type: ignore
+    )
+
+    supplier_provider_factory = SupplierProviderFactory(config=config, database=db, auth=auth)
     supplier_provider = supplier_provider_factory.create()
     binder.bind(SupplierProvider, supplier_provider)
     
@@ -40,6 +49,7 @@ def container_config(binder: inject.Binder) -> None:
         request_count=config.mcsd.request_count,
         resource_map_service=resource_map_service,
         auth=auth,
+        authentic_source_service=authentic_source_system,
     )
     binder.bind(UpdateConsumerService, update_service)
 
@@ -48,7 +58,6 @@ def container_config(binder: inject.Binder) -> None:
     
     supplier_info_service = SupplierInfoService(
         db, 
-        supplier_ignored_directory_service,
         supplier_stale_timeout_seconds=config.scheduler.supplier_stale_timeout_in_sec, # type: ignore
     )
     binder.bind(SupplierInfoService, supplier_info_service)

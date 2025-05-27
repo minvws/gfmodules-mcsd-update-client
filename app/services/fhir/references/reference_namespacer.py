@@ -18,6 +18,9 @@ def _namespace_reference(data: Any, namespace: str) -> Reference | None:
     ref = extract_references(data)
     if ref is None or ref.reference is None:
         return None
+    if ref.reference.startswith("http"):
+        # If the reference is a full URL, we do not modify it
+        return ref
     res_type, id = get_resource_from_reference(ref.reference)
     if res_type is None or id is None:
         return None
