@@ -3,6 +3,7 @@ from typing import List
 from app.models.supplier.dto import SupplierDto
 from app.services.api.api_service import ApiService
 from app.services.entity.supplier_cache_service import SupplierCacheService
+from app.services.entity.supplier_ignored_directory_service import SupplierIgnoredDirectoryService
 from app.services.supplier_provider.api_provider import SupplierApiProvider
 from app.services.supplier_provider.caching_provider import CachingSupplierProvider
 from app.services.supplier_provider.json_provider import SupplierJsonProvider
@@ -24,6 +25,8 @@ class SupplierProviderFactory:
                 suppliers_json_data=SupplierProviderFactory._read_suppliers_file(
                     self.__supplier_config.supplier_urls_path
                 ),
+                supplier_ignored_directory_service=SupplierIgnoredDirectoryService(self.__db)
+
             )
         elif self.__supplier_config.suppliers_provider_url is not None:
             supplier_api_provider = SupplierApiProvider(
@@ -33,6 +36,7 @@ class SupplierProviderFactory:
                     backoff=self.__supplier_config.backoff,
                     retries=5,
                 ),
+                supplier_ignored_directory_service=SupplierIgnoredDirectoryService(self.__db)
             )
             supplier_cache_service = SupplierCacheService(self.__db)
             return CachingSupplierProvider(

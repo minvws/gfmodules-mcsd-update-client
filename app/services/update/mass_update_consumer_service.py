@@ -36,9 +36,7 @@ class MassUpdateConsumerService:
                 logging.error(f"Failed to retrieve suppliers: {e}")
                 return []
             data: list[dict[str, Any]] = []
-            filtered_suppliers = self.__supplier_ignored_directory_service.filter_ignored_supplier_dto(all_suppliers)
-            for supplier in filtered_suppliers:
-
+            for supplier in all_suppliers:
                 info = self.__supplier_info_service.get_supplier_info(supplier.id)
                 new_updated = datetime.now() - timedelta(seconds=60)
                 try:
@@ -62,8 +60,7 @@ class MassUpdateConsumerService:
     
     def cleanup_old_directories(self) -> None:
         with self.__stats.timer("cleanup_old_directories"):
-            all_suppliers = self.__supplier_info_service.get_all_suppliers_info()
-            suppliers = self.__supplier_ignored_directory_service.filter_ignored_supplier_info(all_suppliers)
+            suppliers = self.__supplier_info_service.get_all_suppliers_info()
             for supplier_info in suppliers:
                 if supplier_info.last_success_sync is not None:
                     elapsed_time = (datetime.now(timezone.utc) - supplier_info.last_success_sync.astimezone(timezone.utc)).total_seconds()
@@ -71,4 +68,3 @@ class MassUpdateConsumerService:
                         logging.info(f"Cleaning up directory for outdated supplier {supplier_info.supplier_id}")
                         self.__update_consumer_service.cleanup(supplier_info.supplier_id)
                         self.__supplier_ignored_directory_service.add_directory_to_ignore_list(supplier_info.supplier_id)
-        

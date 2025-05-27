@@ -8,6 +8,8 @@ from app.services.entity.resource_map_service import ResourceMapService
 from app.services.entity.supplier_ignored_directory_service import (
     SupplierIgnoredDirectoryService,
 )
+from app.services.entity.supplier_cache_service import SupplierCacheService
+from app.services.entity.supplier_info_service import SupplierInfoService
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
@@ -27,6 +29,15 @@ def supplier_ignored_directory_service(
     set_config(config)
     return SupplierIgnoredDirectoryService(database=database)
 
+@pytest.fixture()
+def supplier_info_service(database: Database, config: Config) -> SupplierInfoService:
+    set_config(config)
+    return SupplierInfoService(database=database, supplier_stale_timeout_seconds=0)
+
+@pytest.fixture()
+def supplier_cache_service(database: Database, config: Config) -> SupplierCacheService:
+    set_config(config)
+    return SupplierCacheService(database=database)
 
 @pytest.fixture()
 def resource_map_service(database: Database, config: Config) -> ResourceMapService:
