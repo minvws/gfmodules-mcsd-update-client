@@ -77,8 +77,8 @@ class AdjacencyMapService:
         if entry.resource:
             res_refs = self.__fhir_service.get_references(entry.resource)
             for ref in res_refs:
-                res_type, ref_id = self.__fhir_service.split_reference(ref)
-                refs.append(NodeReference(id=ref_id, resource_type=res_type))
+                _res_type, ref_id = self.__fhir_service.split_reference(ref)
+                refs.append(NodeReference(id=ref_id, resource_type=_res_type))
 
         resource_map = self.__resource_map_service.get(
             supplier_id=self.supplier_id,

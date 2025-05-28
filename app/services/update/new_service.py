@@ -69,7 +69,8 @@ class DataPreparationService():
         supplier_id: str,
         consumer_data: BundleEntry | None
     ) -> NodeUpdateData | None:
-        namespaced_supplier_data = self.__fhir_service.namespace_resource_references(node.supplier_bundle_entry.resource, supplier_id)
+        resource = copy.deepcopy(node.supplier_bundle_entry.resource)
+        namespaced_supplier_data = self.__fhir_service.namespace_resource_references(resource, supplier_id)
         update_status = self.__update_status(
             node.supplier_bundle_entry.request.method,
             namespaced_supplier_data,
