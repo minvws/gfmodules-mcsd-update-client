@@ -38,14 +38,14 @@ class FhirApi(AuthenticationBasedApiService):
                 "POST", url, jsonable_encoder(bundle.model_dump())
             )
             if response.status_code > 300:
-                logger.error(response.json())
+                logger.error(response.text)
                 raise HTTPException(status_code=500, detail=response.json())
             data = response.json()
             return self.__fhir_service.create_bundle(data)
         except Exception as e:
             logging.error(e)
             raise e
-        
+
     def search_resource(
         self, resource_type: str, params: dict[str, Any]
     ) -> tuple[URL | None, List[BundleEntry]]:
@@ -56,7 +56,7 @@ class FhirApi(AuthenticationBasedApiService):
                 f"An error with status code {response.status_code} has occurred from server. See response:\n{response.json()}"
             )
             raise HTTPException(status_code=500, detail=response.json())
-        
+
         page_bundle = self.__fhir_service.create_bundle(response.json())
         next_url = None
         entries = page_bundle.entry if page_bundle.entry else []
@@ -66,7 +66,7 @@ class FhirApi(AuthenticationBasedApiService):
                     next_url = URL(link.url)
 
         return next_url, entries
-    
+
     def get_resource_by_id(
         self, resource_type: str, resource_id: str
     ) -> DomainResource:
@@ -82,7 +82,7 @@ class FhirApi(AuthenticationBasedApiService):
                 f"An error with status code {response.status_code} has occurred from server. See response:\n{response.json()}"
             )
             raise HTTPException(status_code=500, detail=response.json())
-        
+
         data = response.json()
         return self.__fhir_service.create_resource(data)
 
