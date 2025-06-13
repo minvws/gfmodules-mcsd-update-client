@@ -5,7 +5,8 @@ from enum import Enum
 import logging
 from typing import List, Any
 from uuid import uuid4
-from app.services.update.cache.in_memory_caching_service import InMemoryCachingService
+from app.services.update.computation_service import ComputationService
+from app.services.update.cache.caching_service import InMemoryCachingService
 from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from yarl import URL
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
@@ -107,6 +108,12 @@ class UpdateConsumerService:
             strict_validation=self.strict_validation,
             url=supplier.endpoint,
         )
+        computation_service = ComputationService(
+            supplier_id=supplier.id,
+            fhir_service=self.__fhir_service,
+            resource_map_service=self.__resource_map_service,
+        )
+
         adjacency_map_service = AdjacencyMapService(
             supplier_id=supplier.id,
             fhir_service=self.__fhir_service,
@@ -114,6 +121,7 @@ class UpdateConsumerService:
             consumer_api=self.__consumer_fhir_api,
             resource_map_service=self.__resource_map_service,
             cache_service=self.__cache,
+            computation_service=computation_service,
         )
         next_url: URL | None = supplier_fhir_api.build_base_history_url(
             resource_type, since
@@ -135,16 +143,14 @@ class UpdateConsumerService:
             updated_nodes = self.update_page(targets, adjacency_map_service)
             for node in updated_nodes:
                 if not self.__cache.key_exists(node.resource_id):
+                    node.clear_for_cash()
                     self.__cache.add_node(node)
-
-                # if node.resource_id not in self.__cache:
-                #     self.__cache.append(node.resource_id)
 
     def update_page(
         self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
     ) -> List[Node]:
         updated = []
-        adj_map = adjacency_map_service.build_adjacency_map(entries, self.__cache)
+        adj_map = adjacency_map_service.build_adjacency_map(entries)
         for node in adj_map.data.values():
             if node.updated is True:
                 logger.info(
@@ -164,12 +170,12 @@ class UpdateConsumerService:
         dtos = []
 
         for node in nodes:
-            if node.update_status == "equal":
+            if node.status == "equal":
                 logger.info(
                     f"{node.resource_id} {node.resource_type} has not changed, ignoring..."
                 )
 
-            if node.update_status == "ignore":
+            if node.status == "ignore":
                 logger.info(
                     f"{node.resource_id} {node.resource_type} is not needed, ignoring..."
                 )

@@ -31,7 +31,7 @@ class AdjacencyMap:
 
         while queue:
             current = queue.popleft()
-            for ref in current.supplier_data.references:
+            for ref in current.references:
                 sibling = self.data[ref.id]
                 if sibling.visited is False:
                     sibling.visited = True
@@ -42,9 +42,7 @@ class AdjacencyMap:
 
     def get_missing_refs(self) -> List[NodeReference]:
         refs = list(
-            chain.from_iterable(
-                [node.supplier_data.references for node in self.data.values()]
-            )
+            chain.from_iterable([node.references for node in self.data.values()])
         )
         return list(filter(self._ref_in_ajd_map, refs))
 
