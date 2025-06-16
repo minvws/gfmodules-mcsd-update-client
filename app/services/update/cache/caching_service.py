@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict
+from uuid import UUID
 from app.models.adjacency.node import Node
 
 
@@ -8,17 +9,8 @@ class CachingService(ABC):
     @abstractmethod
     def get_node(self, id: str) -> Node | None: ...
 
-    # @abstractmethod
-    # def get_nodes(self, id: str) -> List[Node]: ...
-
     @abstractmethod
     def add_node(self, node: Node) -> None: ...
-
-    # @abstractmethod
-    # def add_nodes(self, nodes: List[Node]) -> None: ...
-
-    @abstractmethod
-    def delete_node(self, id: str) -> None: ...
 
     @abstractmethod
     def clear(self) -> None: ...
@@ -29,23 +21,25 @@ class CachingService(ABC):
     @abstractmethod
     def key_exists(self, id: str) -> bool: ...
 
+    @abstractmethod
+    def is_healthy(self) -> bool: ...
+
 
 class InMemoryCachingService(CachingService):
-    def __init__(self) -> None:
+    def __init__(self, run_id: UUID) -> None:
         self.data: Dict[str, Node] = {}
+        self.run_id = run_id
 
     def get_node(self, id: str) -> Node | None:
         if not self.key_exists(id):
             return None
 
-        return self.data[id]
+        target_id = f"{self.run_id}-{id}"
+        return self.data[target_id]
 
     def add_node(self, node: Node) -> None:
-        self.data[node.resource_id] = node
-
-    def delete_node(self, id: str) -> None:
-        if self.key_exists(id):
-            self.data.pop(id)
+        target_id = f"{self.run_id}-{node.resource_id}"
+        self.data[target_id] = node
 
     def clear(self) -> None:
         self.data = {}
@@ -54,4 +48,8 @@ class InMemoryCachingService(CachingService):
         return len(self.data) > 0
 
     def key_exists(self, id: str) -> bool:
-        return id in self.data.keys()
+        target_id = f"{self.run_id}-{id}"
+        return target_id in self.data.keys()
+
+    def is_healthy(self) -> bool:
+        return True

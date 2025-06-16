@@ -6,11 +6,9 @@ from fhir.resources.R4B.bundle import BundleEntry, BundleEntryRequest
 
 from app.models.adjacency.adjacency_map import AdjacencyMap
 from app.models.adjacency.node import (
-    ConsumerNodeData,
     Node,
     NodeReference,
     NodeUpdateData,
-    SupplierNodeData,
 )
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
 from app.services.entity.resource_map_service import ResourceMapService
@@ -45,12 +43,9 @@ class AdjacencyMapService:
 
         while missing_refs:
             # exhaust cache first
-            missing_nodes = list(
-                filter(
-                    lambda x: x is not None,
-                    [self.__cache_service.get_node(ref.id) for ref in missing_refs],
-                )
-            )
+            data = [self.__cache_service.get_node(ref.id) for ref in missing_refs]
+            missing_nodes = [x for x in data if x is not None]
+
             if len(missing_nodes) > 0:
                 adj_map.add_nodes(missing_nodes)
                 missing_refs = adj_map.get_missing_refs()
@@ -121,7 +116,7 @@ class AdjacencyMapService:
         res_type, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
         method = self.__fhir_service.get_request_method_from_entry(entry)
         supplier_hash = self.__computation_service.hash_supplier_entry(entry)
-        references = self.crete_node_references(entry)
+        references = self.create_node_references(entry)
 
         return Node(
             resource_id=id,
@@ -132,7 +127,7 @@ class AdjacencyMapService:
             references=references,
         )
 
-    def crete_node_references(self, entry: BundleEntry) -> List[NodeReference]:
+    def create_node_references(self, entry: BundleEntry) -> List[NodeReference]:
         if entry.resource is None:
             return []
 
@@ -247,3 +242,8 @@ class AdjacencyMapService:
                 )
 
                 return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
+
+            case "unknown":
+                raise Exception(
+                    f"node {node.resource_id} {node.resource_type} cannot be unknown at this stage"
+                )

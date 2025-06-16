@@ -1,3 +1,4 @@
+from uuid import UUID, uuid4
 from fhir.resources.R4B.bundle import Bundle
 import pytest
 from typing import Dict, Any
@@ -14,6 +15,8 @@ from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
 from app.services.update.adjacency_map_service import AdjacencyMapService
+from app.services.update.cache.caching_service import InMemoryCachingService
+from app.services.update.computation_service import ComputationService
 from tests.test_config import get_test_config
 
 
@@ -29,15 +32,18 @@ def supplier_ignored_directory_service(
     set_config(config)
     return SupplierIgnoredDirectoryService(database=database)
 
+
 @pytest.fixture()
 def supplier_info_service(database: Database, config: Config) -> SupplierInfoService:
     set_config(config)
     return SupplierInfoService(database=database, supplier_stale_timeout_seconds=0)
 
+
 @pytest.fixture()
 def supplier_cache_service(database: Database, config: Config) -> SupplierCacheService:
     set_config(config)
     return SupplierCacheService(database=database)
+
 
 @pytest.fixture()
 def resource_map_service(database: Database, config: Config) -> ResourceMapService:
@@ -171,11 +177,36 @@ def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
 
 
 @pytest.fixture()
+def computation_service(
+    mock_supplier_id: str,
+    fhir_service: FhirService,
+    resource_map_service: ResourceMapService,
+) -> ComputationService:
+    return ComputationService(
+        supplier_id=mock_supplier_id,
+        fhir_service=fhir_service,
+        resource_map_service=resource_map_service,
+    )
+
+
+@pytest.fixture()
+def mock_run_id() -> UUID:
+    return uuid4()
+
+
+@pytest.fixture()
+def in_memory_cache_service(mock_run_id: UUID) -> InMemoryCachingService:
+    return InMemoryCachingService(mock_run_id)
+
+
+@pytest.fixture()
 def adjacency_map_service(
     mock_supplier_id: str,
     fhir_service: FhirService,
     fhir_api: FhirApi,
     resource_map_service: ResourceMapService,
+    computation_service: ComputationService,
+    in_memory_cache_service: InMemoryCachingService,
 ) -> AdjacencyMapService:
     return AdjacencyMapService(
         supplier_id=mock_supplier_id,
@@ -183,4 +214,6 @@ def adjacency_map_service(
         supplier_api=fhir_api,
         consumer_api=fhir_api,
         resource_map_service=resource_map_service,
+        computation_service=computation_service,
+        cache_service=in_memory_cache_service,
     )

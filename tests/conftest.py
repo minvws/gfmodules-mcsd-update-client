@@ -194,13 +194,3 @@ def mock_node_ep(
 @pytest.fixture()
 def adjacency_map(mock_node_org: Node, mock_node_ep: Node) -> AdjacencyMap:
     return AdjacencyMap(nodes=[mock_node_org, mock_node_ep])
-
-
-@pytest.fixture()
-def adjacency_map_with_updated_ids(
-    mock_node_org: Node, mock_node_ep: Node
-) -> AdjacencyMap:
-    return AdjacencyMap(
-        nodes=[mock_node_org, mock_node_ep],
-        updated_ids=[mock_node_org.resource_id, mock_node_ep.resource_id],
-    )
