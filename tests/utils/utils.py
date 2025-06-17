@@ -7,12 +7,10 @@ from typing import Any, Dict, List, Set
 from uuid import uuid4
 
 from app.models.adjacency.node import (
-    ConsumerNodeData,
     Node,
     NodeReference,
-    SupplierNodeData,
+    NodeUpdateData,
 )
-from app.models.resource_map.dto import ResourceMapDto
 from app.services.fhir.fhir_service import FhirService
 import numpy as np
 from app.container import get_database
@@ -117,29 +115,24 @@ def check_if_in_db(supplier_id: str, ids_set: Set[str]) -> int:
 def create_mock_node(
     bundle_entry: BundleEntry,
     node_refs: List[NodeReference],
-    supplier_id: str,
     fhir_service: FhirService,
+    supplier_hash: int | None = None,
+    consumer_hash: int | None = None,
+    node_update_data: NodeUpdateData | None = None,
 ) -> Node:
     """
     Helper function to create mock nodes
     """
     res_type, id = fhir_service.get_resource_type_and_id_from_entry(bundle_entry)
     method = fhir_service.get_request_method_from_entry(bundle_entry)
-    supplier_data = SupplierNodeData(
-        supplier_id=supplier_id, references=node_refs, method=method, entry=bundle_entry
-    )
-    resource_map = ResourceMapDto(
-        supplier_id=supplier_id,
-        resource_type=res_type,
-        supplier_resource_id=id,
-        consumer_resource_id=f"{supplier_id}-{id}",
-        history_size=1,
-    )
 
     return Node(
         resource_id=id,
         resource_type=res_type,
-        supplier_data=supplier_data,
-        consumer_data=ConsumerNodeData(resource=None),
-        resource_map=resource_map,
+        references=node_refs,
+        method=method,
+        supplier_entry=bundle_entry,
+        supplier_hash=supplier_hash,
+        consumer_hash=consumer_hash,
+        update_data=node_update_data,
     )

@@ -1,6 +1,7 @@
 import copy
 from typing import List
 from app.db.entities.resource_map import ResourceMap
+from app.models.fhir.types import BundleRequestParams
 from app.services.update.cache.caching_service import CachingService
 from fhir.resources.R4B.bundle import BundleEntry, BundleEntryRequest
 
@@ -26,7 +27,6 @@ class AdjacencyMapService:
         consumer_api: FhirApi,
         resource_map_service: ResourceMapService,
         cache_service: CachingService,
-        computation_service: ComputationService,
     ) -> None:
         self.supplier_id = supplier_id
         self.__fhir_service = fhir_service
@@ -34,7 +34,9 @@ class AdjacencyMapService:
         self.__consumer_api = consumer_api
         self.__resource_map_service = resource_map_service
         self.__cache_service = cache_service
-        self.__computation_service = computation_service
+        self.__computation_service = ComputationService(
+            supplier_id=supplier_id, fhir_service=fhir_service
+        )
 
     def build_adjacency_map(self, entries: List[BundleEntry]) -> AdjacencyMap:
         nodes = [self.create_node(entry) for entry in entries]
@@ -52,20 +54,14 @@ class AdjacencyMapService:
                 continue
 
             # get the rest from the supplier api
-            missing_entries = self.get_supplier_data(missing_refs)
+            missing_entries = self.get_supplier_data(
+                [BundleRequestParams(**ref.model_dump()) for ref in missing_refs]
+            )
             missing_nodes = [self.create_node(entry) for entry in missing_entries]
             adj_map.add_nodes(missing_nodes)
             missing_refs = adj_map.get_missing_refs()
 
-        consumer_targets = []
-        for id, node in adj_map.data.items():
-            if not self.__cache_service.key_exists(id):
-                consumer_targets.append(
-                    NodeReference(
-                        id=f"{self.supplier_id}-{id}", resource_type=node.resource_type
-                    )
-                )
-
+        consumer_targets = self.__get_consumer_missing_targets(adj_map)
         consumer_entries = self.get_consumer_data(consumer_targets)
 
         for entry in consumer_entries:
@@ -84,8 +80,6 @@ class AdjacencyMapService:
                 supplier_resource_id=node.resource_id,
             )
             node.status = self.__computation_service.get_update_status(
-                resource_id=node.resource_id,
-                resource_type=node.resource_type,
                 method=node.method,
                 supplier_hash=node.supplier_hash,
                 consumer_hash=node.consumer_hash,
@@ -95,8 +89,8 @@ class AdjacencyMapService:
 
         return adj_map
 
-    def get_entries(
-        self, refs: List[NodeReference], fhir_api: FhirApi
+    def __get_entries(
+        self, refs: List[BundleRequestParams], fhir_api: FhirApi
     ) -> List[BundleEntry]:
         bundle_request = self.__fhir_service.create_bundle_request(refs)
         res = self.__fhir_service.filter_history_entries(
@@ -106,11 +100,11 @@ class AdjacencyMapService:
         )
         return res
 
-    def get_supplier_data(self, refs: List[NodeReference]) -> List[BundleEntry]:
-        return self.get_entries(refs, self.__supplier_api)
+    def get_supplier_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
+        return self.__get_entries(refs, self.__supplier_api)
 
-    def get_consumer_data(self, refs: List[NodeReference]) -> List[BundleEntry]:
-        return self.get_entries(refs, self.__consumer_api)
+    def get_consumer_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
+        return self.__get_entries(refs, self.__consumer_api)
 
     def create_node(self, entry: BundleEntry) -> Node:
         res_type, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
@@ -247,3 +241,16 @@ class AdjacencyMapService:
                 raise Exception(
                     f"node {node.resource_id} {node.resource_type} cannot be unknown at this stage"
                 )
+
+    def __get_consumer_missing_targets(
+        self, adj_map: AdjacencyMap
+    ) -> List[BundleRequestParams]:
+        consumer_targets = []
+        for id, node in adj_map.data.items():
+            if not self.__cache_service.key_exists(id):
+                consumer_targets.append(
+                    BundleRequestParams(
+                        id=f"{self.supplier_id}-{id}", resource_type=node.resource_type
+                    )
+                )
+        return consumer_targets

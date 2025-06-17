@@ -5,18 +5,15 @@ from app.models.adjacency.node import Node
 
 
 class CachingService(ABC):
+    def __init__(self, run_id: UUID) -> None:
+        self.run_id = run_id
+        self.data: Dict[str, Node] = {}
 
     @abstractmethod
     def get_node(self, id: str) -> Node | None: ...
 
     @abstractmethod
     def add_node(self, node: Node) -> None: ...
-
-    @abstractmethod
-    def clear(self) -> None: ...
-
-    @abstractmethod
-    def is_empty(self) -> bool: ...
 
     @abstractmethod
     def key_exists(self, id: str) -> bool: ...
@@ -40,12 +37,6 @@ class InMemoryCachingService(CachingService):
     def add_node(self, node: Node) -> None:
         target_id = f"{self.run_id}-{node.resource_id}"
         self.data[target_id] = node
-
-    def clear(self) -> None:
-        self.data = {}
-
-    def is_empty(self) -> bool:
-        return len(self.data) > 0
 
     def key_exists(self, id: str) -> bool:
         target_id = f"{self.run_id}-{id}"

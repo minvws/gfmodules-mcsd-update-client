@@ -52,9 +52,5 @@ class AdjacencyMap:
     def _create_adj_map(self, nodes: List[Node]) -> AdjacencyData:
         ids = [node.resource_id for node in nodes]
         data: AdjacencyData = dict(zip(ids, nodes))
-        # if updated_ids:
-        #     for id in updated_ids:
-        #         if id in data.keys():
-        #             data[id].updated = True
 
         return data

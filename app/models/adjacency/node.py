@@ -10,10 +10,6 @@ class NodeReference(BaseModel):
     id: str
     resource_type: str
 
-    def namespace_id(self, namespace: str) -> None:
-        new_id = f"{namespace}-{self.id}"
-        self.id = new_id
-
 
 class NodeUpdateData(BaseModel):
     bundle_entry: BundleEntry | None = None

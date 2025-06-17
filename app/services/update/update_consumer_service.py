@@ -6,7 +6,6 @@ import logging
 from typing import List, Any
 from uuid import uuid4
 from app.services.update.cache.provider import CacheProvider
-from app.services.update.computation_service import ComputationService
 from app.services.update.cache.caching_service import (
     CachingService,
 )
@@ -66,19 +65,6 @@ class UpdateConsumerService:
         self.__cache_provider = cache_provider
         self.__cache: CachingService | None = None
 
-    def create_cache_run(self) -> None:
-        cache_service = self.__cache_provider.create()
-        healthy = cache_service.is_healthy()
-        if healthy is False:
-            raise Exception(
-                "Unable to connect to cache service, check app config and verify connection"
-            )
-
-        self.__cache = self.__cache_provider.create()
-
-    def end_cache_run(self) -> None:
-        self.__cache = None
-
     def cleanup(self, supplier_id: str) -> None:
         for res_type in McsdResources:
             delete_bundle = Bundle(
@@ -103,21 +89,18 @@ class UpdateConsumerService:
             self.__consumer_fhir_api.post_bundle(delete_bundle)
 
     def update(self, supplier: SupplierDto, since: datetime | None = None) -> Any:
-        self.create_cache_run()
+        self.__create_cache_run()
         if self.__cache is None:
             raise Exception(
                 "Unable to continue with update, cache service is not available"
             )
         start_time = time.time()
-        # if not self.__cache.is_empty():
-        # self.__cache.clear()
 
         for res in McsdResources:
             self.update_resource(supplier, res.value, since)
         results = copy.deepcopy([id for id in self.__cache.data.keys()])
-        # self.__cache.clear()
         end_time = time.time()
-        self.end_cache_run()
+        self.__end_cache_run()
 
         return {"log": f"updated {len(results)}", "time": end_time - start_time}
 
@@ -137,11 +120,6 @@ class UpdateConsumerService:
             strict_validation=self.strict_validation,
             url=supplier.endpoint,
         )
-        computation_service = ComputationService(
-            supplier_id=supplier.id,
-            fhir_service=self.__fhir_service,
-            resource_map_service=self.__resource_map_service,
-        )
 
         adjacency_map_service = AdjacencyMapService(
             supplier_id=supplier.id,
@@ -150,7 +128,6 @@ class UpdateConsumerService:
             consumer_api=self.__consumer_fhir_api,
             resource_map_service=self.__resource_map_service,
             cache_service=self.__cache,
-            computation_service=computation_service,
         )
         next_url: URL | None = supplier_fhir_api.build_base_history_url(
             resource_type, since
@@ -229,3 +206,16 @@ class UpdateConsumerService:
             node.updated = True
 
         return nodes
+
+    def __create_cache_run(self) -> None:
+        cache_service = self.__cache_provider.create()
+        healthy = cache_service.is_healthy()
+        if healthy is False:
+            raise Exception(
+                "Unable to connect to cache service, check app config and verify connection"
+            )
+
+        self.__cache = self.__cache_provider.create()
+
+    def __end_cache_run(self) -> None:
+        self.__cache = None

@@ -11,7 +11,7 @@ from fhir.resources.R4B.practitionerrole import PractitionerRole
 from fhir.resources.R4B.reference import Reference
 from pydantic import ValidationError
 import pytest
-from app.models.adjacency.node import NodeReference
+from app.models.fhir.types import BundleRequestParams
 from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from tests.services.fhir.conftest import (
@@ -315,7 +315,7 @@ def test_filter_history_entries_should_succeed(
 
 
 def test_create_bundle_request_should_succeed(fhir_service: FhirService) -> None:
-    mock_node_refs = [NodeReference(id="some-id", resource_type="Organization")]
+    mock_node_refs = [BundleRequestParams(id="some-id", resource_type="Organization")]
     results = fhir_service.create_bundle_request(mock_node_refs)
 
     assert isinstance(results, Bundle)

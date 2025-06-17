@@ -1,9 +1,10 @@
-from uuid import UUID, uuid4
+from uuid import uuid4
 from fhir.resources.R4B.bundle import Bundle
 import pytest
-from typing import Dict, Any
+from typing import Dict, Any, List
 from app.config import Config, set_config
 from app.db.db import Database
+from app.models.adjacency.node import Node, NodeReference
 from app.services.api.fhir_api import FhirApi
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.entity.supplier_ignored_directory_service import (
@@ -11,6 +12,7 @@ from app.services.entity.supplier_ignored_directory_service import (
 )
 from app.services.entity.supplier_cache_service import SupplierCacheService
 from app.services.entity.supplier_info_service import SupplierInfoService
+from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
@@ -18,6 +20,7 @@ from app.services.update.adjacency_map_service import AdjacencyMapService
 from app.services.update.cache.caching_service import InMemoryCachingService
 from app.services.update.computation_service import ComputationService
 from tests.test_config import get_test_config
+from tests.utils.utils import create_mock_node
 
 
 @pytest.fixture()
@@ -155,8 +158,19 @@ def mock_ep_history_bundle(ep_history_entry: Dict[str, Any]) -> Dict[str, Any]:
 
 
 @pytest.fixture()
-def fhir_service() -> FhirService:
-    return FhirService(strict_validation=False)
+def expected_node_org(
+    mock_org_bundle_entry: Dict[str, Any],
+    org_node_references: List[NodeReference],
+    fhir_service: FhirService,
+    computation_service: ComputationService,
+) -> Node:
+    entry = create_bundle_entry(mock_org_bundle_entry)
+    return create_mock_node(
+        bundle_entry=entry,
+        node_refs=org_node_references,
+        fhir_service=fhir_service,
+        supplier_hash=computation_service.hash_supplier_entry(entry),
+    )
 
 
 @pytest.fixture()
@@ -177,26 +191,8 @@ def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
 
 
 @pytest.fixture()
-def computation_service(
-    mock_supplier_id: str,
-    fhir_service: FhirService,
-    resource_map_service: ResourceMapService,
-) -> ComputationService:
-    return ComputationService(
-        supplier_id=mock_supplier_id,
-        fhir_service=fhir_service,
-        resource_map_service=resource_map_service,
-    )
-
-
-@pytest.fixture()
-def mock_run_id() -> UUID:
-    return uuid4()
-
-
-@pytest.fixture()
-def in_memory_cache_service(mock_run_id: UUID) -> InMemoryCachingService:
-    return InMemoryCachingService(mock_run_id)
+def in_memory_cache_service() -> InMemoryCachingService:
+    return InMemoryCachingService(uuid4())
 
 
 @pytest.fixture()
@@ -205,7 +201,6 @@ def adjacency_map_service(
     fhir_service: FhirService,
     fhir_api: FhirApi,
     resource_map_service: ResourceMapService,
-    computation_service: ComputationService,
     in_memory_cache_service: InMemoryCachingService,
 ) -> AdjacencyMapService:
     return AdjacencyMapService(
@@ -214,6 +209,5 @@ def adjacency_map_service(
         supplier_api=fhir_api,
         consumer_api=fhir_api,
         resource_map_service=resource_map_service,
-        computation_service=computation_service,
         cache_service=in_memory_cache_service,
     )

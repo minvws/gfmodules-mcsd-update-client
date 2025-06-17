@@ -5,7 +5,6 @@ from fhir.resources.R4B.domainresource import DomainResource
 
 from app.db.entities.resource_map import ResourceMap
 from app.services.fhir.fhir_service import FhirService
-from app.services.entity.resource_map_service import ResourceMapService
 
 
 class ComputationService:
@@ -13,25 +12,17 @@ class ComputationService:
         self,
         supplier_id: str,
         fhir_service: FhirService,
-        resource_map_service: ResourceMapService,
     ) -> None:
         self.__supplier_id = supplier_id
         self.__fhir_service = fhir_service
-        self.__resource_map_service = resource_map_service
 
     def get_update_status(
         self,
-        resource_id: str,
-        resource_type: str,
         method: str,
         supplier_hash: int | None = None,
         consumer_hash: int | None = None,
         resource_map: ResourceMap | None = None,
     ) -> Literal["ignore", "equal", "delete", "update", "new"]:
-        # resource_map = self.__resource_map_service.get(
-        #     self.__supplier_id, resource_type, resource_id
-        # )
-
         return self._determine_update_status(
             supplier_hash, consumer_hash, resource_map, method
         )
