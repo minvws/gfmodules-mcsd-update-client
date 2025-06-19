@@ -36,11 +36,6 @@ class ResourceMapRepository(RepositoryBase):
                 ResourceMap.supplier_resource_id == conditions["supplier_resource_id"]
             )
 
-        if "history_size" in conditions:
-            filter_conditions.append(
-                ResourceMap.history_size == conditions["history_size"]
-            )
-
         if "consumer_resource_id" in conditions:
             filter_conditions.append(
                 ResourceMap.consumer_resource_id == conditions["consumer_resource_id"]

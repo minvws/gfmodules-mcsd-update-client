@@ -127,7 +127,6 @@ def test_build_adjacency_map_should_succeed_when_data_from_consumer_exists(
             supplier_resource_id=org_node.resource_id,
             resource_type=org_node.resource_type,
             consumer_resource_id=f"{mock_supplier_id}-{org_node.resource_id}",
-            history_size=1,
         )
     )
     org_node.consumer_hash = computation_service.hash_consumer_entry(cons_org_entry)
@@ -146,7 +145,6 @@ def test_build_adjacency_map_should_succeed_when_data_from_consumer_exists(
             supplier_resource_id=ep_node.resource_id,
             resource_type=ep_node.resource_type,
             consumer_resource_id=f"{mock_supplier_id}-{ep_node.resource_id}",
-            history_size=1,
         )
     )
     ep_node.consumer_hash = computation_service.hash_consumer_entry(cons_ep_entry)
@@ -300,7 +298,6 @@ def test_create_node_data_should_succeed_with_status_update(
             supplier_resource_id=node.resource_id,
             resource_type=node.resource_type,
             consumer_resource_id=consumer_res_id,
-            history_size=1,
         )
     )
     node.supplier_hash = computation_service.hash_supplier_entry(supplier_entry)

@@ -17,7 +17,6 @@ def mock_dto() -> ResourceMapDto:
         resource_type="Organization",
         supplier_resource_id="some_resource_id",
         consumer_resource_id="some_consumer_resource_id",
-        history_size=1,
     )
 
 
@@ -94,12 +93,11 @@ def test_add_one_should_fail_when_resource_map_exist(
 def test_update_one_should_succeed_when_resource_map_exist(
     resource_map_service: ResourceMapService, mock_dto: ResourceMapDto
 ) -> None:
-    original = resource_map_service.add_one(mock_dto)
+    resource_map_service.add_one(mock_dto)
     update_dto = ResourceMapUpdateDto(
         supplier_id=mock_dto.supplier_id,
         resource_type=mock_dto.resource_type,
         supplier_resource_id=mock_dto.supplier_resource_id,
-        history_size=2,
     )
     expected = resource_map_service.update_one(update_dto)
     actual = resource_map_service.get_one(
@@ -108,8 +106,6 @@ def test_update_one_should_succeed_when_resource_map_exist(
 
     for k in actual.__table__.columns.keys():
         assert getattr(actual, k) == getattr(expected, k)
-
-    assert original.last_update != actual.last_update
 
 
 def test_update_one_should_raise_exception_when_resource_map_does_not_exist(
@@ -120,7 +116,6 @@ def test_update_one_should_raise_exception_when_resource_map_does_not_exist(
         resource_type=mock_dto.resource_type,
         supplier_id="123",
         supplier_resource_id="wrong_id",
-        history_size=2,
     )
 
     with pytest.raises(HTTPException):
@@ -151,7 +146,6 @@ def test_unique_constraint_on_supplier_id_and_supplier_resource_id(
         resource_type="Organization",
         supplier_resource_id=mock_dto.supplier_resource_id,
         consumer_resource_id="another_consumer_resource_id",
-        history_size=2,
     )
     with pytest.raises(IntegrityError):
         resource_map_service.add_one(duplicate_dto)

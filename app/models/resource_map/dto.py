@@ -9,13 +9,13 @@ class ResourceMapBase(BaseModel):
 
 class ResourceMapDto(ResourceMapBase):
     resource_type: str
-    history_size: int
+
 
 class ResourceMapUpdateDto(BaseModel):
     supplier_id: str
     resource_type: str
     supplier_resource_id: str
-    history_size: int
+
 
 class ResourceMapDeleteDto(BaseModel):
     supplier_id: str

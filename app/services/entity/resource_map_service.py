@@ -58,7 +58,6 @@ class ResourceMapService:
         resource_type: str | None = None,
         supplier_resource_id: str | None = None,
         consumer_resource_id: str | None = None,
-        history_size: int | None = None,
     ) -> Sequence[ResourceMap]:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
@@ -67,7 +66,6 @@ class ResourceMapService:
                 resource_type=resource_type,
                 supplier_resource_id=supplier_resource_id,
                 consumer_resource_id=consumer_resource_id,
-                history_size=history_size,
             )
 
     def add_one(self, dto: ResourceMapDto) -> ResourceMap:
@@ -93,7 +91,6 @@ class ResourceMapService:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
             target.resource_type = dto.resource_type
-            target.history_size = dto.history_size
 
             return repository.update(target)
 
