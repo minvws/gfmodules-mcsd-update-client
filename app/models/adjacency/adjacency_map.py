@@ -9,8 +9,8 @@ AdjacencyData = Dict[str, Node]
 
 
 class AdjacencyMap:
-    def __init__(self, nodes: List[Node], updated_ids: List[str] | None = None) -> None:
-        self.data: AdjacencyData = self._create_adj_map(nodes, updated_ids)
+    def __init__(self, nodes: List[Node]) -> None:
+        self.data: AdjacencyData = self._create_adj_map(nodes)
 
     def add_nodes(self, nodes: List[Node]) -> None:
         self.data.update([(node.resource_id, node) for node in nodes])
@@ -31,7 +31,7 @@ class AdjacencyMap:
 
         while queue:
             current = queue.popleft()
-            for ref in current.supplier_data.references:
+            for ref in current.references:
                 sibling = self.data[ref.id]
                 if sibling.visited is False:
                     sibling.visited = True
@@ -42,23 +42,15 @@ class AdjacencyMap:
 
     def get_missing_refs(self) -> List[NodeReference]:
         refs = list(
-            chain.from_iterable(
-                [node.supplier_data.references for node in self.data.values()]
-            )
+            chain.from_iterable([node.references for node in self.data.values()])
         )
         return list(filter(self._ref_in_ajd_map, refs))
 
     def _ref_in_ajd_map(self, adj_ref: NodeReference) -> bool:
         return adj_ref.id not in self.data.keys()
 
-    def _create_adj_map(
-        self, nodes: List[Node], updated_ids: List[str] | None = None
-    ) -> AdjacencyData:
+    def _create_adj_map(self, nodes: List[Node]) -> AdjacencyData:
         ids = [node.resource_id for node in nodes]
         data: AdjacencyData = dict(zip(ids, nodes))
-        if updated_ids:
-            for id in updated_ids:
-                if id in data.keys():
-                    data[id].updated = True
 
         return data

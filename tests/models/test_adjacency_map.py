@@ -83,10 +83,3 @@ def test_get_missing_refs_should_succeed_and_return_empty_list_when_all_refs_exi
 ) -> None:
     actual = adjacency_map.get_missing_refs()
     assert actual == []
-
-
-def test_adjacency_map_should_mark_nodes_as_updated_when_updated_ids_is_passed(
-    adjacency_map_with_updated_ids: AdjacencyMap,
-) -> None:
-    for node in adjacency_map_with_updated_ids.data.values():
-        assert node.updated is True
