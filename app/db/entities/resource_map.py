@@ -6,7 +6,6 @@ from sqlalchemy import (
     TIMESTAMP,
     func,
     PrimaryKeyConstraint,
-    Integer,
     types,
     UniqueConstraint,
 )
@@ -40,7 +39,6 @@ class ResourceMap(Base):
     consumer_resource_id: Mapped[str] = mapped_column(
         "consumer_resource_id", String, nullable=False, unique=True
     )
-    history_size: Mapped[int] = mapped_column("history_size", Integer, nullable=False)
     last_update: Mapped[datetime] = mapped_column(
         "last_update",
         TIMESTAMP(timezone=True),

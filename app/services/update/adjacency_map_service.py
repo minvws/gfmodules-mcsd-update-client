@@ -161,7 +161,6 @@ class AdjacencyMapService:
                     )
 
                 dto = ResourceMapUpdateDto(
-                    history_size=resource_map.history_size + 1,
                     supplier_id=self.supplier_id,
                     resource_type=node.resource_type,
                     supplier_resource_id=node.resource_id,
@@ -195,7 +194,6 @@ class AdjacencyMapService:
                     supplier_resource_id=node.resource_id,
                     consumer_resource_id=consumer_resource_id,
                     resource_type=node.resource_type,
-                    history_size=1,
                 )
 
                 return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
@@ -232,7 +230,6 @@ class AdjacencyMapService:
                     supplier_id=self.supplier_id,
                     supplier_resource_id=node.resource_id,
                     resource_type=node.resource_type,
-                    history_size=resource_map.history_size + 1,
                 )
 
                 return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)

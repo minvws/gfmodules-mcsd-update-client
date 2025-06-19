@@ -20,7 +20,6 @@ def test_cleanup() -> None:
         resource_type: str | None = None,
         supplier_resource_id: str | None = None,
         consumer_resource_id: str | None = None,
-        history_size: int | None = None,
     ) -> Sequence[MagicMock]:
         assert supplier_id == "supplier_1"
         return [
