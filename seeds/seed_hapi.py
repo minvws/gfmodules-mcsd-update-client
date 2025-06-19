@@ -25,7 +25,7 @@ def generate_data():
         endpoint_id = endpoint_response.json().get("id")
         print(f"Posted endpoint with ID: {endpoint_id}")
 
-        org = generator.generate_organization(endpoint_id=endpoint_id)
+        org = generator.generate_organization(endpoint_ids=[endpoint_id])
         print("Generated organization")
         org_response = requests.post(
             url=_SUPPLIER_URL+"Organization",
@@ -37,7 +37,7 @@ def generate_data():
         print(f"Posted organization with ID: {org_id}")
 
         child_org = generator.generate_organization(
-            endpoint_id=endpoint_id,
+            endpoint_ids=[endpoint_id],
             part_of=org_id,
         )
         print("Generated child organization")
@@ -51,23 +51,23 @@ def generate_data():
         print(f"Posted child organization with ID: {child_org_id}")
 
         loc = generator.generate_location(
-            organization_id=org_id,
-            endpoint_id=endpoint_id,
+            managing_org=org_id,
+            endpoint_ids=[endpoint_id],
         )
         print("Generated location")
-        loc_repsonse = requests.post(
+        loc_response = requests.post(
             url=_SUPPLIER_URL+"Location",
             json=jsonable_encoder(loc.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
         )
-        loc_id = loc_repsonse.json().get("id")
+        loc_id = loc_response.json().get("id")
         print(f"Posted location with ID: {loc_id}")
 
         child_loc = generator.generate_location(
-            organization_id=org_id,
-            endpoint_id=endpoint_id,
-            part_of=loc_id,
+            managing_org=org_id,
+            endpoint_ids=[endpoint_id],
+            part_of_location=loc_id,
         )
         print("Generated child location")
         child_loc_resp = requests.post(
@@ -80,10 +80,10 @@ def generate_data():
         print("Posted child location with ID: ", child_loc_response_id)
 
         health_serv = generator.generate_healthcare_service(
-            provided_by=org_id,
-            location_id=loc_id,
-            coverage_area=loc_id,
-            endpoint_id=endpoint_id,
+            provided_by_org=org_id,
+            location_ids=[loc_id],
+            coverage_area_locations=[loc_id],
+            endpoint_ids=[endpoint_id],
         )
         print("Generated healthcare service")
         health_serv_response = requests.post(
@@ -95,8 +95,8 @@ def generate_data():
         health_serv_id = health_serv_response.json().get("id")
         print(f"Posted healthcare service with ID: {health_serv_id}")
 
-        practitioner = generator.generate_practioner(
-            organization_id=org_id,
+        practitioner = generator.generate_practitioner(
+            qualification_issuer_org_ids=[org_id],
         )
         print("Generated practitioner")
         practitioner_response = requests.post(
@@ -111,9 +111,9 @@ def generate_data():
         practitioner_role = generator.generate_practitioner_role(
             practitioner_id=practitioner_id,
             organization_id=org_id,
-            location_id=loc_id,
-            healthcare_service_id=health_serv_id,
-            endpoint_id=endpoint_id,
+            location_ids=[loc_id],
+            healthcare_service_ids=[health_serv_id],
+            endpoint_ids=[endpoint_id],
         )
         print("Generated practitioner role")
         practitioner_role_response = requests.post(
@@ -126,7 +126,7 @@ def generate_data():
         print("Posted practitioner role with ID: ", practitioner_role_response_id)
 
         # Setup some affiliations between multiple organizations
-        org2 = generator.generate_organization(endpoint_id=endpoint_id)
+        org2 = generator.generate_organization(endpoint_ids=[endpoint_id])
         print("Generated second organization")
         org2_response = requests.post(
             url=_SUPPLIER_URL+"Organization",
@@ -140,10 +140,10 @@ def generate_data():
         org_afil = generator.generate_organization_affiliation(
             organization_id=org_id,
             participating_organization_id=org2_id,
-            network_id=[org_id, child_org_id],
-            location_id=loc_id,
-            healthcare_service_id=health_serv_id,
-            endpoint_id=endpoint_id,
+            network_org_ids=[org_id, child_org_id],
+            location_ids=[loc_id],
+            healthcare_service_ids=[health_serv_id],
+            endpoint_ids=[endpoint_id],
         )
         print("Generated organization affiliation")
         org_afil_response = requests.post(
