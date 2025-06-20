@@ -1,5 +1,6 @@
 from typing import Sequence
 from unittest.mock import ANY, MagicMock
+from app.config import ConfigExternalCache
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.update_consumer_service import (
     UpdateConsumerService,
@@ -46,7 +47,7 @@ def test_cleanup() -> None:
         request_count=3,
         resource_map_service=mock_resource_map_service,
         auth=MagicMock(),
-        cache_provider=CacheProvider(),
+        cache_provider=CacheProvider(config=ConfigExternalCache()),
     )
 
     # Replace the FHIR API with the mock, this is a private and protected attribute, but we can set it for testing

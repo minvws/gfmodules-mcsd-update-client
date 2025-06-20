@@ -33,17 +33,17 @@ class Scheduler(BaseModel):
     @computed_field
     def delay_input_in_sec(self) -> int:
         return self._convert_to_sec(self.delay_input)
-    
+
     @computed_field
     def supplier_stale_timeout_in_sec(self) -> int:
         return self._convert_to_sec(self.supplier_stale_timeout)
-    
+
     @computed_field
     def cleanup_client_directory_after_success_timeout_in_sec(self) -> int:
         return self._convert_to_sec(self.cleanup_client_directory_after_success_timeout)
 
     def _convert_to_sec(self, value: str) -> int:
-        conversion_map = {"s": 1, "m": 60, "h": 3600, "d": 86400}	
+        conversion_map = {"s": 1, "m": 60, "h": 3600, "d": 86400}
         match = re.match(r"^(\d+)([smhd])$", value)
         if not match:
             raise ValidationError(
@@ -75,7 +75,6 @@ class ConfigSupplierApi(BaseModel):
     backoff: float
 
 
-
 class ConfigUvicorn(BaseModel):
     swagger_enabled: bool = Field(default=False)
     docs_url: str = Field(default="/docs")
@@ -91,6 +90,19 @@ class ConfigUvicorn(BaseModel):
     ssl_key_file: str | None
 
 
+class ConfigExternalCache(BaseModel):
+    host: str | None = Field(default=None)
+    port: int | None = Field(default=None)
+    enable_debugger: bool = Field(default=False)
+    key: str | None = Field(default=None)
+    ssl: bool = Field(default=False)
+    cert: str | None = Field(default=None)
+    cafile: str | None = Field(default=None)
+    check_hostname: bool = Field(default=True)
+    object_ttl: int = Field(default=600)
+    default_cache_namespace: str = Field(default="mcsd")
+
+
 class ConfigTelemetry(BaseModel):
     enabled: bool = Field(default=False)
     endpoint: str | None
@@ -103,6 +115,7 @@ class ConfigStats(BaseModel):
     host: str | None
     port: int | None
     module_name: str | None
+
 
 class ConfigMcsd(BaseModel):
     consumer_url: str
@@ -138,6 +151,7 @@ class Config(BaseModel):
     app: ConfigApp
     database: ConfigDatabase
     uvicorn: ConfigUvicorn
+    external_cache: ConfigExternalCache
     mcsd: ConfigMcsd
     telemetry: ConfigTelemetry
     stats: ConfigStats
