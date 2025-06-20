@@ -36,7 +36,7 @@ def container_config(binder: inject.Binder) -> None:
     supplier_provider = supplier_provider_factory.create()
     binder.bind(SupplierProvider, supplier_provider)
 
-    cache_provider = CacheProvider()
+    cache_provider = CacheProvider(config=config.external_cache)
     update_service = UpdateConsumerService(
         consumer_url=config.mcsd.consumer_url,
         strict_validation=config.mcsd.strict_validation,
