@@ -17,7 +17,7 @@ from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
 from app.services.update.adjacency_map_service import AdjacencyMapService
-from app.services.update.cache.caching_service import InMemoryCachingService
+from app.services.update.cache.in_memory import InMemoryCachingService
 from app.services.update.computation_service import ComputationService
 from tests.test_config import get_test_config
 from tests.utils.utils import create_mock_node

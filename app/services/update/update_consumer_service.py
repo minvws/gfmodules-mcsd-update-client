@@ -98,7 +98,7 @@ class UpdateConsumerService:
 
         for res in McsdResources:
             self.update_resource(supplier, res.value, since)
-        results = copy.deepcopy([id for id in self.__cache.data.keys()])
+        results = copy.deepcopy([id for id in self.__cache.keys()])
         end_time = time.time()
         self.__end_cache_run()
 
@@ -209,13 +209,11 @@ class UpdateConsumerService:
 
     def __create_cache_run(self) -> None:
         cache_service = self.__cache_provider.create()
-        healthy = cache_service.is_healthy()
-        if healthy is False:
-            raise Exception(
-                "Unable to connect to cache service, check app config and verify connection"
-            )
+        cache_service.clear()
 
-        self.__cache = self.__cache_provider.create()
+        self.__cache = cache_service
 
     def __end_cache_run(self) -> None:
+        if self.__cache:
+            self.__cache.clear()
         self.__cache = None

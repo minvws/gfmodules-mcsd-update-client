@@ -2,6 +2,7 @@ from app.config import (
     Config,
     ConfigApp,
     ConfigDatabase,
+    ConfigExternalCache,
     ConfigUvicorn,
     ConfigMcsd,
     ConfigTelemetry,
@@ -73,4 +74,5 @@ def get_test_config() -> Config:
             supplier_stale_timeout="120s",
             cleanup_client_directory_after_success_timeout="3d",
         ),
+        external_cache=ConfigExternalCache(),
     )
