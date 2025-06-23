@@ -28,7 +28,7 @@ services:
       - source: supplier_urls_json
         target: /src/supplier_urls.json
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8509/health" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8509/health"]
       start_period: 30s
       interval: 30m
     depends_on:
@@ -74,7 +74,13 @@ services:
   hapi-client-directory-health:
     image: curlimages/curl
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://hapi-client-directory:8081/actuator/health"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://hapi-client-directory:8081/actuator/health",
+        ]
       start_period: 100s
       start_interval: 5s
     depends_on:
@@ -87,7 +93,13 @@ services:
   hapi-supplier-directory-health:
     image: curlimages/curl
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://hapi-supplier-directory:8080/actuator/health"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://hapi-supplier-directory:8080/actuator/health",
+        ]
       start_period: 100s
       start_interval: 5s
     depends_on:
@@ -96,6 +108,17 @@ services:
     networks:
       - mcsd_update_client_net
     command: sleep infinity
+
+  redis:
+    image: redis:latest
+    restart: "no"
+    command: ["redis-server", "--port", "16379"]
+    ports:
+      - "16379:16379"
+    networks:
+      mcsd_update_client_net:
+        aliases:
+          - external-cache
 
   postgres:
     image: postgres:15
