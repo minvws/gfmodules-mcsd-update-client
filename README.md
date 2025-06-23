@@ -6,7 +6,7 @@ to perform updates on [mCSD Supported Resources](https://profiles.ihe.net/ITI/mC
 the FHIR store type.
 
 > [!CAUTION]
-> This project is a *reference implementation* for the [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html) transaction.
+> This project is a **reference implementation** for the [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html) transaction.
 
 ## Reference Implementation
 
