@@ -5,8 +5,8 @@ the 'Generieke Functies, lokalisatie en addressering' project of the Ministry of
 to perform updates on [mCSD Supported Resources](https://profiles.ihe.net/ITI/mCSD/index.html). The update uses HTTP as a basis for CRUD operations and operates regardless of
 the FHIR store type.
 
-> **Important:**  
-This project is a *reference implementation* for the [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html) transaction.
+> [!CAUTION]
+> This project is a *reference implementation* for the [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html) transaction.
 
 ## Reference Implementation
 
