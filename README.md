@@ -2,10 +2,29 @@
 
 This app is the mCSD (Mobile Care Service Discovery) Update Client and is part of
 the 'Generieke Functies, lokalisatie en addressering' project of the Ministry of Health, Welfare and Sport of the Dutch government. The purpose of this application is
-to perform updates on [mCSD Supported Resources](https://profiles.ihe.net/ITI/mCSD/index.html).
-The update mechanism is based on [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html).
-The update uses http as a basis for CRUD operations, and operates regardless of
+to perform updates on [mCSD Supported Resources](https://profiles.ihe.net/ITI/mCSD/index.html). The update uses HTTP as a basis for CRUD operations and operates regardless of
 the FHIR store type.
+
+> **Important:**  
+This project is a *reference implementation* for the [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html) transaction.
+
+## Reference Implementation
+
+This codebase serves as an example of how the mCSD ITI-91 update mechanism can be implemented. It is **NOT** intended for production use.
+
+### Purpose
+
+- Demonstrate mCSD system communication patterns
+- Support documentation and proof-of-concept development
+- Enable basic interoperability testing
+
+### Use Cases
+
+Use this to:
+
+- Understand how the mCSD updates work in practice
+- Explore Update Client and Data Source interactions
+- Prototype or test mCSD-compliant behaviors
 
 ## Disclaimer
 
