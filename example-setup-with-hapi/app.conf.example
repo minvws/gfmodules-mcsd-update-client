@@ -21,7 +21,7 @@ max_logs_entries = 100
 automatic_background_update = True
 # background cleanup automatically start on bootstrap
 automatic_background_cleanup = True
-# Time it takes after the last successful update before an supplier is marked as unhealthy 
+# Time it takes after the last successful update before an supplier is marked as unhealthy
 supplier_stale_timeout = 120s
 # Delay time for scheduled clean up to run
 cleanup_client_directory_after_success_timeout = 30d
@@ -34,6 +34,25 @@ endpoint = http://tracing:4317
 service_name = mcsd_consumer
 # Tracer name to use
 tracer_name = service.mcsd_consumer
+
+[external_cache]
+# external cache host
+host = external-cache
+
+# external cache port number
+port = 16379
+# SSL settings, to create a TLS connection to the redis store.
+enable_debugger = False
+ssl = False
+key =
+cert =
+cafile =
+check_hostname = True
+
+# object time to live in in cache store
+object_ttl = 600
+# default cache namespace
+default_cache_namespace = mcsd
 
 [stats]
 # Statsd is enabled or not
