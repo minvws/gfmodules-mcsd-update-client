@@ -69,12 +69,12 @@ class CachingDirectoryProvider(DirectoryProvider):
 
         for original_directory in original_directories:
             if original_directory.id not in [directory.id for directory in directories]:
-                if self.__directoryProvider.check_if_directory_is_deleted(directory.id):
+                if self.__directoryProvider.check_if_directory_is_deleted(original_directory.id):
                     self.__directory_cache_service.set_directory_cache(
                         DirectoryDto(
-                            id=directory.id,
-                            name=directory.name,
-                            endpoint=directory.endpoint,
+                            id=original_directory.id,
+                            name=original_directory.name,
+                            endpoint=original_directory.endpoint,
                             is_deleted=True,
                         )
                     )

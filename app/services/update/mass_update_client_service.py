@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from app.services.entity.directory_cache_service import DirectoryCacheService
 from app.services.entity.ignored_directory_service import IgnoredDirectoryService
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.directory_provider.directory_provider import DirectoryProvider
@@ -20,6 +21,8 @@ class MassUpdateClientService:
         ignored_directory_service: IgnoredDirectoryService,
         cleanup_client_directory_after_success_timeout_seconds: int,
         stats: Stats,
+        directory_cache_service: DirectoryCacheService,
+        cleanup_client_directory_after_directory_delete: bool,
     ) -> None:
         self.__directory_provider = directory_provider
         self.__update_client_service = update_client_service
@@ -27,6 +30,9 @@ class MassUpdateClientService:
         self.__ignored_directory_service = ignored_directory_service
         self.__cleanup_client_directory_after_success_timeout_seconds = cleanup_client_directory_after_success_timeout_seconds
         self.__stats = stats
+        self.__directory_cache_service = directory_cache_service
+        self.__cleanup_client_directory_after_directory_delete = cleanup_client_directory_after_directory_delete 
+
 
     def update_all(self) -> list[dict[str, Any]]:
         with self.__stats.timer("update_all_directories"):
@@ -68,3 +74,14 @@ class MassUpdateClientService:
                         logging.info(f"Cleaning up directory for outdated directory {directory_info.directory_id}")
                         self.__update_client_service.cleanup(directory_info.directory_id)
                         self.__ignored_directory_service.add_directory_to_ignore_list(directory_info.directory_id)
+            
+             # Delete all deleted directories
+            if not self.__cleanup_client_directory_after_directory_delete:
+                logging.info("Skipping cleanup of deleted directories as per configuration.")
+                return
+            deleted_directories = self.__directory_cache_service.get_deleted_directories()
+            for directory in deleted_directories:
+                logging.info(f"Cleaning up deleted directory {directory.id}")
+                self.__update_client_service.cleanup(directory.id)
+                self.__directory_info_service.delete_directory_info(directory.id)
+                self.__directory_cache_service.delete_directory_cache(directory.id)
