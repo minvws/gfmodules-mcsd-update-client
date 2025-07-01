@@ -15,7 +15,7 @@ from app.services.fhir.fhir_service import FhirService
 import numpy as np
 from app.container import get_database
 from app.db.repositories.resource_map_repository import ResourceMapRepository
-from app.services.update.update_consumer_service import McsdResources
+from app.services.update.update_client_service import McsdResources
 from .mcsd_resource_gen import (
     generate_history_bundles,
     generate_post_bundle,
@@ -94,18 +94,18 @@ def generate_report(
     }
 
 
-def check_if_in_db(supplier_id: str, ids_set: Set[str]) -> int:
+def check_if_in_db(directory_id: str, ids_set: Set[str]) -> int:
     errors = 0
     print("Checking if all resources are in the database")
     db = get_database()
     with db.get_db_session() as session:
         repo = session.get_repository(ResourceMapRepository)
-        result = repo.find(supplier_id=supplier_id)
+        result = repo.find(directory_id=directory_id)
         for resource_item in result:
             if (
-                resource_item.supplier_resource_id in ids_set
+                resource_item.directory_resource_id in ids_set
             ):  # Ids set does not contain deleted resources as latest version
-                ids_set.discard(resource_item.supplier_resource_id)
+                ids_set.discard(resource_item.directory_resource_id)
     if ids_set:
         print(f"Resource {ids_set} not found in the database")
         errors += len(ids_set)
@@ -116,8 +116,8 @@ def create_mock_node(
     bundle_entry: BundleEntry,
     node_refs: List[NodeReference],
     fhir_service: FhirService,
-    supplier_hash: int | None = None,
-    consumer_hash: int | None = None,
+    directory_hash: int | None = None,
+    update_client_hash: int | None = None,
     node_update_data: NodeUpdateData | None = None,
 ) -> Node:
     """
@@ -131,8 +131,8 @@ def create_mock_node(
         resource_type=res_type,
         references=node_refs,
         method=method,
-        supplier_entry=bundle_entry,
-        supplier_hash=supplier_hash,
-        consumer_hash=consumer_hash,
+        directory_entry=bundle_entry,
+        directory_hash=directory_hash,
+        update_client_hash=update_client_hash,
         update_data=node_update_data,
     )

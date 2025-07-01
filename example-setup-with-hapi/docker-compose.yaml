@@ -25,8 +25,8 @@ services:
     configs:
       - source: mcsd_update_client_conf
         target: /src/app.conf
-      - source: supplier_urls_json
-        target: /src/supplier_urls.json
+      - source: directory_urls_json
+        target: /src/directory_urls.json
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8509/health"]
       start_period: 30s
@@ -34,32 +34,32 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      hapi-client-directory-health:
+      hapi-update-client-health:
         condition: service_healthy
-      hapi-supplier-directory-health:
+      hapi-directory-health:
         condition: service_healthy
     stop_signal: SIGKILL
     networks:
       - mcsd_update_client_net
 
-  hapi-client-directory:
+  hapi-update-client:
     image: "hapiproject/hapi:latest"
     ports:
       - "8081:8081"
     configs:
-      - source: hapi_client_directory_config
+      - source: hapi_update_client_config
         target: /app/config/application.yaml
     depends_on:
       - postgres
     networks:
       - mcsd_update_client_net
 
-  hapi-supplier-directory:
+  hapi-directory:
     image: "hapiproject/hapi:latest"
     ports:
       - "8080:8080"
     configs:
-      - source: hapi_supplier_directory_config
+      - source: hapi_directory_config
         target: /app/config/application.yaml
     depends_on:
       - postgres
@@ -71,7 +71,7 @@ services:
     networks:
       - mcsd_update_client_net
 
-  hapi-client-directory-health:
+  hapi-update-client-health:
     image: curlimages/curl
     healthcheck:
       test:
@@ -79,18 +79,18 @@ services:
           "CMD",
           "curl",
           "-f",
-          "http://hapi-client-directory:8081/actuator/health",
+          "http://hapi-update-client:8081/actuator/health",
         ]
       start_period: 100s
       start_interval: 5s
     depends_on:
-      - hapi-client-directory
+      - hapi-update-client
     stop_signal: SIGKILL
     networks:
       - mcsd_update_client_net
     command: sleep infinity
 
-  hapi-supplier-directory-health:
+  hapi-directory-health:
     image: curlimages/curl
     healthcheck:
       test:
@@ -98,12 +98,12 @@ services:
           "CMD",
           "curl",
           "-f",
-          "http://hapi-supplier-directory:8080/actuator/health",
+          "http://hapi-directory:8080/actuator/health",
         ]
       start_period: 100s
       start_interval: 5s
     depends_on:
-      - hapi-supplier-directory
+      - hapi-directory
     stop_signal: SIGKILL
     networks:
       - mcsd_update_client_net
@@ -137,13 +137,13 @@ services:
       - mcsd_update_client_net
 
 configs:
-  hapi_supplier_directory_config:
-    file: supplier.application.yaml
+  hapi_directory_config:
+    file: directory.application.yaml
   mcsd_update_client_conf:
     file: app.conf
-  supplier_urls_json:
-    file: supplier_urls.json
-  hapi_client_directory_config:
+  directory_urls_json:
+    file: directory_urls.json
+  hapi_update_client_config:
     file: client.application.yaml
 
 networks:

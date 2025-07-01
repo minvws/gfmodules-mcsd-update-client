@@ -2,10 +2,29 @@
 
 This app is the mCSD (Mobile Care Service Discovery) Update Client and is part of
 the 'Generieke Functies, lokalisatie en addressering' project of the Ministry of Health, Welfare and Sport of the Dutch government. The purpose of this application is
-to perform updates on [mCSD Supported Resources](https://profiles.ihe.net/ITI/mCSD/index.html).
-The update mechanism is based on [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html).
-The update uses http as a basis for CRUD operations, and operates regardless of
+to perform updates on [mCSD Supported Resources](https://profiles.ihe.net/ITI/mCSD/index.html). The update uses HTTP as a basis for CRUD operations and operates regardless of
 the FHIR store type.
+
+> [!CAUTION]
+> This project is a **reference implementation** for the [ITI-91: Request Care Services Update](https://profiles.ihe.net/ITI/mCSD/ITI-91.html) transaction.
+
+## Reference Implementation
+
+This codebase serves as an example of how the mCSD ITI-91 update mechanism can be implemented. It is **NOT** intended for production use.
+
+### Purpose
+
+- Demonstrate mCSD system communication patterns
+- Support documentation and proof-of-concept development
+- Enable basic interoperability testing
+
+### Use Cases
+
+Use this to:
+
+- Understand how the mCSD updates work in practice
+- Explore Update Client and Data Source interactions
+- Prototype or test mCSD-compliant behaviors
 
 ## Disclaimer
 
@@ -47,14 +66,14 @@ docker compose up
 This will configure the whole system for you and you should be able to use the
 API right away at <http://localhost:8509/docs>.
 
-## Seeding supplier
+## Seeding directory
 
-There is a mock data seeder available in case you want to seed a mock supplier with fake data.
-In a terminal in the same `example-setup-with-hapi` directory run the following command to add fake test data to the mock supplier,
-with a url parameter you can specify the base url of the supplier you want to seed:
+There is a mock data seeder available in case you want to seed a mock directory with fake data.
+In a terminal in the same `example-setup-with-hapi` folder run the following command to add fake test data to the mock directory,
+with a url parameter you can specify the base url of the directory you want to seed:
 
 ```bash
-docker compose run --rm mcsd-update-client poetry run seed http://hapi-supplier-directory:8080/fhir/
+docker compose run --rm mcsd-update-client poetry run seed http://hapi-directory:8080/fhir/
 ```
 
 ## Docker container builds

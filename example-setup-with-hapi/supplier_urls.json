@@ -1,9 +1,0 @@
-{
-    "suppliers": [
-        {
-            "id": "hapi-supplier", 
-            "name": "HAPI supplier", 
-            "endpoint": "http://hapi-supplier-directory:8080/fhir"
-        }
-    ]
-}

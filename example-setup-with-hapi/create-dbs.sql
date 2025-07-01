@@ -1,3 +1,3 @@
-create database hapi_supplier_directory;
-create database hapi_client_directory;
-create database mcsd_consumer;
+create database hapi_directory;
+create database hapi_update_client;
+create database mcsd_update_client;

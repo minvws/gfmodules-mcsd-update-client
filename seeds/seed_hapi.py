@@ -7,9 +7,9 @@ generator = DataGenerator()
 
 def generate_data():
     if len(sys.argv) != 2:
-        raise ValueError("Usage: python seed_hapi.py <mock_supplier_url> \n For example: python seed_hapi.py http://example.com/fhir/")
+        raise ValueError("Usage: python seed_hapi.py <mock_directory_url> \n For example: python seed_hapi.py http://example.com/fhir/")
 
-    _SUPPLIER_URL = sys.argv[1]
+    _DIRECTORY_URL = sys.argv[1]
 
     for x in range(10):
         print(f"Generating data set {x+1}")
@@ -17,7 +17,7 @@ def generate_data():
         endpoint = generator.generate_endpoint()
         print("Generated endpoint")
         endpoint_response = requests.post(
-            url=_SUPPLIER_URL+"Endpoint",
+            url=_DIRECTORY_URL+"Endpoint",
             json=jsonable_encoder(endpoint.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -28,7 +28,7 @@ def generate_data():
         org = generator.generate_organization(endpoint_ids=[endpoint_id])
         print("Generated organization")
         org_response = requests.post(
-            url=_SUPPLIER_URL+"Organization",
+            url=_DIRECTORY_URL+"Organization",
             json=jsonable_encoder(org.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -42,7 +42,7 @@ def generate_data():
         )
         print("Generated child organization")
         child_response = requests.post(
-            url=_SUPPLIER_URL+"Organization",
+            url=_DIRECTORY_URL+"Organization",
             json=jsonable_encoder(child_org.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -56,7 +56,7 @@ def generate_data():
         )
         print("Generated location")
         loc_response = requests.post(
-            url=_SUPPLIER_URL+"Location",
+            url=_DIRECTORY_URL+"Location",
             json=jsonable_encoder(loc.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -71,7 +71,7 @@ def generate_data():
         )
         print("Generated child location")
         child_loc_resp = requests.post(
-            url=_SUPPLIER_URL+"Location",
+            url=_DIRECTORY_URL+"Location",
             json=jsonable_encoder(child_loc.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -87,7 +87,7 @@ def generate_data():
         )
         print("Generated healthcare service")
         health_serv_response = requests.post(
-            url=_SUPPLIER_URL+"HealthcareService",
+            url=_DIRECTORY_URL+"HealthcareService",
             json=jsonable_encoder(health_serv.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -100,7 +100,7 @@ def generate_data():
         )
         print("Generated practitioner")
         practitioner_response = requests.post(
-            url=_SUPPLIER_URL+"Practitioner",
+            url=_DIRECTORY_URL+"Practitioner",
             json=jsonable_encoder(practitioner.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -117,7 +117,7 @@ def generate_data():
         )
         print("Generated practitioner role")
         practitioner_role_response = requests.post(
-            url=_SUPPLIER_URL+"PractitionerRole",
+            url=_DIRECTORY_URL+"PractitionerRole",
             json=jsonable_encoder(practitioner_role.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -129,7 +129,7 @@ def generate_data():
         org2 = generator.generate_organization(endpoint_ids=[endpoint_id])
         print("Generated second organization")
         org2_response = requests.post(
-            url=_SUPPLIER_URL+"Organization",
+            url=_DIRECTORY_URL+"Organization",
             json=jsonable_encoder(org2.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,
@@ -147,7 +147,7 @@ def generate_data():
         )
         print("Generated organization affiliation")
         org_afil_response = requests.post(
-            url=_SUPPLIER_URL+"OrganizationAffiliation",
+            url=_DIRECTORY_URL+"OrganizationAffiliation",
             json=jsonable_encoder(org_afil.model_dump()),
             headers={"Content-Type": "application/json"},
             timeout=5,

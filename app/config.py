@@ -27,7 +27,7 @@ class Scheduler(BaseModel):
     max_logs_entries: int
     automatic_background_update: bool = Field(default=True)
     automatic_background_cleanup: bool = Field(default=True)
-    supplier_stale_timeout: str
+    directory_stale_timeout: str
     cleanup_client_directory_after_success_timeout: str
 
     @computed_field
@@ -35,8 +35,8 @@ class Scheduler(BaseModel):
         return self._convert_to_sec(self.delay_input)
 
     @computed_field
-    def supplier_stale_timeout_in_sec(self) -> int:
-        return self._convert_to_sec(self.supplier_stale_timeout)
+    def directory_stale_timeout_in_sec(self) -> int:
+        return self._convert_to_sec(self.directory_stale_timeout)
 
     @computed_field
     def cleanup_client_directory_after_success_timeout_in_sec(self) -> int:
@@ -68,9 +68,9 @@ class ConfigDatabase(BaseModel):
     pool_recycle: int = Field(default=3600, ge=0)
 
 
-class ConfigSupplierApi(BaseModel):
-    suppliers_provider_url: str | None
-    supplier_urls_path: str | None
+class ConfigDirectoryApi(BaseModel):
+    directories_provider_url: str | None
+    directory_urls_path: str | None
     timeout: int
     backoff: float
 
@@ -118,7 +118,7 @@ class ConfigStats(BaseModel):
 
 
 class ConfigMcsd(BaseModel):
-    consumer_url: str
+    update_client_url: str
     authentication: Union[str] = Field(
         default="off",
         description="Enable authentication, can be 'off', 'oauth2', or 'azure_oauth2'",
@@ -157,7 +157,7 @@ class Config(BaseModel):
     stats: ConfigStats
     azure_oauth2: ConfigAzureOauth2 | None
     aws: ConfigAws | None
-    supplier_api: ConfigSupplierApi
+    directory_api: ConfigDirectoryApi
     scheduler: Scheduler
 
 

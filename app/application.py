@@ -8,10 +8,10 @@ import uvicorn
 from app.container import get_cleanup_scheduler, get_update_scheduler, setup_container
 from app.routers.default import router as default_router
 from app.routers.health import router as health_router
-from app.routers.supplier_router import router as supplier_router
+from app.routers.directory_router import router as directory_router
 from app.routers.resource_map_router import router as resource_map_router
 from app.routers.update_router import router as update_router
-from app.routers.consumer import router as consumer_router
+from app.routers.update_client import router as update_client_router
 from app.routers.scheduler_router import router as scheduler_router
 from app.routers.directory_health import router as directory_health_router
 from app.routers.ignore_list_router import router as ignore_list_router
@@ -97,10 +97,10 @@ def setup_fastapi() -> FastAPI:
     routers = [
         default_router,
         health_router,
-        supplier_router,
+        directory_router,
         resource_map_router,
         update_router,
-        consumer_router,
+        update_client_router,
         scheduler_router,
         directory_health_router,
         ignore_list_router,

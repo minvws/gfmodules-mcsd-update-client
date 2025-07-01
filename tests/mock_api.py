@@ -1,39 +1,39 @@
 import logging
 from typing import List
 
-from app.models.supplier.dto import SupplierDto
-from app.services.supplier_provider.supplier_provider import SupplierProvider
+from app.models.directory.dto import DirectoryDto
+from app.services.directory_provider.directory_provider import DirectoryProvider
 
 logger = logging.getLogger(__name__)
 
 
-class MockApi(SupplierProvider):
-    def get_one_supplier(self, supplier_id: str) -> SupplierDto:
-        if supplier_id == "1":
-            return SupplierDto(
+class MockApi(DirectoryProvider):
+    def get_one_directory(self, directory_id: str) -> DirectoryDto:
+        if directory_id == "1":
+            return DirectoryDto(
                 id="1",
-                name="Test Supplier",
-                endpoint="http://test1.supplier.example.org",
+                name="Test Directory",
+                endpoint="http://test1.directory.example.org",
             )
-        elif supplier_id == "2":
-            return SupplierDto(
+        elif directory_id == "2":
+            return DirectoryDto(
                 id="2",
-                name="Test Supplier 2",
-                endpoint="http://test2.supplier.example.org",
+                name="Test Directory 2",
+                endpoint="http://test2.directory.example.org",
             )
         else:
-            raise ValueError(f"SupplierDto with ID {supplier_id} not found")
+            raise ValueError(f"DirectoryDto with ID {directory_id} not found")
 
-    def get_all_suppliers(self, include_ignored: bool = False) -> List[SupplierDto]:
+    def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
         return [
-            SupplierDto(
+            DirectoryDto(
                 id="1",
-                name="Test Supplier",
-                endpoint="http://test1.supplier.example.org",
+                name="Test Directory",
+                endpoint="http://test1.directory.example.org",
             ),
-            SupplierDto(
+            DirectoryDto(
                 id="2",
-                name="Test Supplier 2",
-                endpoint="http://test2.supplier.example.org",
+                name="Test Directory 2",
+                endpoint="http://test2.directory.example.org",
             ),
         ]

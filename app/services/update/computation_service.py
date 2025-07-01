@@ -10,64 +10,64 @@ from app.services.fhir.fhir_service import FhirService
 class ComputationService:
     def __init__(
         self,
-        supplier_id: str,
+        directory_id: str,
         fhir_service: FhirService,
     ) -> None:
-        self.__supplier_id = supplier_id
+        self.__directory_id = directory_id
         self.__fhir_service = fhir_service
 
     def get_update_status(
         self,
         method: str,
-        supplier_hash: int | None = None,
-        consumer_hash: int | None = None,
+        directory_hash: int | None = None,
+        update_client_hash: int | None = None,
         resource_map: ResourceMap | None = None,
     ) -> Literal["ignore", "equal", "delete", "update", "new"]:
         return self._determine_update_status(
-            supplier_hash, consumer_hash, resource_map, method
+            directory_hash, update_client_hash, resource_map, method
         )
 
     def _determine_update_status(
         self,
-        supplier_hash: int | None,
-        consumer_hash: int | None,
+        directory_hash: int | None,
+        update_client_hash: int | None,
         resource_map: ResourceMap | None,
         method: str,
     ) -> Literal["ignore", "equal", "delete", "update", "new"]:
-        if method == "DELETE" and consumer_hash is None:
+        if method == "DELETE" and update_client_hash is None:
             return "ignore"
 
         if (
             method != "DELETE"
-            and supplier_hash
-            and consumer_hash
-            and supplier_hash == consumer_hash
+            and directory_hash
+            and update_client_hash
+            and directory_hash == update_client_hash
         ):
             return "equal"
 
-        if method == "DELETE" and consumer_hash is not None:
+        if method == "DELETE" and update_client_hash is not None:
             return "delete"
 
         if (
             method != "DELETE"
-            and supplier_hash is not None
-            and consumer_hash is None
+            and directory_hash is not None
+            and update_client_hash is None
             and resource_map is None
         ):
             return "new"
 
         return "update"
 
-    def hash_supplier_entry(self, entry: BundleEntry) -> int | None:
+    def hash_directory_entry(self, entry: BundleEntry) -> int | None:
         if entry.resource is None:
             return None
 
         resource = copy.deepcopy(entry.resource)
-        self.__fhir_service.namespace_resource_references(resource, self.__supplier_id)
+        self.__fhir_service.namespace_resource_references(resource, self.__directory_id)
 
         return self.hash_resource(resource)
 
-    def hash_consumer_entry(self, entry: BundleEntry) -> int | None:
+    def hash_update_client_entry(self, entry: BundleEntry) -> int | None:
         if entry.resource is None:
             return None
 

@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: 'jdbc:postgresql://postgres:5432/hapi_client_directory'
+    url: 'jdbc:postgresql://postgres:5432/hapi_update_client'
     username: postgres
     password: postgres
     driverClassName: org.postgresql.Driver

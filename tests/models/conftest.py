@@ -34,7 +34,7 @@ def mock_node_org(
         bundle_entry=entry,
         node_refs=org_node_references,
         fhir_service=fhir_service,
-        supplier_hash=computation_service.hash_supplier_entry(entry),
+        directory_hash=computation_service.hash_directory_entry(entry),
     )
 
 
@@ -50,5 +50,5 @@ def mock_node_ep(
         bundle_entry=entry,
         node_refs=ep_node_references,
         fhir_service=fhir_service,
-        supplier_hash=computation_service.hash_supplier_entry(entry),
+        directory_hash=computation_service.hash_directory_entry(entry),
     )

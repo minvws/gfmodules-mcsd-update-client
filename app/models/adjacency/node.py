@@ -24,13 +24,13 @@ class Node(BaseModel):
     updated: bool = False
     method: HttpValidVerbs
     status: Literal["ignore", "equal", "delete", "update", "new", "unknown"] = "unknown"
-    supplier_hash: int | None = None
-    consumer_hash: int | None = None
+    directory_hash: int | None = None
+    update_client_hash: int | None = None
     update_data: NodeUpdateData | None = None
-    supplier_entry: BundleEntry | None = None
+    directory_entry: BundleEntry | None = None
 
     def clear_for_cash(self) -> None:
         self.references = []
         self.visited = False
         self.update_data = None
-        self.supplier_entry = None
+        self.directory_entry = None

@@ -16,18 +16,18 @@ class ResourceMapService:
 
     def get(
         self,
-        supplier_id: str | None = None,
+        directory_id: str | None = None,
         resource_type: str | None = None,
-        supplier_resource_id: str | None = None,
-        consumer_resource_id: str | None = None,
+        directory_resource_id: str | None = None,
+        update_client_resource_id: str | None = None,
     ) -> ResourceMap | None:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
             params = {
                 "resource_type": resource_type,
-                "supplier_resource_id": supplier_resource_id,
-                "consumer_resource_id": consumer_resource_id,
-                "supplier_id": supplier_id,
+                "directory_resource_id": directory_resource_id,
+                "update_client_resource_id": update_client_resource_id,
+                "directory_id": directory_id,
             }
             filtered_params = {k: v for k, v in params.items() if v is not None}
             resource_map = repository.get(**filtered_params)
@@ -36,16 +36,16 @@ class ResourceMapService:
 
     def get_one(
         self,
-        supplier_id: str | None = None,
+        directory_id: str | None = None,
         resource_type: str | None = None,
-        supplier_resource_id: str | None = None,
-        consumer_resource_id: str | None = None,
+        directory_resource_id: str | None = None,
+        update_client_resource_id: str | None = None,
     ) -> ResourceMap:
         resource_map = self.get(
-            supplier_id=supplier_id,
+            directory_id=directory_id,
             resource_type=resource_type,
-            supplier_resource_id=supplier_resource_id,
-            consumer_resource_id=consumer_resource_id,
+            directory_resource_id=directory_resource_id,
+            update_client_resource_id=update_client_resource_id,
         )
         if resource_map is None:
             raise HTTPException(status_code=404, detail="Not Found")
@@ -54,26 +54,26 @@ class ResourceMapService:
 
     def find(
         self,
-        supplier_id: str | None = None,
+        directory_id: str | None = None,
         resource_type: str | None = None,
-        supplier_resource_id: str | None = None,
-        consumer_resource_id: str | None = None,
+        directory_resource_id: str | None = None,
+        update_client_resource_id: str | None = None,
     ) -> Sequence[ResourceMap]:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
             return repository.find(
-                supplier_id=supplier_id,
+                directory_id=directory_id,
                 resource_type=resource_type,
-                supplier_resource_id=supplier_resource_id,
-                consumer_resource_id=consumer_resource_id,
+                directory_resource_id=directory_resource_id,
+                update_client_resource_id=update_client_resource_id,
             )
 
     def add_one(self, dto: ResourceMapDto) -> ResourceMap:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
             if repository.resource_map_exists(
-                supplier_resource_id=dto.supplier_resource_id,
-                consumer_resource_id=dto.consumer_resource_id,
+                directory_resource_id=dto.directory_resource_id,
+                update_client_resource_id=dto.update_client_resource_id,
             ):
                 raise HTTPException(
                     status_code=400, detail="Resource Map already exist"
@@ -84,9 +84,9 @@ class ResourceMapService:
 
     def update_one(self, dto: ResourceMapUpdateDto) -> ResourceMap:
         target = self.get_one(
-            supplier_id=dto.supplier_id,
+            directory_id=dto.directory_id,
             resource_type=dto.resource_type,
-            supplier_resource_id=dto.supplier_resource_id,
+            directory_resource_id=dto.directory_resource_id,
         )
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
@@ -96,9 +96,9 @@ class ResourceMapService:
 
     def delete_one(self, dto: ResourceMapDeleteDto) -> None:
         target = self.get_one(
-            supplier_id=dto.supplier_id,
+            directory_id=dto.directory_id,
             resource_type=dto.resource_type,
-            supplier_resource_id=dto.supplier_resource_id,
+            directory_resource_id=dto.directory_resource_id,
         )
 
         with self.__database.get_db_session() as session:

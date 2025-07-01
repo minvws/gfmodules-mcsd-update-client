@@ -18,7 +18,7 @@ class ResourceMap(Base):
     __tablename__ = "resource_maps"
     __table_args__ = (
         PrimaryKeyConstraint("id"),
-        UniqueConstraint("supplier_id", "resource_type", "supplier_resource_id"),
+        UniqueConstraint("directory_id", "resource_type", "directory_resource_id"),
     )
 
     id: Mapped[UUID] = mapped_column(
@@ -27,17 +27,17 @@ class ResourceMap(Base):
         nullable=False,
         default=uuid4,
     )
-    supplier_id: Mapped[str] = mapped_column(
-        "supplier_id",
+    directory_id: Mapped[str] = mapped_column(
+        "directory_id",
         String,
         nullable=False,
     )
     resource_type: Mapped[str] = mapped_column("resource_type", String, nullable=False)
-    supplier_resource_id: Mapped[str] = mapped_column(
-        "supplier_resource_id", String, nullable=False
+    directory_resource_id: Mapped[str] = mapped_column(
+        "directory_resource_id", String, nullable=False
     )
-    consumer_resource_id: Mapped[str] = mapped_column(
-        "consumer_resource_id", String, nullable=False, unique=True
+    update_client_resource_id: Mapped[str] = mapped_column(
+        "update_client_resource_id", String, nullable=False, unique=True
     )
     last_update: Mapped[datetime] = mapped_column(
         "last_update",

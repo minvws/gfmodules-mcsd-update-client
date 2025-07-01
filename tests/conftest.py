@@ -69,11 +69,11 @@ def fhir_service() -> FhirService:
 
 @pytest.fixture()
 def computation_service(
-    mock_supplier_id: str,
+    mock_directory_id: str,
     fhir_service: FhirService,
 ) -> ComputationService:
     return ComputationService(
-        supplier_id=mock_supplier_id,
+        directory_id=mock_directory_id,
         fhir_service=fhir_service,
     )
 
@@ -102,8 +102,8 @@ def mock_location() -> Dict[str, Any]:
 
 
 @pytest.fixture()
-def mock_supplier_id() -> str:
-    return "example-supplier-id"
+def mock_directory_id() -> str:
+    return "example-directory-id"
 
 
 @pytest.fixture()
