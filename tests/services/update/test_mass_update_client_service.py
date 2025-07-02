@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 from datetime import datetime, timedelta, timezone
+from app.services.entity.directory_cache_service import DirectoryCacheService
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.update.mass_update_client_service import MassUpdateClientService
 from app.db.entities.directory_info import DirectoryInfo
@@ -34,6 +35,8 @@ def test_cleanup_old_directories(directory_info_service: DirectoryInfoService) -
         ignored_directory_service=mock_ignored_directory_service,
         cleanup_client_directory_after_success_timeout_seconds=3600, # less than 2 hours
         stats=NoopStats(),
+        directory_cache_service=MagicMock(spec=DirectoryCacheService),  # Mocking the directory cache service
+        cleanup_client_directory_after_directory_delete=True,
     )
 
     service.cleanup_old_directories()

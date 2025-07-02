@@ -29,6 +29,9 @@ class Scheduler(BaseModel):
     automatic_background_cleanup: bool = Field(default=True)
     directory_stale_timeout: str
     cleanup_client_directory_after_success_timeout: str
+    cleanup_client_directory_after_directory_delete: bool = Field(
+        default=True,
+    )
 
     @computed_field
     def delay_input_in_sec(self) -> int:

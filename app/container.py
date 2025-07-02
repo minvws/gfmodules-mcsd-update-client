@@ -1,6 +1,6 @@
-from app.services.entity.ignored_directory_service import (
-    IgnoredDirectoryService,
-)
+from app.services.entity.ignored_directory_service import IgnoredDirectoryService
+from app.services.entity.directory_cache_service import DirectoryCacheService
+
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.directory_provider.factory import DirectoryProviderFactory
 from app.services.directory_provider.directory_provider import DirectoryProvider
@@ -58,6 +58,8 @@ def container_config(binder: inject.Binder) -> None:
     )
     binder.bind(DirectoryInfoService, directory_info_service)
 
+    directory_cache_service = DirectoryCacheService(db)
+
     update_all_service = MassUpdateClientService(
         update_client_service=update_service,
         directory_provider=directory_provider,
@@ -65,6 +67,8 @@ def container_config(binder: inject.Binder) -> None:
         ignored_directory_service=ignored_directory_service,
         cleanup_client_directory_after_success_timeout_seconds=config.scheduler.cleanup_client_directory_after_success_timeout_in_sec,  # type: ignore
         stats=get_stats(),
+        directory_cache_service=directory_cache_service,
+        cleanup_client_directory_after_directory_delete=config.scheduler.cleanup_client_directory_after_directory_delete,
     )
 
     update_scheduler = Scheduler(

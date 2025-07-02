@@ -73,6 +73,7 @@ def get_test_config() -> Config:
             max_logs_entries=10,
             directory_stale_timeout="120s",
             cleanup_client_directory_after_success_timeout="3d",
+            cleanup_client_directory_after_directory_delete=True,
         ),
         external_cache=ConfigExternalCache(),
     )

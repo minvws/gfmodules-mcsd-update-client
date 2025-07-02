@@ -14,6 +14,14 @@ class DirectoryInfoService:
         self.__database = database
         self.__directory_stale_timeout_seconds = directory_stale_timeout_seconds
 
+    def delete_directory_info(self, directory_id: str) -> None:
+        with self.__database.get_db_session() as session:
+            repository = session.get_repository(DirectoryInfoRepository)
+            info = repository.get(directory_id)
+            session.delete(info)
+            session.commit()
+
+
     def get_directory_info(self, directory_id: str) -> DirectoryInfo:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoRepository)

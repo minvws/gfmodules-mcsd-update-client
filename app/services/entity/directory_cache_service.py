@@ -10,6 +10,13 @@ class DirectoryCacheService:
     def __init__(self, database: Database) -> None:
         self.__database = database
 
+    def get_deleted_directories(self) -> list[DirectoryDto]:
+        with self.__database.get_db_session() as session:
+            repository = session.get_repository(DirectoryCacheRepository)
+            deleted_directories = repository.get_deleted_directories()
+            return [self._hydrate_to_directory_dto(directory) for directory in deleted_directories]
+
+
     def get_directory_cache(self, directory_id: str, with_deleted: bool = False) -> DirectoryDto|None:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryCacheRepository)

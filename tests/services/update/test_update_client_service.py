@@ -28,11 +28,13 @@ def test_cleanup() -> None:
                 directory_id=directory_id,
                 update_client_resource_id="resource_1",
                 resource_type=resource_type,
+                directory_resource_id="directory_resource_1",
             ),
             MagicMock(
                 directory_id=directory_id,
                 update_client_resource_id="resource_2",
                 resource_type=resource_type,
+                directory_resource_id="directory_resource_2",
             ),
         ]
 
@@ -76,4 +78,4 @@ def test_cleanup() -> None:
         assert called_bundle.entry[0].request.url is not None
         split = called_bundle.entry[0].request.url.split("/")
         assert split[0] == resource.value
-        assert split[1] == "resource_1" or split[1] == "resource_2"
+        assert split[1] == "resource_1?_cascade=delete" or split[1] == "resource_2?_cascade=delete"

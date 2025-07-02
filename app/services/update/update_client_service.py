@@ -11,7 +11,7 @@ from app.services.update.cache.caching_service import (
 )
 from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from yarl import URL
-from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
+from app.models.resource_map.dto import ResourceMapDeleteDto, ResourceMapDto, ResourceMapUpdateDto
 from app.models.adjacency.node import (
     Node,
 )
@@ -73,20 +73,40 @@ class UpdateClientService:
             resource_map = self.__resource_map_service.find(
                 directory_id=directory_id, resource_type=res_type.value
             )
-            for res_map_item in resource_map:
+            resources = list(resource_map)
+            while len(resources) > 0:
+                if delete_bundle.total >= 100:
+                    logging.info(
+                        f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
+                    )
+                    self.__update_client_fhir_api.post_bundle(delete_bundle)
+                    delete_bundle = Bundle(
+                        id=str(uuid4()), type="transaction", entry=[], total=0
+                    )
+
+                res_map_item = resources.pop()
                 delete_bundle.entry.append(
                     BundleEntry(
                         request=BundleEntryRequest(
                             method="DELETE",
-                            url=f"{res_type.value}/{res_map_item.update_client_resource_id}",
+                            url=f"{res_type.value}/{res_map_item.update_client_resource_id}?_cascade=delete",
                         )
                     )
                 )
                 delete_bundle.total += 1
-            logging.info(
-                f"Removing {delete_bundle.total} items from update_client originating from stale directory {directory_id}"
-            )
-            self.__update_client_fhir_api.post_bundle(delete_bundle)
+                self.__resource_map_service.delete_one(ResourceMapDeleteDto(
+                    directory_id=directory_id,
+                    resource_type=res_type.value,
+                    directory_resource_id=res_map_item.directory_resource_id
+                ))
+            if delete_bundle.total > 0: # Final flush of remaining items
+                logging.info(
+                        f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
+                )
+                self.__update_client_fhir_api.post_bundle(delete_bundle)
+                delete_bundle = Bundle(
+                    id=str(uuid4()), type="transaction", entry=[], total=0
+                )
 
     def update(self, directory: DirectoryDto, since: datetime | None = None) -> Any:
         self.__create_cache_run()

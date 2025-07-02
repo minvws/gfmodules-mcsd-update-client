@@ -24,3 +24,4 @@ hapi:
     allow_multiple_delete: true
     allow_expunge: true
     delete_expunge_enabled: true
+    allow_cascading_deletes: true

@@ -88,3 +88,38 @@ def test_delete_directory_cache_not_found(directory_cache_service: DirectoryCach
         directory_cache_service.delete_directory_cache("123")
 
     mock_repository.delete.assert_not_called()
+
+def test_get_deleted_directories_with_results(directory_cache_service: DirectoryCacheService, mock_database: MagicMock) -> None:
+    mock_session = MagicMock()
+    mock_repository = MagicMock()
+
+    deleted_cache_1 = DirectoryCache(directory_id="deleted_1", endpoint="http://example.com", is_deleted=True)
+    deleted_cache_2 = DirectoryCache(directory_id="deleted_2", endpoint="http://example.com", is_deleted=True)
+    mock_repository.get_deleted_directories.return_value = [deleted_cache_1, deleted_cache_2]
+
+    mock_session.get_repository.return_value = mock_repository
+    mock_database.get_db_session.return_value.__enter__.return_value = mock_session
+
+    result = directory_cache_service.get_deleted_directories()
+
+    assert len(result) == 2
+    assert all(isinstance(directory, DirectoryDto) for directory in result)
+    assert result[0].id == "deleted_1"
+    assert result[0].endpoint == "http://example.com"
+    assert result[0].is_deleted is True
+    assert result[1].id == "deleted_2"
+    assert result[1].endpoint == "http://example.com"
+    assert result[1].is_deleted is True
+    mock_repository.get_deleted_directories.assert_called_once()
+
+def test_get_deleted_directories_no_results(directory_cache_service: DirectoryCacheService, mock_database: MagicMock) -> None:
+    mock_session = MagicMock()
+    mock_repository = MagicMock()
+    mock_repository.get_deleted_directories.return_value = []
+    mock_session.get_repository.return_value = mock_repository
+    mock_database.get_db_session.return_value.__enter__.return_value = mock_session
+
+    result = directory_cache_service.get_deleted_directories()
+
+    assert result == []
+    mock_repository.get_deleted_directories.assert_called_once()

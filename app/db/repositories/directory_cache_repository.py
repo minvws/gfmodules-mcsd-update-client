@@ -13,6 +13,11 @@ logger = logging.getLogger(__name__)
 @repository(DirectoryCache)
 class DirectoryCacheRepository(RepositoryBase):
 
+    def get_deleted_directories(self) -> Sequence[DirectoryCache]:
+        query = select(DirectoryCache).where(DirectoryCache.is_deleted)
+        caches = self.db_session.session.execute(query).scalars().all()
+        return caches
+
     def get(self, directory_id: str, with_deleted: bool = False) -> DirectoryCache | None:
         query = select(DirectoryCache).where(DirectoryCache.directory_id == directory_id)
         if not with_deleted:
