@@ -21,21 +21,21 @@ from app.services.update.computation_service import ComputationService
 class AdjacencyMapService:
     def __init__(
         self,
-        supplier_id: str,
+        directory_id: str,
         fhir_service: FhirService,
-        supplier_api: FhirApi,
-        consumer_api: FhirApi,
+        directory_api: FhirApi,
+        update_client_api: FhirApi,
         resource_map_service: ResourceMapService,
         cache_service: CachingService,
     ) -> None:
-        self.supplier_id = supplier_id
+        self.directory_id = directory_id
         self.__fhir_service = fhir_service
-        self.__supplier_api = supplier_api
-        self.__consumer_api = consumer_api
+        self.__directory_api = directory_api
+        self.__update_client_api = update_client_api
         self.__resource_map_service = resource_map_service
         self.__cache_service = cache_service
         self.__computation_service = ComputationService(
-            supplier_id=supplier_id, fhir_service=fhir_service
+            directory_id=directory_id, fhir_service=fhir_service
         )
 
     def build_adjacency_map(self, entries: List[BundleEntry]) -> AdjacencyMap:
@@ -53,36 +53,40 @@ class AdjacencyMapService:
                 missing_refs = adj_map.get_missing_refs()
                 continue
 
-            # get the rest from the supplier api
-            missing_entries = self.get_supplier_data(
+            # get the rest from the directory api
+            missing_entries = self.get_directory_data(
                 [BundleRequestParams(**ref.model_dump()) for ref in missing_refs]
             )
             missing_nodes = [self.create_node(entry) for entry in missing_entries]
             adj_map.add_nodes(missing_nodes)
             missing_refs = adj_map.get_missing_refs()
 
-        consumer_targets = self.__get_consumer_missing_targets(adj_map)
-        consumer_entries = self.get_consumer_data(consumer_targets)
+        update_client_targets = self.__get_update_client_missing_targets(adj_map)
+        update_client_entries = self.get_update_client_data(update_client_targets)
 
-        for entry in consumer_entries:
+        for entry in update_client_entries:
             _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
-            res_id = id.replace(f"{self.supplier_id}-", "")
+            print("\n#####@@@@@@@@@###########")
+            print(id)
+            res_id = id.replace(f"{self.directory_id}-", "")
+            print(res_id)
+            print("#####@@@@@@@@@###########\n")
             node = adj_map.data[res_id]
-            node.consumer_hash = self.__computation_service.hash_consumer_entry(entry)
+            node.update_client_hash = self.__computation_service.hash_update_client_entry(entry)
 
         for node in adj_map.data.values():
             if node.updated is True:
                 continue
 
             resource_map = self.__resource_map_service.get(
-                supplier_id=self.supplier_id,
+                directory_id=self.directory_id,
                 resource_type=node.resource_type,
-                supplier_resource_id=node.resource_id,
+                directory_resource_id=node.resource_id,
             )
             node.status = self.__computation_service.get_update_status(
                 method=node.method,
-                supplier_hash=node.supplier_hash,
-                consumer_hash=node.consumer_hash,
+                directory_hash=node.directory_hash,
+                update_client_hash=node.update_client_hash,
                 resource_map=resource_map,
             )
             node.update_data = self.create_update_data(node, resource_map)
@@ -100,24 +104,24 @@ class AdjacencyMapService:
         )
         return res
 
-    def get_supplier_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
-        return self.__get_entries(refs, self.__supplier_api)
+    def get_directory_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
+        return self.__get_entries(refs, self.__directory_api)
 
-    def get_consumer_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
-        return self.__get_entries(refs, self.__consumer_api)
+    def get_update_client_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
+        return self.__get_entries(refs, self.__update_client_api)
 
     def create_node(self, entry: BundleEntry) -> Node:
         res_type, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
         method = self.__fhir_service.get_request_method_from_entry(entry)
-        supplier_hash = self.__computation_service.hash_supplier_entry(entry)
+        directory_hash = self.__computation_service.hash_directory_entry(entry)
         references = self.create_node_references(entry)
 
         return Node(
             resource_id=id,
             resource_type=res_type,
-            supplier_hash=supplier_hash,
+            directory_hash=directory_hash,
             method=method,
-            supplier_entry=entry,
+            directory_entry=entry,
             references=references,
         )
 
@@ -137,8 +141,8 @@ class AdjacencyMapService:
     def create_update_data(
         self, node: Node, resource_map: ResourceMap | None
     ) -> NodeUpdateData | None:
-        consumer_resource_id = f"{self.supplier_id}-{node.resource_id}"
-        url = f"{node.resource_type}/{consumer_resource_id}"
+        update_client_resource_id = f"{self.directory_id}-{node.resource_id}"
+        url = f"{node.resource_type}/{update_client_resource_id}"
         dto: ResourceMapDto | ResourceMapUpdateDto | None = None
 
         match node.status:
@@ -161,9 +165,9 @@ class AdjacencyMapService:
                     )
 
                 dto = ResourceMapUpdateDto(
-                    supplier_id=self.supplier_id,
+                    directory_id=self.directory_id,
                     resource_type=node.resource_type,
-                    supplier_resource_id=node.resource_id,
+                    directory_resource_id=node.resource_id,
                 )
 
                 return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
@@ -173,26 +177,26 @@ class AdjacencyMapService:
                 entry_request = BundleEntryRequest.model_construct(
                     method="PUT", url=url
                 )
-                if node.supplier_entry is None:
+                if node.directory_entry is None:
                     raise Exception(
-                        f"Supplier entry for {node.resource_id} {node.resource_type} cannot be None and node marked as `new`"
+                        f"Directory entry for {node.resource_id} {node.resource_type} cannot be None and node marked as `new`"
                     )
-                resource = copy.deepcopy(node.supplier_entry.resource)
+                resource = copy.deepcopy(node.directory_entry.resource)
                 if resource is None:
                     raise Exception(
                         f"Resource {node.resource_id} {node.resource_type} cannot be None when a node is marked `new`"
                     )
                 self.__fhir_service.namespace_resource_references(
-                    resource, self.supplier_id
+                    resource, self.directory_id
                 )
-                resource.id = consumer_resource_id
+                resource.id = update_client_resource_id
                 entry.resource = resource
                 entry.request = entry_request
 
                 dto = ResourceMapDto(
-                    supplier_id=self.supplier_id,
-                    supplier_resource_id=node.resource_id,
-                    consumer_resource_id=consumer_resource_id,
+                    directory_id=self.directory_id,
+                    directory_resource_id=node.resource_id,
+                    update_client_resource_id=update_client_resource_id,
                     resource_type=node.resource_type,
                 )
 
@@ -203,21 +207,21 @@ class AdjacencyMapService:
                 entry_request = BundleEntryRequest.model_construct(
                     method="PUT", url=url
                 )
-                if node.supplier_entry is None:
+                if node.directory_entry is None:
                     raise Exception(
-                        f"Supplier entry for {node.resource_id} {node.resource_type} cannot be None and node marked as `update`"
+                        f"Directory entry for {node.resource_id} {node.resource_type} cannot be None and node marked as `update`"
                     )
 
-                resource = copy.deepcopy(node.supplier_entry.resource)
+                resource = copy.deepcopy(node.directory_entry.resource)
                 if resource is None:
                     raise Exception(
                         f"Resource {node.resource_id} {node.resource_type} cannot be None and node marked as `update`"
                     )
 
                 self.__fhir_service.namespace_resource_references(
-                    resource, self.supplier_id
+                    resource, self.directory_id
                 )
-                resource.id = consumer_resource_id
+                resource.id = update_client_resource_id
                 entry.request = entry_request
                 entry.resource = resource
 
@@ -227,8 +231,8 @@ class AdjacencyMapService:
                     )
 
                 dto = ResourceMapUpdateDto(
-                    supplier_id=self.supplier_id,
-                    supplier_resource_id=node.resource_id,
+                    directory_id=self.directory_id,
+                    directory_resource_id=node.resource_id,
                     resource_type=node.resource_type,
                 )
 
@@ -239,15 +243,15 @@ class AdjacencyMapService:
                     f"node {node.resource_id} {node.resource_type} cannot be unknown at this stage"
                 )
 
-    def __get_consumer_missing_targets(
+    def __get_update_client_missing_targets(
         self, adj_map: AdjacencyMap
     ) -> List[BundleRequestParams]:
-        consumer_targets = []
+        update_client_targets = []
         for id, node in adj_map.data.items():
             if not self.__cache_service.key_exists(id):
-                consumer_targets.append(
+                update_client_targets.append(
                     BundleRequestParams(
-                        id=f"{self.supplier_id}-{id}", resource_type=node.resource_type
+                        id=f"{self.directory_id}-{id}", resource_type=node.resource_type
                     )
                 )
-        return consumer_targets
+        return update_client_targets

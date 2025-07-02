@@ -7,11 +7,11 @@ from app.db.db import Database
 from app.models.adjacency.node import Node, NodeReference
 from app.services.api.fhir_api import FhirApi
 from app.services.entity.resource_map_service import ResourceMapService
-from app.services.entity.supplier_ignored_directory_service import (
-    SupplierIgnoredDirectoryService,
+from app.services.entity.ignored_directory_service import (
+    IgnoredDirectoryService,
 )
-from app.services.entity.supplier_cache_service import SupplierCacheService
-from app.services.entity.supplier_info_service import SupplierInfoService
+from app.services.entity.directory_cache_service import DirectoryCacheService
+from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
@@ -29,23 +29,23 @@ def config() -> Config:
 
 
 @pytest.fixture
-def supplier_ignored_directory_service(
+def ignored_directory_service(
     database: Database, config: Config
-) -> SupplierIgnoredDirectoryService:
+) -> IgnoredDirectoryService:
     set_config(config)
-    return SupplierIgnoredDirectoryService(database=database)
+    return IgnoredDirectoryService(database=database)
 
 
 @pytest.fixture()
-def supplier_info_service(database: Database, config: Config) -> SupplierInfoService:
+def directory_info_service(database: Database, config: Config) -> DirectoryInfoService:
     set_config(config)
-    return SupplierInfoService(database=database, supplier_stale_timeout_seconds=0)
+    return DirectoryInfoService(database=database, directory_stale_timeout_seconds=0)
 
 
 @pytest.fixture()
-def supplier_cache_service(database: Database, config: Config) -> SupplierCacheService:
+def directory_cache_service(database: Database, config: Config) -> DirectoryCacheService:
     set_config(config)
-    return SupplierCacheService(database=database)
+    return DirectoryCacheService(database=database)
 
 
 @pytest.fixture()
@@ -169,7 +169,7 @@ def expected_node_org(
         bundle_entry=entry,
         node_refs=org_node_references,
         fhir_service=fhir_service,
-        supplier_hash=computation_service.hash_supplier_entry(entry),
+        directory_hash=computation_service.hash_directory_entry(entry),
     )
 
 
@@ -181,8 +181,8 @@ def null_authenticator() -> NullAuthenticator:
 @pytest.fixture()
 def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
     return FhirApi(
-        timeout=config.supplier_api.timeout,
-        backoff=config.supplier_api.backoff,
+        timeout=config.directory_api.timeout,
+        backoff=config.directory_api.backoff,
         auth=null_authenticator,
         url="http://example.com/fhir",
         request_count=10,
@@ -197,17 +197,17 @@ def in_memory_cache_service() -> InMemoryCachingService:
 
 @pytest.fixture()
 def adjacency_map_service(
-    mock_supplier_id: str,
+    mock_directory_id: str,
     fhir_service: FhirService,
     fhir_api: FhirApi,
     resource_map_service: ResourceMapService,
     in_memory_cache_service: InMemoryCachingService,
 ) -> AdjacencyMapService:
     return AdjacencyMapService(
-        supplier_id=mock_supplier_id,
+        directory_id=mock_directory_id,
         fhir_service=fhir_service,
-        supplier_api=fhir_api,
-        consumer_api=fhir_api,
+        directory_api=fhir_api,
+        update_client_api=fhir_api,
         resource_map_service=resource_map_service,
         cache_service=in_memory_cache_service,
     )

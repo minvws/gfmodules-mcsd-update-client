@@ -7,7 +7,7 @@ from app.config import (
     ConfigMcsd,
     ConfigTelemetry,
     ConfigStats,
-    ConfigSupplierApi,
+    ConfigDirectoryApi,
     Scheduler,
     LogLevel,
 )
@@ -41,7 +41,7 @@ def get_test_config() -> Config:
             ssl_key_file=None,
         ),
         mcsd=ConfigMcsd(
-            consumer_url="http://testserver/consumer/test",
+            update_client_url="http://testserver/update_client/test",
             authentication="off",
             request_count=20,
             strict_validation=False,
@@ -60,9 +60,9 @@ def get_test_config() -> Config:
         ),
         azure_oauth2=None,
         aws=None,
-        supplier_api=ConfigSupplierApi(
-            suppliers_provider_url="http://testserver/test",
-            supplier_urls_path=None,
+        directory_api=ConfigDirectoryApi(
+            directories_provider_url="http://testserver/test",
+            directory_urls_path=None,
             timeout=1,
             backoff=0.1,
         ),
@@ -71,7 +71,7 @@ def get_test_config() -> Config:
             automatic_background_cleanup=False,
             delay_input="0s",
             max_logs_entries=10,
-            supplier_stale_timeout="120s",
+            directory_stale_timeout="120s",
             cleanup_client_directory_after_success_timeout="3d",
         ),
         external_cache=ConfigExternalCache(),

@@ -13,10 +13,10 @@ from app.models.resource_map.dto import (
 @pytest.fixture
 def mock_dto() -> ResourceMapDto:
     return ResourceMapDto(
-        supplier_id="example id",
+        directory_id="example id",
         resource_type="Organization",
-        supplier_resource_id="some_resource_id",
-        consumer_resource_id="some_consumer_resource_id",
+        directory_resource_id="some_resource_id",
+        update_client_resource_id="some_update_client_resource_id",
     )
 
 
@@ -25,7 +25,7 @@ def test_get_should_return_a_resource_map_when_exists(
 ) -> None:
     expected = resource_map_service.add_one(mock_dto)
     actual = resource_map_service.get(
-        supplier_resource_id=mock_dto.supplier_resource_id
+        directory_resource_id=mock_dto.directory_resource_id
     )
     assert actual is not None
     for k in actual.__table__.columns.keys():
@@ -36,7 +36,7 @@ def test_get_should_return_none_when_resource_map_does_not_exists(
     resource_map_service: ResourceMapService, mock_dto: ResourceMapDto
 ) -> None:
     expected = resource_map_service.add_one(mock_dto)
-    actual = resource_map_service.get(supplier_resource_id="wrong_id")
+    actual = resource_map_service.get(directory_resource_id="wrong_id")
     assert expected != actual
     assert actual is None
 
@@ -46,7 +46,7 @@ def test_get_one_should_return_a_resource_map_when_exist(
 ) -> None:
     expected = resource_map_service.add_one(mock_dto)
     actual = resource_map_service.get_one(
-        supplier_resource_id=mock_dto.supplier_resource_id
+        directory_resource_id=mock_dto.directory_resource_id
     )
     for k in actual.__table__.columns.keys():
         assert getattr(actual, k) == getattr(expected, k)
@@ -57,7 +57,7 @@ def test_get_one_should_raise_excption_when_map_does_not_exist(
 ) -> None:
     resource_map_service.add_one(mock_dto)
     with pytest.raises(HTTPException):
-        resource_map_service.get_one(supplier_resource_id="wrong_id")
+        resource_map_service.get_one(directory_resource_id="wrong_id")
 
 
 def test_find_should_return_results_when_param_matches(
@@ -65,8 +65,8 @@ def test_find_should_return_results_when_param_matches(
 ) -> None:
     expected = resource_map_service.add_one(mock_dto)
     results = resource_map_service.find(
-        supplier_id=expected.supplier_id,
-        supplier_resource_id=expected.supplier_resource_id,
+        directory_id=expected.directory_id,
+        directory_resource_id=expected.directory_resource_id,
     )
     actual = results[0]
     assert len(results) > 0
@@ -78,7 +78,7 @@ def test_find_should_return_empty_list_when_params_do_not_match(
     resource_map_service: ResourceMapService, mock_dto: ResourceMapDto
 ) -> None:
     resource_map_service.add_one(mock_dto)
-    results = resource_map_service.find(supplier_id="wrong_id")
+    results = resource_map_service.find(directory_id="wrong_id")
     assert len(results) == 0
 
 
@@ -95,13 +95,13 @@ def test_update_one_should_succeed_when_resource_map_exist(
 ) -> None:
     resource_map_service.add_one(mock_dto)
     update_dto = ResourceMapUpdateDto(
-        supplier_id=mock_dto.supplier_id,
+        directory_id=mock_dto.directory_id,
         resource_type=mock_dto.resource_type,
-        supplier_resource_id=mock_dto.supplier_resource_id,
+        directory_resource_id=mock_dto.directory_resource_id,
     )
     expected = resource_map_service.update_one(update_dto)
     actual = resource_map_service.get_one(
-        supplier_resource_id=mock_dto.supplier_resource_id
+        directory_resource_id=mock_dto.directory_resource_id
     )
 
     for k in actual.__table__.columns.keys():
@@ -114,8 +114,8 @@ def test_update_one_should_raise_exception_when_resource_map_does_not_exist(
     resource_map_service.add_one(mock_dto)
     update_dto = ResourceMapUpdateDto(
         resource_type=mock_dto.resource_type,
-        supplier_id="123",
-        supplier_resource_id="wrong_id",
+        directory_id="123",
+        directory_resource_id="wrong_id",
     )
 
     with pytest.raises(HTTPException):
@@ -128,24 +128,24 @@ def test_delete_one_should_succeed_when_resource_map_exist(
     resource_map_service.add_one(mock_dto)
 
     delete_dto = ResourceMapDeleteDto(
-        supplier_id=mock_dto.supplier_id,
+        directory_id=mock_dto.directory_id,
         resource_type=mock_dto.resource_type,
-        supplier_resource_id=mock_dto.supplier_resource_id,
+        directory_resource_id=mock_dto.directory_resource_id,
     )
     resource_map_service.delete_one(delete_dto)
     with pytest.raises(HTTPException):
-        resource_map_service.get_one(supplier_resource_id=mock_dto.supplier_resource_id)
+        resource_map_service.get_one(directory_resource_id=mock_dto.directory_resource_id)
 
 
-def test_unique_constraint_on_supplier_id_and_supplier_resource_id(
+def test_unique_constraint_on_directory_id_and_directory_resource_id(
     resource_map_service: ResourceMapService, mock_dto: ResourceMapDto
 ) -> None:
     resource_map_service.add_one(mock_dto)
     duplicate_dto = ResourceMapDto(
-        supplier_id=mock_dto.supplier_id,
+        directory_id=mock_dto.directory_id,
         resource_type="Organization",
-        supplier_resource_id=mock_dto.supplier_resource_id,
-        consumer_resource_id="another_consumer_resource_id",
+        directory_resource_id=mock_dto.directory_resource_id,
+        update_client_resource_id="another_update_client_resource_id",
     )
     with pytest.raises(IntegrityError):
         resource_map_service.add_one(duplicate_dto)

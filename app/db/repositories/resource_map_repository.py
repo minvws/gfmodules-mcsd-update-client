@@ -26,19 +26,19 @@ class ResourceMapRepository(RepositoryBase):
     ) -> Sequence[ResourceMap]:
         conditions = {k: v for k, v in conditions.items() if v is not None}
         filter_conditions = []
-        if "supplier_id" in conditions:
+        if "directory_id" in conditions:
             filter_conditions.append(
-                ResourceMap.supplier_id == conditions["supplier_id"]
+                ResourceMap.directory_id == conditions["directory_id"]
             )
 
-        if "supplier_resource_id" in conditions:
+        if "directory_resource_id" in conditions:
             filter_conditions.append(
-                ResourceMap.supplier_resource_id == conditions["supplier_resource_id"]
+                ResourceMap.directory_resource_id == conditions["directory_resource_id"]
             )
 
-        if "consumer_resource_id" in conditions:
+        if "update_client_resource_id" in conditions:
             filter_conditions.append(
-                ResourceMap.consumer_resource_id == conditions["consumer_resource_id"]
+                ResourceMap.update_client_resource_id == conditions["update_client_resource_id"]
             )
 
         if "resource_type" in conditions:
@@ -86,13 +86,13 @@ class ResourceMapRepository(RepositoryBase):
             raise
 
     def resource_map_exists(
-        self, supplier_resource_id: str, consumer_resource_id: str
+        self, directory_resource_id: str, update_client_resource_id: str
     ) -> bool:
         stmt = (
             exists(1)
             .where(
-                ResourceMap.supplier_resource_id == supplier_resource_id,
-                ResourceMap.consumer_resource_id == consumer_resource_id,
+                ResourceMap.directory_resource_id == directory_resource_id,
+                ResourceMap.update_client_resource_id == update_client_resource_id,
             )
             .select()
         )

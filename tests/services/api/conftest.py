@@ -31,8 +31,8 @@ def mock_body() -> Dict[str, Any]:
 @pytest.fixture()
 def api_service() -> ApiService:
     return ApiService(
-        timeout=config.supplier_api.timeout,
-        backoff=config.supplier_api.backoff,
+        timeout=config.directory_api.timeout,
+        backoff=config.directory_api.backoff,
         retries=1,
     )
 
@@ -58,8 +58,8 @@ def aws_based_api_service(
 ) -> AuthenticationBasedApiService:
     return AuthenticationBasedApiService(
         auth=aws_v4_authenticator,
-        timeout=config.supplier_api.timeout,
-        backoff=config.supplier_api.backoff,
+        timeout=config.directory_api.timeout,
+        backoff=config.directory_api.backoff,
         retries=1,
     )
 
@@ -70,7 +70,7 @@ def azure_base_api_service(
 ) -> AuthenticationBasedApiService:
     return AuthenticationBasedApiService(
         auth=azure_oauth_authenticator,
-        timeout=config.supplier_api.timeout,
-        backoff=config.supplier_api.backoff,
+        timeout=config.directory_api.timeout,
+        backoff=config.directory_api.backoff,
         retries=1,
     )

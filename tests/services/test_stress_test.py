@@ -12,7 +12,7 @@ import requests
 from yarl import URL
 from app.container import get_database
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
-from app.models.supplier.dto import SupplierDto
+from app.models.directory.dto import DirectoryDto
 from tests.utils.utils import (
     check_if_in_db,
     create_file_structure,
@@ -84,7 +84,7 @@ def mock_do_request(
             response.status_code = 200
             response._content = return_bundle.model_dump_json(indent=4).encode("utf-8")
             return response
-        if str(url) == "http://testserver/consumer/test":
+        if str(url) == "http://testserver/update_client/test":
             response = requests.Response()
             assert json_data is not None
             for entry in json_data.get("entry", []):
@@ -95,13 +95,13 @@ def mock_do_request(
                     or entry["request"].get("method") == "PUT"
                 ):
                     resource = entry["resource"]
-                    store_consumer(resource)
+                    store_update_client(resource)
                     response._content = b'{"resourceType": "Bundle", "type": "batch-response", "entry": []}'
                     response.status_code = 200
                 if entry["request"].get("method") == "GET":
                     resource_type = entry["request"].get("url").split("/")[1]
                     resource_id = entry["request"].get("url").split("/")[2]
-                    resource = get_from_consumer(resource_type, resource_id)
+                    resource = get_from_update_client(resource_type, resource_id)
 
                     if resource is not None:
                         return_bundle = Bundle(type="batch-response", entry=[])
@@ -132,13 +132,13 @@ def mock_do_request(
         assert False, "Should not reach here"
 
 
-def store_consumer(resource: Dict[str, Any]) -> None:
-    key = f"consumer_data/{resource['resourceType']}/{resource['id']}.json"
+def store_update_client(resource: Dict[str, Any]) -> None:
+    key = f"update_client_data/{resource['resourceType']}/{resource['id']}.json"
     CACHE[key] = resource
 
 
-def get_from_consumer(resource_type: str, resource_id: str) -> Any | None:
-    key = f"consumer_data/{resource_type}/{resource_id}.json"
+def get_from_update_client(resource_type: str, resource_id: str) -> Any | None:
+    key = f"update_client_data/{resource_type}/{resource_id}.json"
     return CACHE.get(key)
 
 
@@ -180,21 +180,21 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
     side_effect=mock_do_request,
 )
 @patch(
-    "app.services.supplier_provider.api_provider.SupplierApiProvider.get_all_suppliers",
+    "app.services.directory_provider.api_provider.DirectoryApiProvider.get_all_directories",
     return_value=[
-        SupplierDto(
-            id="test-supplier",
-            name="Test Supplier",
+        DirectoryDto(
+            id="test-directory",
+            name="Test Directory",
             endpoint="http://testserver/test",
             is_deleted=False,
         )
     ],
 )
 @patch(
-    "app.services.supplier_provider.api_provider.SupplierApiProvider.get_one_supplier",
-    return_value=SupplierDto(
-        id="test-supplier",
-        name="Test Supplier",
+    "app.services.directory_provider.api_provider.DirectoryApiProvider.get_one_directory",
+    return_value=DirectoryDto(
+        id="test-directory",
+        name="Test Directory",
         endpoint="http://testserver/test",
         is_deleted=False,
     ),
@@ -202,8 +202,8 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
 def test_stress_test_update(
     mock_do_request: requests.Response,
     mock_get_history_batch: Tuple[URL | None, List[BundleEntry]],
-    mock_get_all_suppliers: List[SupplierDto],
-    mock_get_one_supplier: SupplierDto,
+    mock_get_all_directories: List[DirectoryDto],
+    mock_get_one_directory: DirectoryDto,
     api_client: TestClient,
     resource_count: int,
     version_count: int,
@@ -239,8 +239,8 @@ def test_stress_test_update(
         monitor_thread.start()
         for iteration in range(iterations):
             print(f"Iteration {iteration + 1}/{iterations}")
-            with get_stats().timer("mcsd.update_supplier"):
-                _response = api_client.post("/update_resources/test-supplier")
+            with get_stats().timer("mcsd.update_directory"):
+                _response = api_client.post("/update_resources/test-directory")
             print(f"Update done: mCSD resources are updated: {_response.json()}")
     finally:
         monitoring = False
@@ -271,7 +271,7 @@ def test_stress_test_update(
         if method != "DELETE"
     }
 
-    assert check_if_in_db(supplier_id="test-supplier", ids_set=final_resources) == 0
+    assert check_if_in_db(directory_id="test-directory", ids_set=final_resources) == 0
 
     print("Generating test report")
 
@@ -282,12 +282,12 @@ def test_stress_test_update(
 
     true_update_durations = []
     patch_durations = []
-    for idx, item in enumerate(report["mcsd.update_supplier"]):
+    for idx, item in enumerate(report["mcsd.update_directory"]):
         patch_durations.append(sum(report[f"{idx}.patch_timing"]))
         true_update_durations.append(item - sum(report[f"{idx}.patch_timing"]))
 
     durations = {
-        "total": report["mcsd.update_supplier"],
+        "total": report["mcsd.update_directory"],
         "true_update": true_update_durations,
         "patch": patch_durations,
     }
