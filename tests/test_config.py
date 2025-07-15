@@ -74,6 +74,8 @@ def get_test_config() -> Config:
             directory_stale_timeout="120s",
             cleanup_client_directory_after_success_timeout="3d",
             cleanup_client_directory_after_directory_delete=True,
+            ignore_directory_after_success_timeout="120s",
+            ignore_directory_after_failed_attempts_threshold=5,
         ),
         external_cache=ConfigExternalCache(),
     )

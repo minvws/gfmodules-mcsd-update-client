@@ -23,15 +23,17 @@ class ConfigApp(BaseModel):
 
 
 class Scheduler(BaseModel):
-    delay_input: str
-    max_logs_entries: int
+    delay_input: str = Field(default="30s")
+    max_logs_entries: int = Field(default=1000, ge=0)
     automatic_background_update: bool = Field(default=True)
     automatic_background_cleanup: bool = Field(default=True)
-    directory_stale_timeout: str
-    cleanup_client_directory_after_success_timeout: str
+    directory_stale_timeout: str = Field(default="5m")
+    cleanup_client_directory_after_success_timeout: str = Field(default="30d")
     cleanup_client_directory_after_directory_delete: bool = Field(
         default=True,
     )
+    ignore_directory_after_success_timeout: str = Field(default="10m")
+    ignore_directory_after_failed_attempts_threshold: int = Field(default=20)
 
     @computed_field
     def delay_input_in_sec(self) -> int:
@@ -44,6 +46,10 @@ class Scheduler(BaseModel):
     @computed_field
     def cleanup_client_directory_after_success_timeout_in_sec(self) -> int:
         return self._convert_to_sec(self.cleanup_client_directory_after_success_timeout)
+    
+    @computed_field
+    def ignore_directory_after_success_timeout_in_sec(self) -> int:
+        return self._convert_to_sec(self.ignore_directory_after_success_timeout)
 
     def _convert_to_sec(self, value: str) -> int:
         conversion_map = {"s": 1, "m": 60, "h": 3600, "d": 86400}

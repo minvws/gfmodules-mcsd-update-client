@@ -66,11 +66,7 @@ class AdjacencyMapService:
 
         for entry in update_client_entries:
             _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
-            print("\n#####@@@@@@@@@###########")
-            print(id)
             res_id = id.replace(f"{self.directory_id}-", "")
-            print(res_id)
-            print("#####@@@@@@@@@###########\n")
             node = adj_map.data[res_id]
             node.update_client_hash = self.__computation_service.hash_update_client_entry(entry)
 

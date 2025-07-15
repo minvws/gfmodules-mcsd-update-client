@@ -23,6 +23,8 @@ class MassUpdateClientService:
         stats: Stats,
         directory_cache_service: DirectoryCacheService,
         cleanup_client_directory_after_directory_delete: bool,
+        ignore_directory_after_success_timeout_seconds: int,
+        ignore_directory_after_failed_attempts_threshold: int,
     ) -> None:
         self.__directory_provider = directory_provider
         self.__update_client_service = update_client_service
@@ -32,6 +34,8 @@ class MassUpdateClientService:
         self.__stats = stats
         self.__directory_cache_service = directory_cache_service
         self.__cleanup_client_directory_after_directory_delete = cleanup_client_directory_after_directory_delete 
+        self.__ignore_directory_after_success_timeout_seconds = ignore_directory_after_success_timeout_seconds
+        self.__ignore_directory_after_failed_attempts_threshold = ignore_directory_after_failed_attempts_threshold
 
 
     def update_all(self) -> list[dict[str, Any]]:
@@ -66,22 +70,41 @@ class MassUpdateClientService:
     
     def cleanup_old_directories(self) -> None:
         with self.__stats.timer("cleanup_old_directories"):
-            directories = self.__directory_info_service.get_all_directories_info()
+            directories = self.__directory_info_service.get_all_directories_info(include_ignored=True) # WITH ignored ones
             for directory_info in directories:
-                if directory_info.last_success_sync is not None:
+                dir_id = directory_info.directory_id
+                is_not_ignored = self.__ignored_directory_service.get_ignored_directory(directory_id=dir_id) is None
+                
+                if directory_info.last_success_sync is not None: # Process directories that have been synced at least once
                     elapsed_time = (datetime.now(timezone.utc) - directory_info.last_success_sync.astimezone(timezone.utc)).total_seconds()
-                    if elapsed_time > self.__cleanup_client_directory_after_success_timeout_seconds:
-                        logging.info(f"Cleaning up directory for outdated directory {directory_info.directory_id}")
-                        self.__update_client_service.cleanup(directory_info.directory_id)
-                        self.__ignored_directory_service.add_directory_to_ignore_list(directory_info.directory_id)
-            
-             # Delete all deleted directories
+
+                    directory_is_stale = elapsed_time > self.__ignore_directory_after_success_timeout_seconds and is_not_ignored
+                    directory_is_obsolete = elapsed_time > self.__cleanup_client_directory_after_success_timeout_seconds
+
+                    if directory_is_stale: # Ignore directories that are not ignored and have not been updated for a certain time
+                        logging.warning(f"Directory {dir_id} has not been updated for {elapsed_time} seconds, ignoring it.")
+                        self.__ignored_directory_service.add_directory_to_ignore_list(dir_id) # Add to ignored directories
+
+                    if directory_is_obsolete: # Cleanup directories that have not been updated for a certain time
+                        logging.info(f"Cleaning up directory for outdated directory {dir_id}")
+                        self.__delete_data(dir_id)
+                        
+                else: # Process directories that have never been synced successfully
+                    if directory_info.failed_attempts >= self.__ignore_directory_after_failed_attempts_threshold and is_not_ignored:
+                        logging.warning(f"Directory {dir_id} has failed {directory_info.failed_attempts} times and will be ignored.")
+                        self.__ignored_directory_service.add_directory_to_ignore_list(dir_id) # Add to ignored directories
+
+            # Delete all deleted directories
             if not self.__cleanup_client_directory_after_directory_delete:
                 logging.info("Skipping cleanup of deleted directories as per configuration.")
                 return
             deleted_directories = self.__directory_cache_service.get_deleted_directories()
             for directory in deleted_directories:
                 logging.info(f"Cleaning up deleted directory {directory.id}")
-                self.__update_client_service.cleanup(directory.id)
-                self.__directory_info_service.delete_directory_info(directory.id)
-                self.__directory_cache_service.delete_directory_cache(directory.id)
+                self.__delete_data(directory.id)
+
+    def __delete_data(self, directory_id: str) -> None:
+        """Delete all data related to a directory."""
+        self.__directory_info_service.delete_directory_info(directory_id)
+        self.__directory_cache_service.delete_directory_cache(directory_id)
+        self.__update_client_service.cleanup(directory_id)

@@ -69,6 +69,8 @@ def container_config(binder: inject.Binder) -> None:
         stats=get_stats(),
         directory_cache_service=directory_cache_service,
         cleanup_client_directory_after_directory_delete=config.scheduler.cleanup_client_directory_after_directory_delete,
+        ignore_directory_after_success_timeout_seconds=config.scheduler.ignore_directory_after_success_timeout_in_sec,  # type: ignore
+        ignore_directory_after_failed_attempts_threshold=config.scheduler.ignore_directory_after_failed_attempts_threshold,
     )
 
     update_scheduler = Scheduler(
