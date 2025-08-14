@@ -137,7 +137,7 @@ jobs:
                 path: coverage.xml
 
     sonar:
-        name: SonarCloud
+        name: SonarQube
         runs-on: ubuntu-latest
         needs: test
         steps:
@@ -147,8 +147,8 @@ jobs:
                 fetch-depth: 0
             - name: Download coverage report
               uses: actions/download-artifact@v4
-            - name: Run SonarCloud scanner
-              uses: ./.github/actions/sonarcloud
+            - name: Run SonarQube scanner
+              uses: minvws/action-sonarqube@v1
               with:
                 sonar-token: ${{ secrets.SONAR_TOKEN }}
 
