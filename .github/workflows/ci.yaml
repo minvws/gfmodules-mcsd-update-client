@@ -98,7 +98,6 @@ jobs:
     test:
         name: Run the tests
         runs-on: ubuntu-22.04
-        container: python:3.11-bookworm
         needs: build
         services:
           postgres:
