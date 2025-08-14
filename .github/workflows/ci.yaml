@@ -18,7 +18,7 @@ jobs:
 
         steps:
             - name: Checkout repositories
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Run build action
               uses: ./.github/actions/poetry-install
@@ -32,7 +32,7 @@ jobs:
 
         steps:
             - name: Checkout repositories
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Run build action
               uses: ./.github/actions/poetry-install
@@ -49,7 +49,7 @@ jobs:
 
         steps:
             - name: Checkout repositories
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Run build action
               uses: ./.github/actions/poetry-install
@@ -66,7 +66,7 @@ jobs:
 
         steps:
             - name: Checkout repositories
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Run build action
               uses: ./.github/actions/poetry-install
@@ -83,7 +83,7 @@ jobs:
 
         steps:
             - name: Checkout repositories
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Run build action
               uses: ./.github/actions/poetry-install
@@ -115,7 +115,7 @@ jobs:
 
         steps:
             - name: Checkout repositories
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Run build action
               uses: ./.github/actions/poetry-install
@@ -142,7 +142,7 @@ jobs:
         needs: test
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
               with:
                 fetch-depth: 0
             - name: Download coverage report
@@ -160,7 +160,7 @@ jobs:
           all_modified_files: ${{ steps.changed-files.outputs.all_modified_files }}
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
             - name: Get changed files
               id: changed-files
               uses: tj-actions/changed-files@ed68ef82c095e0d48ec87eccea555d944a631a4c # v46
@@ -178,7 +178,7 @@ jobs:
         needs: [build, lint, type-check, safety-check, spelling-check, test, detect_modified_files]
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Log in to the Container registry
               uses: docker/login-action@v3
