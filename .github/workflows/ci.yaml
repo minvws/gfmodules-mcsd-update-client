@@ -121,11 +121,6 @@ jobs:
               with:
                 python_version: "3.11"
 
-            - name: Install dependencies
-              run: |
-                apt-get update
-                apt-get install --yes --no-install-recommends postgresql-client
-
             - name: Run the tests
               run: poetry run $(make test --just-print --silent)
 
