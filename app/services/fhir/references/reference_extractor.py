@@ -12,7 +12,12 @@ from fhir.resources.R4B.practitionerrole import PractitionerRole
 
 
 def extract_references(data: Any) -> Reference | None:
+    """
+    Extracts a Reference from the given data if it contains a "reference" field, or when the
+    data is already a Reference object with a valid reference.
+    """
     if isinstance(data, dict):
+        # '#' is a local reference we already have, so we don't need to extract
         if "reference" in data and data["reference"][0] != "#":
             return Reference.model_construct(**data)
 
@@ -32,15 +37,18 @@ def _get_org_references(model: Organization) -> List[Reference]:
             ref = extract_references(endpoint)
             if ref is not None:
                 refs.append(ref)
+
     if part_of is not None:
         new_ref = extract_references(part_of)
         if new_ref is not None:
             refs.append(new_ref)
+
     return refs
 
 
 def _get_endpoint_references(model: Endpoint) -> List[Reference]:
     refs: List[Reference] = []
+
     managing_org = model.managingOrganization
     if managing_org is not None:
         new_ref = extract_references(managing_org)

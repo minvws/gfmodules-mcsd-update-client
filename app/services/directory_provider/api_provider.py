@@ -13,14 +13,17 @@ from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.endpoint import Endpoint
 
+from app.services.fhir.references.reference_misc import ReferenceType, get_reference_type, is_same_origin
+
 logger = logging.getLogger(__name__)
 
 
 class DirectoryApiProvider(DirectoryProvider):
-    def __init__(self, fhir_api: FhirApi, ignored_directory_service: IgnoredDirectoryService) -> None:
+    def __init__(self, fhir_api: FhirApi, ignored_directory_service: IgnoredDirectoryService, provider_url: str) -> None:
         self.__fhir_api = fhir_api
         self.__fhir_service = FhirService(strict_validation=False)
         self.__ignored_directory_service = ignored_directory_service
+        self.__provider_url = provider_url
 
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
         return self.__fetch_directories(include_ignored=include_ignored, include_ignored_ids=None)
@@ -129,6 +132,9 @@ class DirectoryApiProvider(DirectoryProvider):
         name = org.name
         id = directory_id or org.id
         endpoint_address = self.__get_endpoint_address(org, endpoint_map)
+        if endpoint_address is None:
+            logger.warning(f"Organization {org.id} has no valid endpoint address.")
+            return None
 
         if not all(isinstance(val, str) and val for val in [name, id, endpoint_address]):
             logger.warning(f"Invalid directory data for ID {id}. Skipping.")
@@ -137,19 +143,32 @@ class DirectoryApiProvider(DirectoryProvider):
         return DirectoryDto(
             id=id,
             name=name,
-            endpoint=endpoint_address, # type:ignore
+            endpoint=endpoint_address,
             is_deleted=False,
         )
 
     def __get_endpoint_address(self, org: Organization, endpoint_map: Dict[str, Endpoint]) -> str | None:
         if org.endpoint is None:
             return None
-        ref = self.__fhir_service.get_references(org) if org.endpoint else None
-        if ref:
-            first_ref = ref[0]
-            if not first_ref.reference.startswith("Endpoint/"):
-                logger.warning(f"Unexpected reference format: {first_ref.reference}")
+
+        if len(org.endpoint) > 1:
+            logger.warning(f"Organization {org.id} has multiple endpoints, using the first one.")
+
+        ref = org.endpoint[0]
+
+        # Relative references are expected to be in the format "Endpoint/{id}"
+        if get_reference_type(ref) == ReferenceType.RELATIVE:
+            if not ref.reference.startswith("Endpoint/"):
+                logger.warning(f"Unexpected reference format: {ref.reference}")
                 return None
-            endpoint = endpoint_map.get(first_ref.reference.split("/")[-1])
+            endpoint = endpoint_map.get(ref.reference.split("/")[-1])
             return str(endpoint.address) if endpoint else None
+
+        # Absolute references should be checked against the directory API's origin
+        elif get_reference_type(ref) == ReferenceType.ABSOLUTE:
+            if not is_same_origin(ref.reference, self.__provider_url):
+                logger.warning(f"Endpoint reference {ref.reference} is not from the same origin as the directory API.")
+                return None
+            return str(ref.reference)
+
         return None

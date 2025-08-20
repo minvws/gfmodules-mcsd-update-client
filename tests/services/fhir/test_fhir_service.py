@@ -24,7 +24,7 @@ from tests.services.fhir.conftest import (
 
 
 @pytest.mark.parametrize("data", incomplete_resources)
-def test_create_resource_should_succeeed_when_strict_mode_is_off(
+def test_create_resource_should_succeed_when_strict_mode_is_off(
     fhir_service: FhirService, data: Dict[str, Any]
 ) -> None:
     actual = fhir_service.create_resource(data)

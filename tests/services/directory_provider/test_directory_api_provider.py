@@ -15,12 +15,14 @@ from app.services.directory_provider.api_provider import DirectoryApiProvider
 def mock_fhir_api() -> MagicMock:
     return MagicMock(spec=FhirApi)
 
+@pytest.fixture
+def provider_url() -> str:
+    return "https://base_url.example.com/fhir"
 
 @pytest.fixture
-def api_provider(mock_fhir_api: MagicMock, ignored_directory_service: IgnoredDirectoryService
+def api_provider(mock_fhir_api: MagicMock, ignored_directory_service: IgnoredDirectoryService, provider_url: str
 ) -> DirectoryApiProvider:
-    return DirectoryApiProvider(mock_fhir_api, ignored_directory_service)
-
+    return DirectoryApiProvider(mock_fhir_api, ignored_directory_service, provider_url)
 
 
 def __mock_bundle_entry() -> List[BundleEntry]:
@@ -68,6 +70,47 @@ def __mock_bundle_entry() -> List[BundleEntry]:
         ),
     ]
 
+def __mock_bundle_entry2() -> List[BundleEntry]:
+    return [
+        BundleEntry(
+            resource=Organization(
+                id="test-org-12346",
+                identifier=[
+                    {
+                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
+                        "value": "12345678",
+                    }
+                ],
+                name="Example Organization",
+                endpoint=[
+                    {
+                        "reference": "https://another-origin.example.com/foo/bar",
+                    }
+                ],
+            )
+        ),
+    ]
+
+def __mock_bundle_entry3() -> List[BundleEntry]:
+    return [
+        BundleEntry(
+            resource=Organization(
+                id="test-org-12347",
+                identifier=[
+                    {
+                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
+                        "value": "12345678",
+                    }
+                ],
+                name="Example Organization",
+                endpoint=[
+                    {
+                        "reference": "https://base_url.example.com/fhir/foo/bar",
+                    }
+                ],
+            )
+        ),
+    ]
 
 def test_get_all_directories_should_ignore_ignored_if_specified(
     api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock, ignored_directory_service: IgnoredDirectoryService
@@ -162,3 +205,33 @@ def test_get_one_directory_should_return_none_if_not_found(
     mock_fhir_api.search_resource.side_effect = Exception("Not Found")
     with pytest.raises(Exception):
         api_provider.get_one_directory("non-existing-id")
+
+def test_absolute_endpoint_with_different_origin(
+    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock
+) -> None:
+    """
+    mock bundle has an organization with an absolute endpoint, but a different origin than
+    the provider URL. It should not be included in the results.
+    """
+    mock_fhir_api.search_resource.return_value = (
+        None,
+        __mock_bundle_entry2()
+    )
+    result = api_provider.get_all_directories()
+    assert result is not None
+    assert len(result) == 0
+
+def test_absolute_endpoint_with_same_origin(
+    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock, provider_url: URL
+) -> None:
+    """
+    mock bundle has an organization with an absolute endpoint that matches the origin of the provider URL.
+    """
+    mock_fhir_api.search_resource.return_value = (
+        None,
+        __mock_bundle_entry3()
+    )
+    result = api_provider.get_all_directories()
+    assert result is not None
+    assert len(result) == 1
+    assert result[0].endpoint == f"{provider_url}/foo/bar"

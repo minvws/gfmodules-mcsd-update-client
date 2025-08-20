@@ -92,6 +92,11 @@ an app.conf mount.
 Both containers only differ in their init script and the default version usually will mount its own local src directory
 into the container's /src dir.
 
+## URL resolving of resources
+
+When resolving absolute URLs, the application will only resolve resource references according to the same-origin policy. 
+This means that the URL must have the same scheme, host and port as the resource.
+
 ## Contribution
 
 As stated in the [Disclaimer](#disclaimer) this project and all associated code serve solely as documentation and 
