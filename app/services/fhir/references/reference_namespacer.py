@@ -26,7 +26,7 @@ def _namespace_reference(data: Any, namespace: str) -> Reference | None:
     return ref
 
 
-def _namesapce_organization_references(
+def _namespace_organization_references(
     data: Organization, namespace: str
 ) -> Organization:
     endpoints = data.endpoint
@@ -244,7 +244,7 @@ def namespace_resource_reference(
 ) -> DomainResource:
     new_data = data
     if isinstance(data, Organization):
-        new_data = _namesapce_organization_references(data, namespace)
+        new_data = _namespace_organization_references(data, namespace)
 
     if isinstance(data, Endpoint):
         new_data = _namespace_endpoint_references(data, namespace)
