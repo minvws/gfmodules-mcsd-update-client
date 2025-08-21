@@ -65,10 +65,12 @@ class AdjacencyMapService:
         update_client_entries = self.get_update_client_data(update_client_targets)
 
         for entry in update_client_entries:
-            _, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
-            res_id = id.replace(f"{self.directory_id}-", "")
+            _, _id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
+            res_id = _id.replace(f"{self.directory_id}-", "")
             node = adj_map.data[res_id]
-            node.update_client_hash = self.__computation_service.hash_update_client_entry(entry)
+            node.update_client_hash = (
+                self.__computation_service.hash_update_client_entry(entry)
+            )
 
         for node in adj_map.data.values():
             if node.updated is True:
@@ -103,17 +105,19 @@ class AdjacencyMapService:
     def get_directory_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
         return self.__get_entries(refs, self.__directory_api)
 
-    def get_update_client_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
+    def get_update_client_data(
+        self, refs: List[BundleRequestParams]
+    ) -> List[BundleEntry]:
         return self.__get_entries(refs, self.__update_client_api)
 
     def create_node(self, entry: BundleEntry) -> Node:
-        res_type, id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
+        res_type, _id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
         method = self.__fhir_service.get_request_method_from_entry(entry)
         directory_hash = self.__computation_service.hash_directory_entry(entry)
         references = self.create_node_references(entry)
 
         return Node(
-            resource_id=id,
+            resource_id=_id,
             resource_type=res_type,
             directory_hash=directory_hash,
             method=method,

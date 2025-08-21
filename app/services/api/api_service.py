@@ -3,7 +3,7 @@ import logging
 import time
 from typing import Dict, Any
 import requests
-from requests.exceptions import RequestException, Timeout, ConnectionError
+from requests.exceptions import Timeout, ConnectionError
 from yarl import URL
 
 from app.services.api.authenticators.authenticator import Authenticator
@@ -73,7 +73,6 @@ class ApiService(RequestService, ABC):
             except (
                 ConnectionError,
                 Timeout,
-                RequestException,
             ):
                 logger.warning(f"Failed to make request to {url} on attempt {attempt}")
 
@@ -122,7 +121,6 @@ class AuthenticationBasedApiService(RequestService, ABC):
             except (
                 ConnectionError,
                 Timeout,
-                RequestException,
             ):
                 logger.warning(f"Failed to make request to {url} on attempt {attempt}")
                 if attempt < self.retries - 1:

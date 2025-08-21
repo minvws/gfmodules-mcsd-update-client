@@ -20,15 +20,10 @@ def warning_message(resource: str, missing_field: str, placeholder: str) -> str:
 
 
 def create_model(model: Type[T], data: Dict[str, Any], strict: bool) -> T:
-    try:
-        if strict:
-            resource = model.model_validate(data)
-            return resource  # type: ignore
+    if strict:
+        return model.model_validate(data)  # type: ignore
 
-        resource = model.model_construct(**data)
-        return resource  # type: ignore
-    except ValidationError as e:
-        raise e
+    return model.model_construct(**data)  # type: ignore
 
 
 def create_organization(data: Dict[str, Any], strict: bool) -> Organization:

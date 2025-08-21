@@ -18,11 +18,11 @@ def _namespace_reference(data: Any, namespace: str) -> Reference | None:
     ref = extract_references(data)
     if ref is None or ref.reference is None:
         return None
-    res_type, id = get_resource_from_reference(ref.reference)
-    if res_type is None or id is None:
+    res_type, _id = get_resource_from_reference(ref.reference)
+    if res_type is None or _id is None:
         return None
 
-    ref.reference = f"{res_type}/{namespace}-{id}"
+    ref.reference = f"{res_type}/{namespace}-{_id}"
     return ref
 
 

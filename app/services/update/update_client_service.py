@@ -11,7 +11,11 @@ from app.services.update.cache.caching_service import (
 )
 from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from yarl import URL
-from app.models.resource_map.dto import ResourceMapDeleteDto, ResourceMapDto, ResourceMapUpdateDto
+from app.models.resource_map.dto import (
+    ResourceMapDeleteDto,
+    ResourceMapDto,
+    ResourceMapUpdateDto,
+)
 from app.models.adjacency.node import (
     Node,
 )
@@ -94,14 +98,16 @@ class UpdateClientService:
                     )
                 )
                 delete_bundle.total += 1
-                self.__resource_map_service.delete_one(ResourceMapDeleteDto(
-                    directory_id=directory_id,
-                    resource_type=res_type.value,
-                    directory_resource_id=res_map_item.directory_resource_id
-                ))
-            if delete_bundle.total > 0: # Final flush of remaining items
+                self.__resource_map_service.delete_one(
+                    ResourceMapDeleteDto(
+                        directory_id=directory_id,
+                        resource_type=res_type.value,
+                        directory_resource_id=res_map_item.directory_resource_id,
+                    )
+                )
+            if delete_bundle.total > 0:  # Final flush of remaining items
                 logging.info(
-                        f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
+                    f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
                 )
                 self.__update_client_fhir_api.post_bundle(delete_bundle)
                 delete_bundle = Bundle(
@@ -157,11 +163,11 @@ class UpdateClientService:
             next_url, history = directory_fhir_api.get_history_batch(next_url)
             targets = []
             for e in history:
-                _, id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
-                if id is not None:
-                    if self.__cache.key_exists(id):
+                _, _id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
+                if _id is not None:
+                    if self.__cache.key_exists(_id):
                         logger.info(
-                            f"{id} {resource_type} already processed.. skipping.. "
+                            f"{_id} {resource_type} already processed.. skipping.. "
                         )
                         continue
                     targets.append(e)

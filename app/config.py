@@ -1,7 +1,7 @@
 from enum import Enum
 import configparser
 import re
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError, computed_field, field_validator
 
@@ -46,7 +46,7 @@ class Scheduler(BaseModel):
     @computed_field
     def cleanup_client_directory_after_success_timeout_in_sec(self) -> int:
         return self._convert_to_sec(self.cleanup_client_directory_after_success_timeout)
-    
+
     @computed_field
     def ignore_directory_after_success_timeout_in_sec(self) -> int:
         return self._convert_to_sec(self.ignore_directory_after_success_timeout)
@@ -128,7 +128,7 @@ class ConfigStats(BaseModel):
 
 class ConfigMcsd(BaseModel):
     update_client_url: str
-    authentication: Union[str] = Field(
+    authentication: str = Field(
         default="off",
         description="Enable authentication, can be 'off', 'oauth2', or 'azure_oauth2'",
     )

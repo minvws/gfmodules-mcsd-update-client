@@ -64,7 +64,7 @@ class FhirService:
         """
         return split_reference(data)
 
-    def create_bundle(self, data: Dict[str, Any] | None = None) -> Bundle:
+    def create_bundle(self, data: Dict[str, Any]) -> Bundle:
         """
         Returns a Bundle instance from a Dict object
         """
