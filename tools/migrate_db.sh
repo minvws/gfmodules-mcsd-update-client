@@ -9,7 +9,7 @@ NC="\033[0m"
 
 echo -e "${GREEN}👀 Checking migrations ${NC}"
 
-source <(grep dsn app.conf | sed -r 's/\+psycopg//')
+source <(grep dsn app.conf | sed -r 's/\+psycopg//' | sed 's/=/="/; s/$/"/')
 
 # check if the migration table exists
 if

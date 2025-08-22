@@ -7,7 +7,7 @@ YELLOW="\033[33m"
 BLUE="\033[34m"
 NC="\033[0m"
 
-source <(grep dsn app.conf | sed -r 's/\+psycopg//')
+source <(grep dsn app.conf | sed -r 's/\+psycopg//' | sed 's/=/="/; s/$/"/')
 
 echo -e "${GREEN}👀 Checking seed migrations ${NC}"
 
