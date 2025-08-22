@@ -17,6 +17,7 @@ from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
 from app.services.update.adjacency_map_service import AdjacencyMapService
+from app.services.update.cache.external import ExternalCachingService
 from app.services.update.cache.in_memory import InMemoryCachingService
 from app.services.update.computation_service import ComputationService
 from tests.test_config import get_test_config
@@ -43,7 +44,9 @@ def directory_info_service(database: Database, config: Config) -> DirectoryInfoS
 
 
 @pytest.fixture()
-def directory_cache_service(database: Database, config: Config) -> DirectoryCacheService:
+def directory_cache_service(
+    database: Database, config: Config
+) -> DirectoryCacheService:
     set_config(config)
     return DirectoryCacheService(database=database)
 
@@ -193,6 +196,13 @@ def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
 @pytest.fixture()
 def in_memory_cache_service() -> InMemoryCachingService:
     return InMemoryCachingService(uuid4())
+
+
+@pytest.fixture()
+def external_caching_service() -> ExternalCachingService:
+    return ExternalCachingService(
+        run_id=uuid4(), host="http://example.com", port=8000, ssl_check_hostname=False
+    )
 
 
 @pytest.fixture()

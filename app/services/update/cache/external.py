@@ -1,5 +1,5 @@
 from typing import List
-from redis import Redis
+from redis import Redis, ConnectionError
 from uuid import UUID
 from app.models.adjacency.node import Node
 from app.services.update.cache.caching_service import CachingService
@@ -41,8 +41,7 @@ class ExternalCachingService(CachingService):
         self.__redis.set(target_id, serialized_data)
 
     def key_exists(self, id: str) -> bool:
-        target_id = self.make_target_id(id)
-        return bool(self.__redis.exists(target_id))
+        return bool(self.__redis.exists(id))
 
     def clear(self) -> None:
         self.__redis.flushdb()
@@ -52,7 +51,7 @@ class ExternalCachingService(CachingService):
             healthy = self.__redis.ping()
             healthy = True
             return healthy
-        except Exception:
+        except ConnectionError:
             return False
 
     def keys(self) -> List[str]:
