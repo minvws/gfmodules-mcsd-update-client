@@ -47,6 +47,7 @@ class NoopStats(Stats):
         @contextmanager
         def noop_context_manager() -> Generator[Any, Any, Any]:
             yield
+
         return noop_context_manager()
 
 
@@ -71,7 +72,6 @@ class MemoryClient:
         if stat not in self.memory:
             self.memory[stat] = 0
         self.memory[stat] += count
-
 
     def decr(self, stat: str, count: int = 1, rate: int = 1) -> None:
         """Decrement a stat by `count`. | Warning: Own implementation, not from statsd."""
@@ -117,7 +117,11 @@ def setup_stats() -> None:
     if config.stats.enabled is False:
         return
     in_memory = (config.stats.host is None and config.stats.port is None) or False
-    client = MemoryClient() if in_memory else statsd.StatsClient(config.stats.host, config.stats.port) 
+    client = (
+        MemoryClient()
+        if in_memory
+        else statsd.StatsClient(config.stats.host, config.stats.port)
+    )
     global _STATS
     _STATS = Statsd(client)
 
@@ -131,11 +135,14 @@ class StatsdMiddleware(BaseHTTPMiddleware):
     """
     Middleware to record request info and response time for each request
     """
+
     def __init__(self, app: ASGIApp, module_name: str):
         super().__init__(app)
         self.module_name = module_name
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         key = f"{self.module_name}.http.request.{request.method.lower()}.{request.url.path}"
         get_stats().inc(key)
 

@@ -70,24 +70,23 @@ def create_bundle(data: Dict[str, Any], strict: bool = False) -> Bundle:
         return Bundle.model_validate(data)
 
     bundle = Bundle.model_construct(type="")
-    if data is not None:
-        if "type" in data:
-            bundle.type = data["type"]
+    if "type" in data:
+        bundle.type = data["type"]
 
-        if "link" in data:
-            bundle.link = []
-            for link in data["link"]:
-                bundle_link = create_bundle_link(link)
-                bundle.link.append(bundle_link)
+    if "link" in data:
+        bundle.link = []
+        for link in data["link"]:
+            bundle_link = create_bundle_link(link)
+            bundle.link.append(bundle_link)
 
-        if "entry" in data:
-            bundle.entry = []
-            for entry in data["entry"]:
-                bundle.entry.append(create_bundle_entry(entry))
+    if "entry" in data:
+        bundle.entry = []
+        for entry in data["entry"]:
+            bundle.entry.append(create_bundle_entry(entry))
 
-        if "total" in data:
-            bundle.total = int(data["total"])
-        return bundle
+    if "total" in data:
+        bundle.total = int(data["total"])
+    return bundle
 
 
 def create_bundle_request(data: list[BundleRequestParams]) -> Bundle:
