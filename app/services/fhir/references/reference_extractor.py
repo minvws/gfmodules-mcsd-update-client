@@ -211,7 +211,7 @@ def _get_healthcare_service_references(model: HealthcareService) -> List[Referen
 
 
 def _make_unique(data: List[Reference]) -> List[Reference]:
-    unique_str = list(set([json.dumps(d.model_dump()) for d in data]))
+    unique_str = [*{*[json.dumps(d.model_dump()) for d in data]}]
     unique_dicts = [json.loads(i) for i in unique_str]
 
     return [Reference(**d) for d in unique_dicts]

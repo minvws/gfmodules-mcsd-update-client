@@ -7,7 +7,6 @@ from fhir.resources.R4B.bundle import (
     BundleLink,
     BundleEntrySearch,
 )
-from pydantic import ValidationError
 
 from app.models.fhir.types import BundleRequestParams
 from app.services.fhir.model_factory import create_resource
@@ -66,32 +65,29 @@ def create_bundle_entry(data: Dict[str, Any]) -> BundleEntry:
     return bundle_entry
 
 
-def create_bundle(data: Dict[str, Any] | None = None, strict: bool = False) -> Bundle:
-    try:
-        if strict:
-            return Bundle(**data) if data is not None else Bundle.model_construct()
+def create_bundle(data: Dict[str, Any], strict: bool = False) -> Bundle:
+    if strict:
+        return Bundle.model_validate(data)
 
-        bundle = Bundle.model_construct(type="")
-        if data is not None:
-            if "type" in data:
-                bundle.type = data["type"]
+    bundle = Bundle.model_construct(type="")
+    if data is not None:
+        if "type" in data:
+            bundle.type = data["type"]
 
-            if "link" in data:
-                bundle.link = []
-                for link in data["link"]:
-                    bundle_link = create_bundle_link(link)
-                    bundle.link.append(bundle_link)
+        if "link" in data:
+            bundle.link = []
+            for link in data["link"]:
+                bundle_link = create_bundle_link(link)
+                bundle.link.append(bundle_link)
 
-            if "entry" in data:
-                bundle.entry = list()
-                for entry in data["entry"]:
-                    bundle.entry.append(create_bundle_entry(entry))
+        if "entry" in data:
+            bundle.entry = []
+            for entry in data["entry"]:
+                bundle.entry.append(create_bundle_entry(entry))
 
-            if "total" in data:
-                bundle.total = int(data["total"])
+        if "total" in data:
+            bundle.total = int(data["total"])
         return bundle
-    except ValidationError as e:
-        raise e
 
 
 def create_bundle_request(data: list[BundleRequestParams]) -> Bundle:

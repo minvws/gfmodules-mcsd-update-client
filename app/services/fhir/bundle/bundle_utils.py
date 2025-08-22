@@ -69,14 +69,14 @@ def filter_history_entries(entries: List[BundleEntry]) -> List[BundleEntry]:
     results = []
     ids = []
     for entry in entries:
-        _, id = get_resource_type_and_id_from_entry(entry)
-        if id is None:
+        _, res_id = get_resource_type_and_id_from_entry(entry)
+        if res_id is None:
             continue
 
-        if id in ids:
+        if res_id in ids:
             continue
 
-        ids.append(id)
+        ids.append(res_id)
         results.append(entry)
 
     return results
