@@ -60,7 +60,7 @@ Follow the instructions to get the app running:
 
 ```bash
 cd example-setup-with-hapi
-docker compose up
+./setup-demo.sh
 ```
 
 This will configure the whole system for you and you should be able to use the
@@ -73,7 +73,7 @@ In a terminal in the same `example-setup-with-hapi` folder run the following com
 with a url parameter you can specify the base url of the directory you want to seed:
 
 ```bash
-docker compose run --rm mcsd-update-client poetry run seed http://hapi-directory:8080/fhir/
+docker compose exec mcsd-update-client python seeds/seed_hapi.py https://hapi-directory:8443/fhir/ true
 ```
 
 ## Docker container builds
