@@ -267,6 +267,9 @@ class ConfigMcsd(BaseModel):
     )
     request_count: int = Field(default=20)
     strict_validation: bool = Field(default=False)
+    mtls_client_cert_path: str | None = Field(default=None)
+    mtls_client_key_path: str | None = Field(default=None)
+    mtls_server_ca_path: str | None = Field(default=None)
 
     @field_validator("request_count", mode="before")
     def validate_request_count(cls, v: Any) -> int:
