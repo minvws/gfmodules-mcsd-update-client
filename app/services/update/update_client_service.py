@@ -53,6 +53,10 @@ class UpdateClientService:
         resource_map_service: ResourceMapService,
         auth: Authenticator,
         cache_provider: CacheProvider,
+        use_mtls: bool = True,
+        client_cert_file: str | None = None,
+        client_key_file: str | None = None,
+        client_ca_file: str | None = None,
     ) -> None:
         self.strict_validation = strict_validation
         self.timeout = timeout
@@ -62,7 +66,7 @@ class UpdateClientService:
         self.auth = auth
         self.__resource_map_service = resource_map_service
         self.__update_client_fhir_api = FhirApi(
-            timeout, backoff, auth, update_client_url, request_count, strict_validation
+            timeout, backoff, auth, update_client_url, request_count, strict_validation, use_mtls, client_cert_file, client_key_file, client_ca_file
         )
         self.__fhir_service = FhirService(strict_validation)
         self.__cache_provider = cache_provider
@@ -144,6 +148,9 @@ class UpdateClientService:
             request_count=self.request_count,
             strict_validation=self.strict_validation,
             url=directory.endpoint,
+            use_mtls=self.__update_client_fhir_api.use_mtls,
+            client_cert_file=self.__update_client_fhir_api.client_cert_file,
+            client_key_file=self.__update_client_fhir_api.client_key_file,
         )
 
         adjacency_map_service = AdjacencyMapService(

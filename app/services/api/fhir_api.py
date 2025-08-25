@@ -25,8 +25,12 @@ class FhirApi(AuthenticationBasedApiService):
         url: str,
         request_count: int,
         strict_validation: bool,
+        use_mtls: bool = True,
+        client_cert_file: str | None = None,
+        client_key_file: str | None = None,
+        client_ca_file: str | None = None,
     ):
-        super().__init__(timeout=timeout, backoff=backoff, auth=auth, retries=5)
+        super().__init__(timeout=timeout, backoff=backoff, auth=auth, retries=5, use_mtls=use_mtls, client_cert_file=client_cert_file, client_key_file=client_key_file, client_ca_file=client_ca_file)
         self.__base_url = url
         self.__request_count = request_count
         self.__fhir_service = FhirService(strict_validation=strict_validation)
