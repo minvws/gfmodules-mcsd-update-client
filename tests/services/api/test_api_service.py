@@ -86,3 +86,83 @@ def do_request_should_fail_with_unkown_request_methods(
 ) -> None:
     with pytest.raises(Exception):
         api_service.do_request("SOME METHOD", mock_url)
+
+
+@patch(PATCHED_MODULE)
+def test_do_request_should_use_mtls_cert_when_enabled(
+    mock_request: MagicMock,
+    mock_url: URL,
+) -> None:
+    api_service = ApiService(
+        timeout=10,
+        backoff=0.1,
+        retries=1,
+        use_mtls=True,
+        client_cert_file="test.crt",
+        client_key_file="test.key"
+    )
+    
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_request.return_value = mock_response
+
+    api_service.do_request("GET", mock_url)
+
+    mock_request.assert_called_once()
+    call_kwargs = mock_request.call_args[1]
+    assert call_kwargs["cert"] == ("test.crt", "test.key")
+    assert call_kwargs["verify"] is True
+
+
+@patch(PATCHED_MODULE)
+def test_do_request_should_use_ca_file_for_verification_when_provided(
+    mock_request: MagicMock,
+    mock_url: URL,
+) -> None:
+    api_service = ApiService(
+        timeout=10,
+        backoff=0.1,
+        retries=1,
+        use_mtls=True,
+        client_cert_file="test.crt",
+        client_key_file="test.key",
+        client_ca_file="ca.crt"
+    )
+    
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_request.return_value = mock_response
+
+    api_service.do_request("GET", mock_url)
+
+    mock_request.assert_called_once()
+    call_kwargs = mock_request.call_args[1]
+    assert call_kwargs["cert"] == ("test.crt", "test.key")
+    assert call_kwargs["verify"] == "ca.crt"
+
+
+@patch(PATCHED_MODULE)
+def test_do_request_should_not_use_cert_when_mtls_disabled(
+    mock_request: MagicMock,
+    mock_url: URL,
+) -> None:
+    api_service = ApiService(
+        timeout=10,
+        backoff=0.1,
+        retries=1,
+        use_mtls=False,
+        client_cert_file="test.crt",
+        client_key_file="test.key"
+    )
+    
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_request.return_value = mock_response
+
+    api_service.do_request("GET", mock_url)
+
+    mock_request.assert_called_once()
+    call_kwargs = mock_request.call_args[1]
+    assert call_kwargs["cert"] is None
+    assert call_kwargs["verify"] is False
+

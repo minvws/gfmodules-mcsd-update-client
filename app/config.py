@@ -134,6 +134,10 @@ class ConfigMcsd(BaseModel):
     )
     request_count: int = Field(default=20)
     strict_validation: bool = Field(default=False)
+    use_mtls: bool = Field(default=True)
+    client_cert_file: str = Field(default="client.crt")
+    client_key_file: str = Field(default="client.key")
+    client_ca_file: str = Field(default="ca.crt")
 
     @field_validator("authentication")
     def validate_authentication(cls, value: Any) -> str | bool:
