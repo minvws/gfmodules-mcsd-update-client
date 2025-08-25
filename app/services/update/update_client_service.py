@@ -1,6 +1,5 @@
 from datetime import datetime
 import time
-import copy
 from enum import Enum
 import logging
 from typing import List, Any
@@ -124,7 +123,7 @@ class UpdateClientService:
 
         for res in McsdResources:
             self.update_resource(directory, res.value, since)
-        results = copy.deepcopy([id for id in self.__cache.keys()])
+        results = self.__cache.keys()
         end_time = time.time()
         self.__end_cache_run()
 

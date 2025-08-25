@@ -124,8 +124,8 @@ def test_keys_should_return_list_of_keys_in_cache(
     expected_node_org: Node,
 ) -> None:
     target_id = external_caching_service.make_target_id(expected_node_org.resource_id)
-    expected = [target_id]
-    mock_scan_iter.return_value = expected
+    mock_scan_iter.return_value = [target_id.encode()]
+    expected = [expected_node_org.resource_id]
 
     actual = external_caching_service.keys()
 

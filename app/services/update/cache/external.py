@@ -55,4 +55,7 @@ class ExternalCachingService(CachingService):
             return False
 
     def keys(self) -> List[str]:
-        return [key for key in self.__redis.scan_iter()]
+        return [
+            key.decode("utf-8").replace(f"{self.run_id}-", "")
+            for key in self.__redis.scan_iter()
+        ]

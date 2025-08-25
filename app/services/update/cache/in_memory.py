@@ -30,7 +30,4 @@ class InMemoryCachingService(CachingService):
         self.__data = {}
 
     def keys(self) -> List[str]:
-        data = [key for key in self.__data.keys()]
-        results = list(map(lambda x: x.replace(f"{self.run_id}-", ""), data))
-
-        return results
+        return [key.replace(f"{self.run_id}-", "") for key in self.__data.keys()]
