@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict
+from urllib.parse import urlencode
 from requests.exceptions import ConnectionError
 from unittest.mock import patch, MagicMock
 
@@ -215,13 +216,13 @@ def test_search_resource_should_succeed(
     mock_org_history_bundle: Dict[str, Any],
     org_history_entry_1: Dict[str, Any],
     org_history_entry_2: Dict[str, Any],
-    mock_url: URL,
+    mock_url: str,
     mock_params: Dict[str, Any],
     fhir_api: FhirApi,
 ) -> None:
-    expected_url = mock_url.with_query(mock_params)
+    expected_url = f"{mock_url}?{urlencode(mock_params)}"
     mock_org_history_bundle["link"] = [
-        {"relation": "next", "url": mock_url.with_query(mock_params)}
+        {"relation": "next", "url": f"{mock_url}?{urlencode(mock_params)}"}
     ]
     mock_request = MagicMock()
     mock_request.status_code = 200
@@ -236,7 +237,7 @@ def test_search_resource_should_succeed(
         resource_type="Organization", params=mock_params
     )
 
-    assert (expected_url, expected_entries) == (actual_url, actual_entries)
+    assert (URL(expected_url), expected_entries) == (actual_url, actual_entries)
 
 
 @patch(PATCHED_MODULE)

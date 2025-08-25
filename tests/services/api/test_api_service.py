@@ -78,6 +78,7 @@ def test_do_request_with_authenticator_should_succeed(
     mock_request.status_code = 200
     mock_request.headers = mock_authentication_headers
     mock_request.auth = mock_auth
+
     mock_get.return_value = mock_request
 
     actual = http_service.do_request("GET")
@@ -173,6 +174,7 @@ def test_make_target_url_should_succeed_with_only_base_url(
 def test_make_target_url_should_work_with_params(
     http_service: HttpService,
     base_url: str,
+    mock_url: str,
     mock_sub_route: str,
     mock_params: Dict[str, Any],
 ) -> None:
@@ -181,3 +183,85 @@ def test_make_target_url_should_work_with_params(
     actual = http_service.make_target_url(sub_route=mock_sub_route, params=mock_params)
 
     assert expected == actual
+
+
+@patch(PATCHED_MODULE)
+def test_do_request_should_use_mtls_cert_when_enabled(
+    mock_request: MagicMock,
+    mock_url: str,
+) -> None:
+    api_service = HttpService(
+        base_url=mock_url,
+        timeout=10,
+        backoff=0.1,
+        retries=1,
+        mtls_cert="test.crt",
+        mtls_key="test.key",
+        mtls_ca="test.ca"
+    )
+    
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_request.return_value = mock_response
+
+    api_service.do_request("GET", mock_url)
+
+    mock_request.assert_called_once()
+    call_kwargs = mock_request.call_args[1]
+    assert call_kwargs["cert"] == ("test.crt", "test.key")
+    assert call_kwargs["verify"] == "test.ca"
+
+
+@patch(PATCHED_MODULE)
+def test_do_request_should_use_ca_file_for_verification_when_provided(
+    mock_request: MagicMock,
+    mock_url: str,
+) -> None:
+    api_service = HttpService(
+        base_url=mock_url,
+        timeout=10,
+        backoff=0.1,
+        retries=1,
+        mtls_cert="test.crt",
+        mtls_key="test.key",
+        mtls_ca="ca.crt"
+    )
+    
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_request.return_value = mock_response
+
+    api_service.do_request("GET", mock_url)
+
+    mock_request.assert_called_once()
+    call_kwargs = mock_request.call_args[1]
+    assert call_kwargs["cert"] == ("test.crt", "test.key")
+    assert call_kwargs["verify"] == "ca.crt"
+
+
+@patch(PATCHED_MODULE)
+def test_do_request_should_not_use_cert_when_mtls_disabled(
+    mock_request: MagicMock,
+    mock_url: str,
+) -> None:
+    api_service = HttpService(
+        base_url=mock_url,
+        timeout=10,
+        backoff=0.1,
+        retries=1,
+        mtls_cert=None,
+        mtls_key=None,
+        mtls_ca=None
+    )
+    
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_request.return_value = mock_response
+
+    api_service.do_request("GET", mock_url)
+
+    mock_request.assert_called_once()
+    call_kwargs = mock_request.call_args[1]
+    assert call_kwargs["cert"] is None
+    assert call_kwargs["verify"] is True
+

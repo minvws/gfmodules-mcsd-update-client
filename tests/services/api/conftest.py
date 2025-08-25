@@ -1,6 +1,5 @@
 from typing import Any, Dict, Final
 import pytest
-from yarl import URL
 
 from app.config import Config
 from app.services.api.api_service import (
@@ -43,8 +42,8 @@ def mock_sub_route() -> str:
 
 
 @pytest.fixture()
-def mock_url() -> URL:
-    return URL("http://example.com")
+def mock_url() -> str:
+    return "http://example.com"
 
 
 @pytest.fixture()
@@ -70,6 +69,9 @@ def http_service(base_url: str) -> HttpService:
         timeout=config.directory_api.timeout,
         backoff=config.directory_api.backoff,
         retries=1,
+        mtls_cert=config.mcsd.mtls_client_cert_path,
+        mtls_key=config.mcsd.mtls_client_key_path,
+        mtls_ca=config.mcsd.mtls_server_ca_path,
     )
 
 
