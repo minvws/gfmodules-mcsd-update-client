@@ -61,3 +61,11 @@ def test_make_target_id_should_succeed_and_return_namespaced_id(
     actual = in_memory_cache_service.make_target_id(expected_node_org.resource_id)
 
     assert expected == actual
+
+
+def test_is_healthy_should_always_be_true(
+    in_memory_cache_service: InMemoryCachingService,
+) -> None:
+    actual = in_memory_cache_service.is_healthy()
+
+    assert actual is True

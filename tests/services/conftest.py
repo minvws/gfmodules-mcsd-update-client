@@ -2,7 +2,7 @@ from uuid import uuid4
 from fhir.resources.R4B.bundle import Bundle
 import pytest
 from typing import Dict, Any, List
-from app.config import Config, set_config
+from app.config import Config, ConfigExternalCache, set_config
 from app.db.db import Database
 from app.models.adjacency.node import Node, NodeReference
 from app.services.api.fhir_api import FhirApi
@@ -19,6 +19,7 @@ from app.services.api.authenticators.null_authenticator import NullAuthenticator
 from app.services.update.adjacency_map_service import AdjacencyMapService
 from app.services.update.cache.external import ExternalCachingService
 from app.services.update.cache.in_memory import InMemoryCachingService
+from app.services.update.cache.provider import CacheProvider
 from app.services.update.computation_service import ComputationService
 from tests.test_config import get_test_config
 from tests.utils.utils import create_mock_node
@@ -203,6 +204,16 @@ def external_caching_service() -> ExternalCachingService:
     return ExternalCachingService(
         run_id=uuid4(), host="http://example.com", port=8000, ssl_check_hostname=False
     )
+
+
+@pytest.fixture()
+def mock_config_external_cache() -> ConfigExternalCache:
+    return ConfigExternalCache(host="http://example.com", port=8000)
+
+
+@pytest.fixture()
+def cache_provider(mock_config_external_cache: ConfigExternalCache) -> CacheProvider:
+    return CacheProvider(config=mock_config_external_cache)
 
 
 @pytest.fixture()
