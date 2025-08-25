@@ -5,6 +5,9 @@ from app.services.update.cache.caching_service import CachingService
 
 
 class InMemoryCachingService(CachingService):
+    """
+    Caching service that uses in-memory storage to store nodes.
+    """
     def __init__(self, run_id: UUID) -> None:
         self.__data: Dict[str, Node] = {}
         self.run_id = run_id

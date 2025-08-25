@@ -20,6 +20,9 @@ class DirectoryApiProvider(DirectoryProvider):
     def __init__(
         self, fhir_api: FhirApi, ignored_directory_service: IgnoredDirectoryService
     ) -> None:
+        """
+        Service to manage directories from a FHIR-based API.
+        """
         self.__fhir_api = fhir_api
         self.__fhir_service = FhirService(strict_validation=False)
         self.__ignored_directory_service = ignored_directory_service
@@ -29,9 +32,7 @@ class DirectoryApiProvider(DirectoryProvider):
             include_ignored=include_ignored, include_ignored_ids=None
         )
 
-    def get_all_directories_include_ignored(
-        self, include_ignored_ids: List[str]
-    ) -> List[DirectoryDto]:
+    def get_all_directories_include_ignored(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
         return self.__fetch_directories(
             include_ignored=False, include_ignored_ids=include_ignored_ids
         )
@@ -46,6 +47,8 @@ class DirectoryApiProvider(DirectoryProvider):
                 self.__ignored_directory_service.get_all_ignored_directories()
             )
 
+
+        # Keep on fetching until next_url is None (ie: no more pages)
         params = {
             "_include": "Organization:endpoint",
         }
@@ -124,9 +127,7 @@ class DirectoryApiProvider(DirectoryProvider):
             logger.warning(f"Check for deleted directory {directory_id} failed: {e}")
             return False
 
-    def __parse_bundle(
-        self, entries: BundleEntry
-    ) -> tuple[List[Organization], Dict[str, Endpoint]]:
+    def __parse_bundle(self, entries: BundleEntry) -> tuple[List[Organization], Dict[str, Endpoint]]:
         orgs: List[Organization] = []
         endpoint_map: Dict[str, Any] = {}
 
@@ -162,9 +163,7 @@ class DirectoryApiProvider(DirectoryProvider):
             is_deleted=False,
         )
 
-    def __get_endpoint_address(
-        self, org: Organization, endpoint_map: Dict[str, Endpoint]
-    ) -> str | None:
+    def __get_endpoint_address(self, org: Organization, endpoint_map: Dict[str, Endpoint]) -> str | None:
         if org.endpoint is None:
             return None
         ref = self.__fhir_service.get_references(org) if org.endpoint else None

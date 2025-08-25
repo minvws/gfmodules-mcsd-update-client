@@ -7,6 +7,9 @@ from app.services.directory_provider.directory_provider import DirectoryProvider
 
 
 class DirectoryJsonProvider(DirectoryProvider):
+    """
+    Service to manage directories from a JSON data source.
+    """
     directory_urls: List[DirectoryDto]
 
     def __init__(self, directories_json_data: List[DirectoryDto], ignored_directory_service: IgnoredDirectoryService) -> None:
@@ -20,8 +23,9 @@ class DirectoryJsonProvider(DirectoryProvider):
                 directory for directory in self.__directories
                 if not any(dir.directory_id == directory.id for dir in self.__ignored_directory_service.get_all_ignored_directories())
             ]
+
         return self.__directories
-    
+
     def get_all_directories_include_ignored(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
         ignored_directories = self.__ignored_directory_service.get_all_ignored_directories()
         return [

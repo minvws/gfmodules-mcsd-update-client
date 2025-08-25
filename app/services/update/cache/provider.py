@@ -10,6 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class CacheProvider:
+    """
+    Factory class to create a caching service based on the provided configuration.
+    """
     def __init__(self, config: ConfigExternalCache) -> None:
         self.__config = config
 

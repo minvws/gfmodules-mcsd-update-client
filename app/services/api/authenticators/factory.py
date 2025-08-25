@@ -8,6 +8,9 @@ from app.services.api.authenticators.azure_oauth2_authenticator import (
 
 
 class AuthenticatorFactory:
+    """
+    Factory class to create Authenticator instances based on configuration.
+    """
     def __init__(self, config: Config) -> None:
         self.__config = config
 

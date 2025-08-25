@@ -16,3 +16,4 @@ def split_reference(data: Reference) -> tuple[str, str]:
         )
 
     return parts[-2], parts[-1]
+

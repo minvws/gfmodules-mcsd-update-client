@@ -10,13 +10,17 @@ logger = logging.getLogger(__name__)
 
 
 class DirectoryInfoService:
-    def __init__(
-        self, database: Database, directory_stale_timeout_seconds: int
-    ) -> None:
+    """
+    Service to manage directory information in the database.
+    """
+    def __init__(self, database: Database, directory_stale_timeout_seconds: int) -> None:
         self.__database = database
         self.__directory_stale_timeout_seconds = directory_stale_timeout_seconds
 
     def delete_directory_info(self, directory_id: str) -> None:
+        """
+        Deletes a directory information entry by its ID.
+        """
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoRepository)
             info = repository.get(directory_id)
@@ -24,30 +28,42 @@ class DirectoryInfoService:
             session.commit()
 
     def get_directory_info(self, directory_id: str) -> DirectoryInfo:
+        """
+        Retrieves a directory information entry by its ID.
+        """
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoRepository)
             return repository.get(directory_id)
 
-    def get_all_directories_info(
-        self, include_ignored: bool = False
-    ) -> Sequence[DirectoryInfo]:
+    def get_all_directories_info(self, include_ignored: bool = False) -> Sequence[DirectoryInfo]:
+        """
+        Retrieves all directory information entries.
+        """
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoRepository)
             return repository.get_all(include_ignored=include_ignored)
 
     def update_directory_info(self, info: DirectoryInfo) -> None:
+        """
+        Updates a directory information entry.
+        """
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoRepository)
             repository.update(info)
 
     def health_check(self) -> bool:
+        """
+        Checks the health of all directories based on their last successful sync time.
+        """
         def is_directory_healthy(directory_info: DirectoryInfo) -> bool:
             if not directory_info.last_success_sync:
                 return False
+
             time_since_last_success = (
                 datetime.now(timezone.utc)
                 - directory_info.last_success_sync.astimezone(timezone.utc)
             ).total_seconds()
+
             return time_since_last_success < self.__directory_stale_timeout_seconds
 
         directories = self.get_all_directories_info()
@@ -56,6 +72,9 @@ class DirectoryInfoService:
         )
 
     def get_prometheus_metrics(self) -> List[str]:
+        """
+        Generates Prometheus metrics for directory information.
+        """
         lines = []
 
         lines.append("# HELP directory_failed_sync_total Total failed syncs")

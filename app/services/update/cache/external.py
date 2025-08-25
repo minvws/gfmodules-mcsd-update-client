@@ -6,6 +6,9 @@ from app.services.update.cache.caching_service import CachingService
 
 
 class ExternalCachingService(CachingService):
+    """
+    Caching service that uses an external Redis instance to store nodes.
+    """
     def __init__(
         self,
         run_id: UUID,

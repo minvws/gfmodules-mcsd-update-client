@@ -11,6 +11,9 @@ from app.models.resource_map.dto import (
 
 
 class ResourceMapService:
+    """
+    Service to manage resource maps in the database.
+    """
     def __init__(self, database: Database) -> None:
         self.__database = database
 
@@ -21,6 +24,9 @@ class ResourceMapService:
         directory_resource_id: str | None = None,
         update_client_resource_id: str | None = None,
     ) -> ResourceMap | None:
+        """
+        Retrieves a resource map based on provided parameters.
+        """
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
             params = {
@@ -41,6 +47,9 @@ class ResourceMapService:
         directory_resource_id: str | None = None,
         update_client_resource_id: str | None = None,
     ) -> ResourceMap:
+        """
+        Retrieves a single resource map based on provided parameters.
+        """
         resource_map = self.get(
             directory_id=directory_id,
             resource_type=resource_type,
@@ -59,6 +68,9 @@ class ResourceMapService:
         directory_resource_id: str | None = None,
         update_client_resource_id: str | None = None,
     ) -> Sequence[ResourceMap]:
+        """
+        Finds resource maps based on provided parameters.
+        """
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
             return repository.find(
@@ -69,6 +81,9 @@ class ResourceMapService:
             )
 
     def add_one(self, dto: ResourceMapDto) -> ResourceMap:
+        """
+        Adds a new resource map to the database.
+        """
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
             if repository.resource_map_exists(
@@ -83,6 +98,9 @@ class ResourceMapService:
             return repository.create(new_map)
 
     def update_one(self, dto: ResourceMapUpdateDto) -> ResourceMap:
+        """
+        Updates an existing resource map in the database.
+        """
         target = self.get_one(
             directory_id=dto.directory_id,
             resource_type=dto.resource_type,
@@ -95,6 +113,9 @@ class ResourceMapService:
             return repository.update(target)
 
     def delete_one(self, dto: ResourceMapDeleteDto) -> None:
+        """
+        Deletes a resource map from the database.
+        """
         target = self.get_one(
             directory_id=dto.directory_id,
             resource_type=dto.resource_type,

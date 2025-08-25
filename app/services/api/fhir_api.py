@@ -37,20 +37,25 @@ class FhirApi(AuthenticationBasedApiService):
             response = self.do_request(
                 "POST", url, jsonable_encoder(bundle.model_dump())
             )
+
             if response.status_code > 300:
                 logger.error(response.text)
                 raise HTTPException(status_code=500, detail=response.json())
+
             data = response.json()
             return self.__fhir_service.create_bundle(data)
         except Exception as e:
             logging.error(e)
             raise e
 
-    def search_resource(
-        self, resource_type: str, params: dict[str, Any]
-    ) -> tuple[URL | None, List[BundleEntry]]:
+    def search_resource(self, resource_type: str, params: dict[str, Any]) -> tuple[URL | None, List[BundleEntry]]:
+        """
+        Search for resources of a given type with specified parameters. Will return a tuple containing the next URL (if available)
+        and a list of BundleEntry objects. If the next url is empty, there are no more pages to fetch
+        """
         url = URL(f"{self.__base_url}/{resource_type}/_search").with_query(params)
         response = self.do_request("GET", url)
+
         if response.status_code > 300:
             logger.error(
                 f"An error with status code {response.status_code} has occurred from server. See response:\n{response.json()}"
@@ -67,16 +72,16 @@ class FhirApi(AuthenticationBasedApiService):
 
         return next_url, entries
 
-    def get_resource_by_id(
-        self, resource_type: str, resource_id: str
-    ) -> DomainResource:
+    def get_resource_by_id(self, resource_type: str, resource_id: str) -> DomainResource:
         url = URL(f"{self.__base_url}/{resource_type}/{resource_id}")
         response = self.do_request("GET", url)
+
         if response.status_code == 410:
             logger.warning(
                 f"Resource {resource_type}/{resource_id} has been deleted from the server."
             )
             raise HTTPException(status_code=410, detail="Resource has been deleted.")
+
         if response.status_code > 300:
             logger.error(
                 f"An error with status code {response.status_code} has occurred from server. See response:\n{response.json()}"
@@ -86,9 +91,10 @@ class FhirApi(AuthenticationBasedApiService):
         data = response.json()
         return self.__fhir_service.create_resource(data)
 
-    def build_base_history_url(
-        self, resource_type: str, since: datetime | None = None
-    ) -> URL:
+    def build_base_history_url(self, resource_type: str, since: datetime | None = None) -> URL:
+        """
+        Build the base URL for fetching resource history, with optional _since parameter.
+        """
         params: dict[str, int | str] = {"_count": self.__request_count}
         if since is not None:
             params["_since"] = since.isoformat()
@@ -96,10 +102,12 @@ class FhirApi(AuthenticationBasedApiService):
         url = URL(f"{self.__base_url}/{resource_type}/_history").with_query(params)
         return url
 
-    def get_history_batch(
-        self,
-        url: URL,
-    ) -> tuple[URL | None, List[BundleEntry]]:
+
+    def get_history_batch(self, url: URL) -> tuple[URL | None, List[BundleEntry]]:
+        """
+        Fetch a batch of resource history entries from the given URL. Will return a tuple containing the next URL (if available)
+        and a list of BundleEntry objects. If the next url is empty, there are no more pages to fetch
+        """
         response = self.do_request("GET", url)
         if response.status_code > 300:
             logger.error(

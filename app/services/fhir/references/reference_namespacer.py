@@ -15,6 +15,9 @@ from app.services.fhir.references.reference_extractor import extract_references
 
 
 def _namespace_reference(data: Any, namespace: str) -> Reference | None:
+    """
+    Finds a single reference in the data and converts it to namespaced references.
+    """
     ref = extract_references(data)
     if ref is None or ref.reference is None:
         return None
@@ -26,9 +29,12 @@ def _namespace_reference(data: Any, namespace: str) -> Reference | None:
     return ref
 
 
-def _namesapce_organization_references(
-    data: Organization, namespace: str
-) -> Organization:
+def _namespace_organization_references(data: Organization, namespace: str) -> Organization:
+    """
+    Finds all "part-of" and "endpoint" references in the data and converts them to namespaced references.
+
+    This will convert references like "Organization/123" to "Organization/namespace-123".
+    """
     endpoints = data.endpoint
     part_of = data.partOf
     if endpoints is not None:
@@ -47,6 +53,9 @@ def _namesapce_organization_references(
 
 
 def _namespace_endpoint_references(data: Endpoint, namespace: str) -> Endpoint:
+    """
+    Finds all "managing-organization" references in the data and converts them to namespaced references.
+    """
     managing_org = deepcopy(data.managingOrganization)
     if managing_org is not None:
         new_ref = _namespace_reference(managing_org, namespace)
@@ -155,9 +164,7 @@ def _namespace_practitioner_references(
     return data
 
 
-def _namespace_pratitioner_role(
-    data: PractitionerRole, namespace: str
-) -> PractitionerRole:
+def _namespace_pratitioner_role(data: PractitionerRole, namespace: str) -> PractitionerRole:
     practitioner = data.practitioner
     organization = data.organization
     locations = data.location
@@ -200,9 +207,7 @@ def _namespace_pratitioner_role(
     return data
 
 
-def _namespace_healthcare_service(
-    data: HealthcareService, namespace: str
-) -> HealthcareService:
+def _namespace_healthcare_service(data: HealthcareService, namespace: str) -> HealthcareService:
     provided_by = data.providedBy
     location = data.location
     coverage_area = data.coverageArea
@@ -239,12 +244,10 @@ def _namespace_healthcare_service(
     return data
 
 
-def namespace_resource_reference(
-    data: DomainResource, namespace: str
-) -> DomainResource:
+def namespace_resource_reference(data: DomainResource, namespace: str) -> DomainResource:
     new_data = data
     if isinstance(data, Organization):
-        new_data = _namesapce_organization_references(data, namespace)
+        new_data = _namespace_organization_references(data, namespace)
 
     if isinstance(data, Endpoint):
         new_data = _namespace_endpoint_references(data, namespace)

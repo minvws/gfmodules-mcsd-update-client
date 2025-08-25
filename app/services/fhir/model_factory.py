@@ -10,6 +10,10 @@ from fhir.resources.R4B.practitionerrole import PractitionerRole
 from fhir.resources.R4B.healthcareservice import HealthcareService
 from pydantic import ValidationError
 
+"""
+Factory functions to create FHIR mCSD resource models from generic dictionaries.
+"""
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=DomainResource)
@@ -20,6 +24,10 @@ def warning_message(resource: str, missing_field: str, placeholder: str) -> str:
 
 
 def create_model(model: Type[T], data: Dict[str, Any], strict: bool) -> T:
+    """
+    Creates a FHIR model from generic type T which is a subclass of DomainResource.
+    If strict is True, it will validate the data strictly, otherwise it will construct the model without validation.
+    """
     if strict:
         return model.model_validate(data)  # type: ignore
 
@@ -27,20 +35,21 @@ def create_model(model: Type[T], data: Dict[str, Any], strict: bool) -> T:
 
 
 def create_organization(data: Dict[str, Any], strict: bool) -> Organization:
+    """
+    Creates an Organization model from the provided data.
+    """
     return create_model(Organization, data, strict)
 
 
-def create_organization_affiliation(
-    data: Dict[str, Any], strict: bool
-) -> OrganizationAffiliation:
+def create_organization_affiliation(data: Dict[str, Any], strict: bool) -> OrganizationAffiliation:
     return create_model(OrganizationAffiliation, data, strict)
 
 
 def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
     if "payloadType" not in data:
         data["payloadType"] = []
-
         logger.warning(warning_message("Endpoint", "payloadType", "empty array"))
+
     if "address" not in data:
         data["address"] = ""
         logger.warning(warning_message("Endpoint", "address", "empty string"))
@@ -56,11 +65,9 @@ def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
         data["status"] = code
 
     if "connectionType" not in data:
-        logger.warning(
-            warning_message(
-                "Endpoint", "connectionType", "code system with warning text"
-            )
-        )
+        logger.warning(warning_message(
+            "Endpoint", "connectionType", "code system with warning text"
+        ))
         data["connectionType"] = {
             "conding": [{"system": "System not available"}],
             "text": "system was added dyrung update to bypass validation",
