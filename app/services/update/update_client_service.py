@@ -151,6 +151,7 @@ class UpdateClientService:
             use_mtls=self.__update_client_fhir_api.use_mtls,
             client_cert_file=self.__update_client_fhir_api.client_cert_file,
             client_key_file=self.__update_client_fhir_api.client_key_file,
+            client_ca_file=self.__update_client_fhir_api.client_ca_file,
         )
 
         adjacency_map_service = AdjacencyMapService(
