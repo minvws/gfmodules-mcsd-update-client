@@ -5,6 +5,9 @@ from app.models.adjacency.node import Node
 
 
 class CachingService(ABC):
+    """
+    Abstract base class for caching
+    """
     def __init__(self, run_id: UUID) -> None:
         self.run_id = run_id
         self.data: Dict[str, Node] = {}

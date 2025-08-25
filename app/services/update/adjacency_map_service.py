@@ -91,9 +91,7 @@ class AdjacencyMapService:
 
         return adj_map
 
-    def __get_entries(
-        self, refs: List[BundleRequestParams], fhir_api: FhirApi
-    ) -> List[BundleEntry]:
+    def __get_entries(self, refs: List[BundleRequestParams], fhir_api: FhirApi) -> List[BundleEntry]:
         bundle_request = self.__fhir_service.create_bundle_request(refs)
         res = self.__fhir_service.filter_history_entries(
             self.__fhir_service.get_entries_from_bundle_of_bundles(
@@ -243,9 +241,7 @@ class AdjacencyMapService:
                     f"node {node.resource_id} {node.resource_type} cannot be unknown at this stage"
                 )
 
-    def __get_update_client_missing_targets(
-        self, adj_map: AdjacencyMap
-    ) -> List[BundleRequestParams]:
+    def __get_update_client_missing_targets(self, adj_map: AdjacencyMap) -> List[BundleRequestParams]:
         update_client_targets = []
         for id, node in adj_map.data.items():
             if not self.__cache_service.key_exists(id):

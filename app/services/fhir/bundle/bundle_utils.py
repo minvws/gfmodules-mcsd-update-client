@@ -25,9 +25,7 @@ def get_resource_from_reference(reference: str) -> tuple[str | None, str | None]
     return parts[-2], parts[-1]
 
 
-def get_resource_type_and_id_from_entry(
-    entry: BundleEntry,
-) -> tuple[str, str]:
+def get_resource_type_and_id_from_entry(entry: BundleEntry) -> tuple[str, str]:
     """
     Retrieves the resource type and id from a Bundle entry
     """

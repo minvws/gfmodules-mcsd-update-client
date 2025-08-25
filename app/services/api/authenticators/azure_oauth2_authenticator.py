@@ -5,6 +5,9 @@ from app.services.api.authenticators.authenticator import Authenticator
 
 
 class AzureOAuth2Authenticator(Authenticator):
+    """
+    Authenticator for Azure services using OAuth2 client credentials flow.
+    """
     def __init__(
         self, token_url: str, client_id: str, client_secret: str, resource: str
     ) -> None:
@@ -16,9 +19,15 @@ class AzureOAuth2Authenticator(Authenticator):
         self.expiry = 0.0
 
     def get_auth(self) -> Any:
+        """
+        OAuth2 does not use a simple auth object.
+        """
         return None
 
     def get_authentication_header(self) -> str:
+        """
+        Returns a Bearer token for the Authorization header.
+        """
         if self.token is None or time.time() >= self.expiry:
             token_data = self.__get_token()
             self.token = str(token_data["access_token"])  # type: ignore

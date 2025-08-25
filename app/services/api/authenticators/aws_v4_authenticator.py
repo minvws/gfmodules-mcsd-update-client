@@ -6,14 +6,23 @@ import boto3
 
 
 class AwsV4Authenticator(Authenticator):
+    """
+    Authenticator for AWS services using AWS Signature Version 4.
+    """
     def __init__(self, profile: str, region: str) -> None:
         self.__profile = profile
         self.__region = region
 
     def get_authentication_header(self) -> str:
+        """
+        AWS Signature Version 4 does not use a simple header string.
+        """
         return ""
 
     def get_auth(self) -> Any:
+        """
+        Returns an AWS4Auth object for signing requests to AWS services.
+        """
         session = boto3.Session(profile_name=self.__profile, region_name=self.__region)
         credentials = session.get_credentials()
         auth = AWS4Auth(

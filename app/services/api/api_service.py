@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class RequestService(ABC):
+    """
+    Abstract base class for making HTTP requests with retry logic.
+    """
     def __init__(self, timeout: int, backoff: float, retries: int):
         self.__timeout = timeout
         self.__backoff = backoff
@@ -19,10 +22,16 @@ class RequestService(ABC):
 
     @property
     def retries(self) -> int:
+        """
+        Number of retries for failed requests.
+        """
         return self.__retries
 
     @retries.setter
     def retries(self, count: int) -> None:
+        """
+        Set the number of retries for failed requests.
+        """
         self.__retries = count
 
     @property
@@ -45,6 +54,9 @@ class RequestService(ABC):
     def do_request(
         self, method: str, url: URL, json: Dict[str, Any] | None = None
     ) -> requests.Response:
+        """
+        Perform an HTTP request.
+        """
         raise NotImplementedError
 
 
@@ -55,7 +67,7 @@ class ApiService(RequestService, ABC):
     def do_request(
         self, method: str, url: URL, json: Dict[str, Any] | None = None
     ) -> requests.Response:
-
+        # We always assume application/json as the content type
         headers = {"Content-Type": "application/json"}
 
         for attempt in range(self.retries):
@@ -76,6 +88,8 @@ class ApiService(RequestService, ABC):
             ):
                 logger.warning(f"Failed to make request to {url} on attempt {attempt}")
 
+                # Connection error or timeout, we can retry with an exponential backoff until
+                # we reach the max retries
                 if attempt < self.retries - 1:
                     logger.info(f"Retrying in {self.backoff * (2**attempt)} seconds")
                     time.sleep(self.backoff * (2**attempt))
@@ -85,6 +99,9 @@ class ApiService(RequestService, ABC):
 
 
 class AuthenticationBasedApiService(RequestService, ABC):
+    """
+    API service that uses an Authenticator for authenticated requests.
+    """
     def __init__(self, auth: Authenticator, timeout: int, backoff: float, retries: int):
         super().__init__(timeout, backoff, retries)
         self.__auth = auth
@@ -100,7 +117,14 @@ class AuthenticationBasedApiService(RequestService, ABC):
     def do_request(
         self, method: str, url: URL, json: Dict[str, Any] | None = None
     ) -> requests.Response:
+        """
+        Perform an HTTP request with authentication. Note that authentication can either be done
+        by a simple Authentication header, or by passing an auth object to the requests library.
+        This should cover most of the common authentication mechanisms.
+        """
         headers = {"Content-Type": "application/json"}
+
+        # Add authentication header if available
         auth_header = self.auth.get_authentication_header()
         if auth_header:
             headers["Authorization"] = auth_header
@@ -115,6 +139,7 @@ class AuthenticationBasedApiService(RequestService, ABC):
                     headers=headers,
                     json=json,
                     timeout=self.timeout,
+                    # Pass the auth object from the authenticator if available
                     auth=self.auth.get_auth(),
                 )
                 return response

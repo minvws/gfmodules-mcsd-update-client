@@ -8,6 +8,9 @@ from app.services.directory_provider.directory_provider import DirectoryProvider
 
 
 class CachingDirectoryProvider(DirectoryProvider):
+    """
+    Service to manage directories with caching mechanism.
+    """
     def __init__(
         self,
         directory_provider: DirectoryApiProvider,
@@ -17,10 +20,16 @@ class CachingDirectoryProvider(DirectoryProvider):
         self.__directory_cache_service = directory_cache_service
 
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
+        """
+        Returns a list of all directories, also including ignored ones if specified, otherwise these are filtered out.
+        """
         original_directories = self.__directory_cache_service.get_all_directories_caches(include_ignored=include_ignored)
         return self.__common_directory_cache_logic(include_ignored=include_ignored, original_directories=original_directories)
-    
+
     def get_all_directories_include_ignored(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
+        """
+        Returns a list of all directories including, if specified, the directories which id is in the ignore list, otherwise these are filtered out.
+        """
         original_directories = []
         if include_ignored_ids:
             original_directories = self.__directory_cache_service.get_all_directories_caches_include_ignored_ids(include_ignored_ids=include_ignored_ids)
@@ -30,6 +39,9 @@ class CachingDirectoryProvider(DirectoryProvider):
         return self.__common_directory_cache_logic(include_ignored=True, original_directories=original_directories)
 
     def get_one_directory(self, directory_id: str) -> DirectoryDto:
+        """
+        Returns a specific directory by their unique identifier or raises Exception if the directory provider could not be reached.
+        """
         try:
             directory = self.__directoryProvider.get_one_directory(directory_id)
         except Exception:  # Retrieving directory failed

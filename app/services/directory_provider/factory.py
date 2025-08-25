@@ -14,6 +14,9 @@ from app.db.db import Database
 
 
 class DirectoryProviderFactory:
+    """
+    Factory to create a DirectoryProvider based on configuration.
+    """
     def __init__(self, config: Config, database: Database, auth: Authenticator) -> None:
         self.__directory_config = config.directory_api
         self.__db = database
@@ -23,6 +26,7 @@ class DirectoryProviderFactory:
         if self.__directory_config.directory_urls_path is not None and len(
             self.__directory_config.directory_urls_path
         ) > 1:
+            # Use JSON file-based provider if directory_urls_path is provided
             return DirectoryJsonProvider(
                 directories_json_data=DirectoryProviderFactory._read_directories_file(
                     self.__directory_config.directory_urls_path
@@ -31,6 +35,7 @@ class DirectoryProviderFactory:
 
             )
         elif self.__directory_config.directories_provider_url is not None:
+            # Use API-based provider if directories_provider_url is provided
             directory_api_provider = DirectoryApiProvider(
                 fhir_api=FhirApi(
                     timeout=self.__directory_config.timeout,

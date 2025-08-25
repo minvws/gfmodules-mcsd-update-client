@@ -9,9 +9,10 @@ logger = logging.getLogger("Scheduler")
 
 
 class Scheduler:
-    def __init__(
-        self, function: Callable[..., Any], delay: int, max_logs_entries: int
-    ) -> None:
+    """
+    A scheduler that runs a given function at specified intervals in a separate thread.
+    """
+    def __init__(self, function: Callable[..., Any], delay: int, max_logs_entries: int) -> None:
         self.__function = function
         self.__delay = delay
         self.__max_logs_entries = max_logs_entries
@@ -21,6 +22,9 @@ class Scheduler:
         self.__runner_logs: list[dict[str, Any]] = []
 
     def start(self) -> None:
+        """
+        Start the scheduler in a separate thread.
+        """
         if self.__thread is not None:
             return
 
@@ -31,24 +35,37 @@ class Scheduler:
         self.__thread.start()
 
     def stop(self) -> None:
+        """
+        Stop the scheduler and wait for the thread to finish.
+        """
         if self.__thread is not None:
             self.__stop_event.set()
             self.__thread.join()
             self.__thread = None
 
     def __run(self) -> None:
+        """
+        The main loop that runs the scheduled function at the specified interval.
+        """
         while self.__stop_event.is_set() is False:
             try:
                 start_time = time.time()
+
+                # Execute the scheduled function
                 self.__function()
+
                 self.__stop_event.wait(self.__delay)
                 end_time = time.time()
+
                 self.update_runner(start_time, end_time)
             except Exception:
                 logger.exception("Got an error while scheduling task")
                 time.sleep(self.__delay)
 
     def update_runner(self, start_time: float, end_time: float) -> None:
+        """
+        Update the runner logs with the latest execution details.
+        """
         data = {
             "runner_id": self.__runner_id,
             "started_at": datetime.fromtimestamp(start_time).isoformat(),

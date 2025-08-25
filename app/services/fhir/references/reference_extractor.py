@@ -24,6 +24,9 @@ def extract_references(data: Any) -> Reference | None:
 
 
 def _get_org_references(model: Organization) -> List[Reference]:
+    """
+    Extracts "endpoint" and "part-of" references from an Organization resource.
+    """
     refs: List[Reference] = []
     endpoints = model.endpoint
     part_of = model.partOf
@@ -40,6 +43,9 @@ def _get_org_references(model: Organization) -> List[Reference]:
 
 
 def _get_endpoint_references(model: Endpoint) -> List[Reference]:
+    """
+    Extracts "managing-organization" references from an Endpoint resource.
+    """
     refs: List[Reference] = []
     managing_org = model.managingOrganization
     if managing_org is not None:
@@ -50,9 +56,10 @@ def _get_endpoint_references(model: Endpoint) -> List[Reference]:
     return refs
 
 
-def _get_org_affiliation_references(
-    model: OrganizationAffiliation,
-) -> List[Reference]:
+def _get_org_affiliation_references(model: OrganizationAffiliation) -> List[Reference]:
+    """
+    Extracts references from an OrganizationAffiliation resource, including organization,
+    """
     refs: List[Reference] = []
     organization = model.organization
     participating_org = model.participatingOrganization
@@ -99,6 +106,9 @@ def _get_org_affiliation_references(
 
 
 def _get_location_references(model: Location) -> List[Reference]:
+    """
+    Extracts references from a Location resource, including managing-organization,
+    """
     refs: List[Reference] = []
     managing_org = model.managingOrganization
     part_of = model.partOf
@@ -124,6 +134,9 @@ def _get_location_references(model: Location) -> List[Reference]:
 
 
 def _get_practitioner_references(model: Practitioner) -> List[Reference]:
+    """
+    Extracts references from a Practitioner resource, including qualification issuer.
+    """
     refs: List[Reference] = []
     qualifications = model.qualification
     if qualifications is not None:
@@ -139,6 +152,9 @@ def _get_practitioner_references(model: Practitioner) -> List[Reference]:
 
 
 def _get_practitioner_role_references(model: PractitionerRole) -> List[Reference]:
+    """
+    Extracts references from a PractitionerRole resource, including practitioner,
+    """
     refs: List[Reference] = []
     practitioner = model.practitioner
     organization = model.organization
@@ -178,6 +194,9 @@ def _get_practitioner_role_references(model: PractitionerRole) -> List[Reference
 
 
 def _get_healthcare_service_references(model: HealthcareService) -> List[Reference]:
+    """
+    Extracts references from a HealthcareService resource, including location,
+    """
     refs: List[Reference] = []
     locations = model.location
     coverage_areas = model.coverageArea
@@ -211,15 +230,16 @@ def _get_healthcare_service_references(model: HealthcareService) -> List[Referen
 
 
 def _make_unique(data: List[Reference]) -> List[Reference]:
+    """
+    Takes a list of References and deduplicates them based on their JSON representation.
+    """
     unique_str = [*{*[json.dumps(d.model_dump()) for d in data]}]
     unique_dicts = [json.loads(i) for i in unique_str]
 
     return [Reference(**d) for d in unique_dicts]
 
 
-def get_references(
-    data: DomainResource,
-) -> List[Reference]:
+def get_references(data: DomainResource) -> List[Reference]:
     """
     Takes a FHIR DomainResource as an argument and returns a list of References.
     """
