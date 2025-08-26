@@ -46,6 +46,7 @@ def container_config(binder: inject.Binder) -> None:
         resource_map_service=resource_map_service,
         auth=auth,
         cache_provider=cache_provider,
+        retries=config.directory_api.retries,
     )
     binder.bind(UpdateClientService, update_service)
 

@@ -50,6 +50,7 @@ def test_cleanup() -> None:
         resource_map_service=mock_resource_map_service,
         auth=MagicMock(),
         cache_provider=CacheProvider(config=ConfigExternalCache()),
+        retries=5,
     )
 
     # Replace the FHIR API with the mock, this is a private and protected attribute, but we can set it for testing
@@ -66,7 +67,9 @@ def test_cleanup() -> None:
 
     # Verify the bundle structure of the calls
     for idx, resource in enumerate(McsdResources):
-        called_bundle = mock_update_client_fhir_api.post_bundle.call_args_list[idx][0][0]
+        called_bundle = mock_update_client_fhir_api.post_bundle.call_args_list[idx][0][
+            0
+        ]
 
         assert isinstance(called_bundle, Bundle)
         assert called_bundle.type == "transaction"
@@ -78,4 +81,7 @@ def test_cleanup() -> None:
         assert called_bundle.entry[0].request.url is not None
         split = called_bundle.entry[0].request.url.split("/")
         assert split[0] == resource.value
-        assert split[1] == "resource_1?_cascade=delete" or split[1] == "resource_2?_cascade=delete"
+        assert (
+            split[1] == "resource_1?_cascade=delete"
+            or split[1] == "resource_2?_cascade=delete"
+        )

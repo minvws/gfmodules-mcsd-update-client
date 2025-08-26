@@ -132,10 +132,12 @@ class ConfigDatabase(BaseModel):
 
 
 class ConfigDirectoryApi(BaseModel):
-    directories_provider_url: str | None
-    directory_urls_path: str | None
-    timeout: int
-    backoff: float
+    # either provider_url or urls_path should be set from config
+    directories_provider_url: str | None = Field(default=None)
+    directory_urls_path: str | None = Field(default=None)
+    timeout: int = Field(default=1)
+    backoff: float = Field(default=0.1)
+    retries: int = Field(default=5)
 
     @field_validator("timeout",  mode="before")
     def validate_timeout(cls, v: Any) -> int:

@@ -187,8 +187,9 @@ def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
     return FhirApi(
         timeout=config.directory_api.timeout,
         backoff=config.directory_api.backoff,
+        retries=config.directory_api.retries,
         auth=null_authenticator,
-        url="http://example.com/fhir",
+        base_url="http://example.com/fhir",
         request_count=10,
         strict_validation=False,
     )
