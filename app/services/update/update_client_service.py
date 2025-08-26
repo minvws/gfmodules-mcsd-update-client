@@ -2,7 +2,7 @@ from datetime import datetime
 import time
 from enum import Enum
 import logging
-from typing import List, Any
+from typing import Dict, List, Any
 from uuid import uuid4
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.cache.caching_service import (
@@ -168,7 +168,9 @@ class UpdateClientService:
             cache_service=self.__cache,
         )
 
-        next_params = directory_fhir_api.build_history_params()
+        next_params: Dict[str, Any] | None = directory_fhir_api.build_history_params(
+            since=since
+        )
         while next_params is not None:
             next_params, history = directory_fhir_api.get_history_batch(
                 resource_type, next_params

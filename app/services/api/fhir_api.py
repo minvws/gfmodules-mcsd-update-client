@@ -40,8 +40,7 @@ class FhirApi(HttpService):
             mtls_cert=mtls_cert,
             mtls_key=mtls_key,
         )
-        # self.__base_url = url
-        self.__request_count = request_count
+        self.request_count = request_count
         self.__fhir_service = FhirService(strict_validation=strict_validation)
 
     def post_bundle(self, bundle: Bundle) -> Bundle:
@@ -111,7 +110,7 @@ class FhirApi(HttpService):
         """
         Builds the params based on request_count and _since parameter.
         """
-        params: Dict[str, int | str] = {"_count": self.__request_count}
+        params: Dict[str, int | str] = {"_count": str(self.request_count)}
         if since:
             params["_since"] = since.isoformat()
 
@@ -148,7 +147,6 @@ class FhirApi(HttpService):
         if page_bundle.link is not None and len(page_bundle.link) > 0:
             for link in page_bundle.link:
                 if link.relation == "next":
-                    next_url = URL(link.url)
-                    next_params = self.get_next_params(next_url)
+                    next_params = self.get_next_params(URL(link.url))
 
         return next_params, entries

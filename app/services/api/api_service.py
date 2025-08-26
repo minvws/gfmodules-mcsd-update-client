@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class HttpService(ABC):
+    """
+    Base class for making HTTP requests with retry logic
+    """
+
     def __init__(
         self,
         base_url: str,
@@ -50,8 +54,7 @@ class HttpService(ABC):
                 logger.info(f"Making HTTP {method} request to {url}")
                 response = request(
                     method=method,
-                    url=str(url.with_query(params)),
-                    params=params,
+                    url=str(url),
                     headers=headers,
                     timeout=self.__timeout,
                     json=json,
