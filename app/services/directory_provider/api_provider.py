@@ -91,6 +91,7 @@ class DirectoryApiProvider(DirectoryProvider):
                 resource_type="Organization",
                 params=params,
             )
+
             orgs, endpoint_map = self.__parse_bundle(entries)
 
             org = next(iter(orgs), None)
@@ -153,7 +154,7 @@ class DirectoryApiProvider(DirectoryProvider):
         if not all(
             isinstance(val, str) and val for val in [name, _id, endpoint_address]
         ):
-            logger.warning(f"Invalid directory data for ID {id}. Skipping.")
+            logger.warning(f"Invalid directory data for ID {_id}. Skipping.")
             return None
 
         return DirectoryDto(

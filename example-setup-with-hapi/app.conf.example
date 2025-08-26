@@ -89,13 +89,12 @@ update_client_url = http://addressing-app:8502
 # authentication can be either "off", or "azure_oauth2" in case of azure oauth2 authentication
 authentication = off
 # When configured, all connections to the supplier register and mCSD FHIR directories will use mTLS
-use_mtls = True
 # Path to client certificate file for mTLS authentication
-client_cert_file = client.crt
+mtls_client_cert_path = client.crt
 # Path to client private key file for mTLS authentication  
-client_key_file = client.key
+mtls_client_key_path = client.key
 # Path to CA certificate file for server verification
-client_ca_file = ca.crt
+mtls_server_ca_path = ca.crt
 
 # query parameter for the number of entries in Bundle per request (limit)
 # This is usually used in the directory request service and not directory API (LRZa)

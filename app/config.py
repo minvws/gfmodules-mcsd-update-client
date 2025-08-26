@@ -1,7 +1,7 @@
 from enum import Enum
 import configparser
 import re
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, ValidationError, computed_field, field_validator
 
@@ -34,6 +34,34 @@ class Scheduler(BaseModel):
     )
     ignore_directory_after_success_timeout: str = Field(default="10m")
     ignore_directory_after_failed_attempts_threshold: int = Field(default=20)
+
+    @field_validator("max_logs_entries", mode="before")
+    def validate_max_log_entries(cls, v: Any) -> int:
+        if v in (None, "", " "):
+            return 1000
+        return int(v)
+
+    @field_validator("ignore_directory_after_failed_attempts_threshold", mode="before")
+    def validate_ignore_directory_after_failed_attempts_threshold(cls, v: Any) -> Any:
+        if v in (None, "", " "):
+            return 20
+        return int(v)
+
+    @field_validator("automatic_background_update", mode="before")
+    def validate_automatic_background_update(cls, v: Any) -> Any:
+        if v in (None, "", " "):
+            return True
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
+
+    @field_validator("automatic_background_cleanup", mode="before")
+    def validate_automatic_background_cleanup(cls, v: Any) -> Any:
+        if v in (None, "", " "):
+            return True
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
 
     @computed_field
     def delay_input_in_sec(self) -> int:
@@ -76,20 +104,61 @@ class ConfigDatabase(BaseModel):
     pool_pre_ping: bool = Field(default=False)
     pool_recycle: int = Field(default=3600, ge=0)
 
+    @field_validator("create_tables", mode="before")
+    def validate_create_tables(cls, v: Any) -> bool:
+        if v in (None, "", " "):
+            return False
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
+
+    @field_validator("pool_size", mode="before")
+    def validate_pool_size(cls, v: Any) -> int:
+        if v in (None, "", " "):
+            return 5
+        return int(v)
+
+    @field_validator("max_overflow", mode="before")
+    def validate_max_overflow(cls, v: Any) -> int:
+        if v in (None, "", " "):
+            return 10
+        return int(v)
+
+    @field_validator("pool_recycle", mode="before")
+    def validate_pool_recycle(cls, v: Any) -> int:
+        if v in (None, "", " "):
+            return 3600
+        return int(v)
+
 
 class ConfigDirectoryApi(BaseModel):
-    directories_provider_url: str | None
-    directory_urls_path: str | None
-    timeout: int
-    backoff: float
+    # either provider_url or urls_path should be set from config
+    directories_provider_url: str | None = Field(default=None)
+    directory_urls_path: str | None = Field(default=None)
+    timeout: int = Field(default=1)
+    backoff: float = Field(default=0.1)
+    retries: int = Field(default=5)
+
+    @field_validator("timeout",  mode="before")
+    def validate_timeout(cls, v: Any) -> int:
+        if v in (None, "", " "):
+            return 10
+        return int(v)
+
+    @field_validator("backoff",  mode="before")
+    def validate_backoff(cls, v: Any) -> float:
+        if v in (None, "", " "):
+            return 0.5
+        return float(v)
+
 
 
 class ConfigUvicorn(BaseModel):
     swagger_enabled: bool = Field(default=False)
     docs_url: str = Field(default="/docs")
     redoc_url: str = Field(default="/redoc")
-    host: str = Field(default="0.0.0.0")
-    port: int = Field(default=8509, gt=0, lt=65535)
+    host: str = Field(default="127.0.0.1")
+    port: Optional[int] = Field(default=8000, gt=0, lt=65535)
     reload: bool = Field(default=True)
     reload_delay: float = Field(default=1)
     reload_dirs: list[str] = Field(default=["app"])
@@ -97,6 +166,49 @@ class ConfigUvicorn(BaseModel):
     ssl_base_dir: str | None
     ssl_cert_file: str | None
     ssl_key_file: str | None
+
+    @field_validator("host", mode="before")
+    def validate_host(cls, v: Any) -> str:
+        if v in (None, "", " "):
+            return "127.0.0.1"
+        return str(v)
+
+    @field_validator("port", mode="before")
+    def validate_port(cls, v: Any) -> int:
+        if v in (None, "", " "):
+            return 8000
+        return int(v)
+
+    @field_validator("reload", mode="before")
+    def validate_reload(cls, v: Any) -> bool:
+        if v in (None, "", " "):
+            return True
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
+
+    @field_validator("reload_delay", mode="before")
+    def validate_reload_delay(cls, v: Any) -> float:
+        if v in (None, "", " "):
+            return 1.0
+        return float(v)
+
+    @field_validator("reload_dirs", mode="before")
+    def validate_reload_dirs(cls, v: Any) -> list[str]:
+        if v in (None, "", " "):
+            return ["app"]
+        if isinstance(v, str):
+            return [d.strip() for d in v.split(",")]
+        return v  # type: ignore
+
+    @field_validator("use_ssl", mode="before")
+    def validate_use_ssl(cls, v: Any) -> bool:
+        if v in (None, "", " "):
+            return False
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
+
 
 
 class ConfigExternalCache(BaseModel):
@@ -118,6 +230,14 @@ class ConfigTelemetry(BaseModel):
     service_name: str | None
     tracer_name: str | None
 
+    @field_validator("enabled", mode="before")
+    def validate_enabled(cls, v: Any) -> bool:
+        if v in (None, "", " "):
+            return False
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
+
 
 class ConfigStats(BaseModel):
     enabled: bool = Field(default=False)
@@ -125,6 +245,19 @@ class ConfigStats(BaseModel):
     port: int | None
     module_name: str | None
 
+    @field_validator("enabled", mode="before")
+    def validate_enabled(cls, v: Any) -> bool:
+        if v in (None, "", " "):
+            return False
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
+
+    @field_validator("port", mode="before")
+    def validate_port(cls, v: Any) -> int | None:
+        if v in (None, "", " "):
+            return None
+        return int(v)
 
 class ConfigMcsd(BaseModel):
     update_client_url: str
@@ -134,10 +267,15 @@ class ConfigMcsd(BaseModel):
     )
     request_count: int = Field(default=20)
     strict_validation: bool = Field(default=False)
-    use_mtls: bool = Field(default=True)
-    client_cert_file: str = Field(default="client.crt")
-    client_key_file: str = Field(default="client.key")
-    client_ca_file: str = Field(default="ca.crt")
+    mtls_client_cert_path: str | None = Field(default=None)
+    mtls_client_key_path: str | None = Field(default=None)
+    mtls_server_ca_path: str | None = Field(default=None)
+
+    @field_validator("request_count", mode="before")
+    def validate_request_count(cls, v: Any) -> int:
+        if v in (None, "", " "):
+            return 20
+        return int(v)
 
     @field_validator("authentication")
     def validate_authentication(cls, value: Any) -> str | bool:
@@ -147,6 +285,13 @@ class ConfigMcsd(BaseModel):
             )
         return str(value)
 
+    @field_validator("strict_validation", mode="before")
+    def validate_strict_validation(cls, v: Any) -> bool:
+        if v in (None, "", " "):
+            return False
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
 
 class ConfigAws(BaseModel):
     profile: str

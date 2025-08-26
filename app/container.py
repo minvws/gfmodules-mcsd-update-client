@@ -46,10 +46,10 @@ def container_config(binder: inject.Binder) -> None:
         resource_map_service=resource_map_service,
         auth=auth,
         cache_provider=cache_provider,
-        use_mtls=config.mcsd.use_mtls,
-        client_cert_file=config.mcsd.client_cert_file,
-        client_key_file=config.mcsd.client_key_file,
-        client_ca_file=config.mcsd.client_ca_file,
+        retries=config.directory_api.retries,
+        mtls_cert=config.mcsd.mtls_client_cert_path,
+        mtls_key=config.mcsd.mtls_client_key_path,
+        mtls_ca=config.mcsd.mtls_server_ca_path,
     )
     binder.bind(UpdateClientService, update_service)
 

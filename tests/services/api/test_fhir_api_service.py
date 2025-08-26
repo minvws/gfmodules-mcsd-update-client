@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict
+from urllib.parse import urlencode
 from requests.exceptions import ConnectionError
 from unittest.mock import patch, MagicMock
 
@@ -12,7 +13,7 @@ from app.services.api.fhir_api import FhirApi
 from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 
-PATCHED_MODULE = "app.services.api.api_service.AuthenticationBasedApiService.do_request"
+PATCHED_MODULE = "app.services.api.api_service.HttpService.do_request"
 
 
 @patch(PATCHED_MODULE)
@@ -57,24 +58,32 @@ def test_post_bundle_should_fail_on_connection_error(
         fhir_api.post_bundle(mock_bundle_request)
 
 
-def test_build_base_history_url_should_succeed(fhir_api: FhirApi) -> None:
-    expected = URL("http://example.com/fhir/Organization/_history?_count=10")
-    actual = fhir_api.build_base_history_url("Organization")
-
-    assert expected == actual
-
-
-def test_build_base_history_url_should_succeed_with_since_param(
-    fhir_api: FhirApi,
+def test_build_history_params_should_succeed(
+    fhir_api: FhirApi, mock_history_params: Dict[str, Any]
 ) -> None:
-    expected = URL(
-        "http://example.com/fhir/Organization/_history?_count=10&_since=2025-01-01T00:00:00"
-    )
-    actual = fhir_api.build_base_history_url(
-        "Organization", datetime.fromisoformat("2025-01-01")
-    )
+    actual = fhir_api.build_history_params()
+
+    assert mock_history_params == actual
+
+
+def test_build_history_params_should_succeed_with_since_param(
+    fhir_api: FhirApi, mock_history_params: Dict[str, Any]
+) -> None:
+    since = datetime.fromisoformat("2025-01-01")
+    expected = {**mock_history_params, "_since": datetime.isoformat(since)}
+    actual = fhir_api.build_history_params(since=since)
 
     assert expected == actual
+
+
+def test_build_next_params_should_succeed(
+    fhir_api: FhirApi, base_url: str, mock_params: Dict[str, Any]
+) -> None:
+    url = URL(base_url).with_query(mock_params)
+
+    actual = fhir_api.get_next_params(url)
+
+    assert mock_params == actual
 
 
 @patch(PATCHED_MODULE)
@@ -92,37 +101,37 @@ def test_get_history_batch_should_succeed(
         create_bundle_entry(org_history_entry_1),
     ]
 
-    url = fhir_api.build_base_history_url("Organization")
-    actual_next_url, actual_entries = fhir_api.get_history_batch(url)
+    actual_next_url, actual_entries = fhir_api.get_history_batch("Organizaton")
 
     assert actual_next_url == expected_next_url
     assert expected_entries == actual_entries
 
 
 @patch(PATCHED_MODULE)
-def test_get_history_batch_should_succeed_and_return_next_url(
+def test_get_history_batch_should_succeed_and_return_next_params(
     mock_response: MagicMock,
     fhir_api: FhirApi,
     mock_org_history_bundle: Dict[str, Any],
     org_history_entry_1: Dict[str, Any],
+    base_url: str,
+    mock_history_params: Dict[str, Any],
 ) -> None:
-    expected_next_url = URL("some-next-url")
+    next_url = URL(base_url).with_query(mock_history_params)
     expected_entries = [
         create_bundle_entry(org_history_entry_1),
     ]
-    mock_org_history_bundle["link"] = [
-        {"relation": "next", "url": expected_next_url.with_query(None)}
-    ]
+    mock_org_history_bundle["link"] = [{"relation": "next", "url": next_url}]
 
     mock_request = MagicMock()
     mock_request.status_code = 200
     mock_request.json.return_value = mock_org_history_bundle
     mock_response.return_value = mock_request
 
-    url = fhir_api.build_base_history_url("Organization")
-    actual_next_url, actual_entries = fhir_api.get_history_batch(url)
+    actual_next_params, actual_entries = fhir_api.get_history_batch(
+        "Organization", mock_history_params
+    )
 
-    assert actual_next_url == expected_next_url
+    assert actual_next_params == mock_history_params
     assert expected_entries == actual_entries
 
 
@@ -134,9 +143,8 @@ def test_get_history_should_fail_on_error_status_code(
     mock_request = MagicMock()
     mock_request.status_code = 400
     mock_response.return_value = mock_request
-    url = fhir_api.build_base_history_url("Organization")
     with pytest.raises(HTTPException) as e:
-        fhir_api.get_history_batch(url)
+        fhir_api.get_history_batch("Organization")
 
     assert e.value.status_code == 500
 
@@ -146,9 +154,8 @@ def test_get_history_should_fail_on_connection_error(
     mock_response: MagicMock, fhir_api: FhirApi
 ) -> None:
     mock_response.side_effect = ConnectionError
-    url = fhir_api.build_base_history_url("Organization")
     with pytest.raises(Exception):
-        fhir_api.get_history_batch(url)
+        fhir_api.get_history_batch("Organization")
 
 
 @patch(PATCHED_MODULE)
@@ -209,13 +216,13 @@ def test_search_resource_should_succeed(
     mock_org_history_bundle: Dict[str, Any],
     org_history_entry_1: Dict[str, Any],
     org_history_entry_2: Dict[str, Any],
-    mock_url: URL,
+    mock_url: str,
     mock_params: Dict[str, Any],
     fhir_api: FhirApi,
 ) -> None:
-    expected_url = mock_url.with_query(mock_params)
+    expected_url = f"{mock_url}?{urlencode(mock_params)}"
     mock_org_history_bundle["link"] = [
-        {"relation": "next", "url": mock_url.with_query(mock_params)}
+        {"relation": "next", "url": f"{mock_url}?{urlencode(mock_params)}"}
     ]
     mock_request = MagicMock()
     mock_request.status_code = 200
@@ -230,7 +237,7 @@ def test_search_resource_should_succeed(
         resource_type="Organization", params=mock_params
     )
 
-    assert (expected_url, expected_entries) == (actual_url, actual_entries)
+    assert (URL(expected_url), expected_entries) == (actual_url, actual_entries)
 
 
 @patch(PATCHED_MODULE)

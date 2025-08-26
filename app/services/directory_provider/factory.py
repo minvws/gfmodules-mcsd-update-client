@@ -17,6 +17,7 @@ class DirectoryProviderFactory:
     """
     Factory to create a DirectoryProvider based on configuration.
     """
+
     def __init__(self, config: Config, database: Database, auth: Authenticator) -> None:
         self.__directory_config = config.directory_api
         self.__mcsd_config = config.mcsd
@@ -24,16 +25,16 @@ class DirectoryProviderFactory:
         self.__auth = auth
 
     def create(self) -> DirectoryProvider:
-        if self.__directory_config.directory_urls_path is not None and len(
-            self.__directory_config.directory_urls_path
-        ) > 1:
-            # Use JSON file-based provider if directory_urls_path is provided
+        # Use JSON file-based provider if directory_urls_path is provided
+        if (
+            self.__directory_config.directory_urls_path is not None
+            and len(self.__directory_config.directory_urls_path) > 1
+        ):
             return DirectoryJsonProvider(
                 directories_json_data=DirectoryProviderFactory._read_directories_file(
                     self.__directory_config.directory_urls_path
                 ),
-                ignored_directory_service=IgnoredDirectoryService(self.__db)
-
+                ignored_directory_service=IgnoredDirectoryService(self.__db),
             )
         elif self.__directory_config.directories_provider_url is not None:
             # Use API-based provider if directories_provider_url is provided
@@ -42,15 +43,15 @@ class DirectoryProviderFactory:
                     timeout=self.__directory_config.timeout,
                     backoff=self.__directory_config.backoff,
                     auth=self.__auth,
-                    url=self.__directory_config.directories_provider_url,
+                    base_url=self.__directory_config.directories_provider_url,
                     request_count=5,
                     strict_validation=False,
-                    use_mtls=self.__mcsd_config.use_mtls,
-                    client_cert_file=self.__mcsd_config.client_cert_file,
-                    client_key_file=self.__mcsd_config.client_key_file,
-                    client_ca_file=self.__mcsd_config.client_ca_file,
+                    retries=10,
+                    mtls_cert=self.__mcsd_config.mtls_client_cert_path,
+                    mtls_key=self.__mcsd_config.mtls_client_key_path,
+                    mtls_ca=self.__mcsd_config.mtls_server_ca_path,
                 ),
-                ignored_directory_service=IgnoredDirectoryService(self.__db)
+                ignored_directory_service=IgnoredDirectoryService(self.__db),
             )
             directory_cache_service = DirectoryCacheService(self.__db)
             return CachingDirectoryProvider(
@@ -75,7 +76,7 @@ class DirectoryProviderFactory:
                         DirectoryDto(
                             id=directory["id"],
                             name=directory["name"],
-                            endpoint=directory["endpoint"]
+                            endpoint=directory["endpoint"],
                         )
                     )
                 return directory_urls

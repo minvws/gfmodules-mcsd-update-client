@@ -2,14 +2,13 @@ from datetime import datetime
 import time
 from enum import Enum
 import logging
-from typing import List, Any
+from typing import Dict, List, Any
 from uuid import uuid4
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.cache.caching_service import (
     CachingService,
 )
 from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
-from yarl import URL
 from app.models.resource_map.dto import (
     ResourceMapDeleteDto,
     ResourceMapDto,
@@ -49,14 +48,14 @@ class UpdateClientService:
         strict_validation: bool,
         timeout: int,
         backoff: float,
+        retries: int,
         request_count: int,
         resource_map_service: ResourceMapService,
         auth: Authenticator,
         cache_provider: CacheProvider,
-        use_mtls: bool = True,
-        client_cert_file: str | None = None,
-        client_key_file: str | None = None,
-        client_ca_file: str | None = None,
+        mtls_cert: str | None = None,
+        mtls_key: str | None = None,
+        mtls_ca: str | None = None,
     ) -> None:
         self.strict_validation = strict_validation
         self.timeout = timeout
@@ -65,8 +64,20 @@ class UpdateClientService:
         self.request_count = request_count
         self.auth = auth
         self.__resource_map_service = resource_map_service
+        self.mtls_cert = mtls_cert
+        self.mtls_key = mtls_key
+        self.mtls_ca = mtls_ca
         self.__update_client_fhir_api = FhirApi(
-            timeout, backoff, auth, update_client_url, request_count, strict_validation, use_mtls, client_cert_file, client_key_file, client_ca_file
+            base_url=update_client_url,
+            auth=auth,
+            timeout=timeout,
+            retries=retries,
+            backoff=backoff,
+            mtls_cert=self.mtls_cert,
+            mtls_key=self.mtls_key,
+            mtls_ca=self.mtls_ca,
+            request_count=request_count,
+            strict_validation=strict_validation,
         )
         self.__fhir_service = FhirService(strict_validation)
         self.__cache_provider = cache_provider
@@ -147,11 +158,11 @@ class UpdateClientService:
             auth=self.auth,
             request_count=self.request_count,
             strict_validation=self.strict_validation,
-            url=directory.endpoint,
-            use_mtls=self.__update_client_fhir_api.use_mtls,
-            client_cert_file=self.__update_client_fhir_api.client_cert_file,
-            client_key_file=self.__update_client_fhir_api.client_key_file,
-            client_ca_file=self.__update_client_fhir_api.client_ca_file,
+            base_url=directory.endpoint,
+            retries=10,
+            mtls_cert=self.mtls_cert,
+            mtls_key=self.mtls_key,
+            mtls_ca=self.mtls_ca,
         )
 
         adjacency_map_service = AdjacencyMapService(
@@ -162,12 +173,14 @@ class UpdateClientService:
             resource_map_service=self.__resource_map_service,
             cache_service=self.__cache,
         )
-        next_url: URL | None = directory_fhir_api.build_base_history_url(
-            resource_type, since
-        )
 
-        while next_url is not None:
-            next_url, history = directory_fhir_api.get_history_batch(next_url)
+        next_params: Dict[str, Any] | None = directory_fhir_api.build_history_params(
+            since=since
+        )
+        while next_params is not None:
+            next_params, history = directory_fhir_api.get_history_batch(
+                resource_type, next_params
+            )
             targets = []
             for e in history:
                 _, _id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
