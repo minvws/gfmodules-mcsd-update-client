@@ -20,6 +20,7 @@ class DirectoryProviderFactory:
 
     def __init__(self, config: Config, database: Database, auth: Authenticator) -> None:
         self.__directory_config = config.directory_api
+        self.__mcsd_config = config.mcsd
         self.__db = database
         self.__auth = auth
 
@@ -46,6 +47,9 @@ class DirectoryProviderFactory:
                     request_count=5,
                     strict_validation=False,
                     retries=10,
+                    mtls_cert=self.__mcsd_config.mtls_client_cert_path,
+                    mtls_key=self.__mcsd_config.mtls_client_key_path,
+                    mtls_ca=self.__mcsd_config.mtls_server_ca_path,
                 ),
                 ignored_directory_service=IgnoredDirectoryService(self.__db),
             )

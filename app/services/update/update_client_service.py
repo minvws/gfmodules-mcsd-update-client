@@ -64,15 +64,18 @@ class UpdateClientService:
         self.request_count = request_count
         self.auth = auth
         self.__resource_map_service = resource_map_service
+        self.mtls_cert = mtls_cert
+        self.mtls_key = mtls_key
+        self.mtls_ca = mtls_ca
         self.__update_client_fhir_api = FhirApi(
             base_url=update_client_url,
             auth=auth,
             timeout=timeout,
             retries=retries,
             backoff=backoff,
-            mtls_cert=mtls_cert,
-            mtls_key=mtls_key,
-            mtls_ca=mtls_ca,
+            mtls_cert=self.mtls_cert,
+            mtls_key=self.mtls_key,
+            mtls_ca=self.mtls_ca,
             request_count=request_count,
             strict_validation=strict_validation,
         )
@@ -157,6 +160,9 @@ class UpdateClientService:
             strict_validation=self.strict_validation,
             base_url=directory.endpoint,
             retries=10,
+            mtls_cert=self.mtls_cert,
+            mtls_key=self.mtls_key,
+            mtls_ca=self.mtls_ca,
         )
 
         adjacency_map_service = AdjacencyMapService(
