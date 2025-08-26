@@ -45,6 +45,10 @@ def get_test_config() -> Config:
             authentication="off",
             request_count=20,
             strict_validation=False,
+            use_mtls=False,
+            client_cert_file="client.crt",
+            client_key_file="client.key",
+            client_ca_file="client.ca"
         ),
         telemetry=ConfigTelemetry(
             enabled=False,
