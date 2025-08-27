@@ -142,7 +142,7 @@ def _get_practitioner_references(model: Practitioner) -> List[Reference]:
     if qualifications is not None:
         for qualification in qualifications:
             if isinstance(qualification, PractitionerQualification):
-                issuer = qualification.issuer
+                issuer = qualification.issuer       # type: ignore[attr-defined]
 
                 new_ref = extract_references(issuer)
                 if new_ref is not None:

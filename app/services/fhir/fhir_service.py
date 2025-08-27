@@ -8,7 +8,7 @@ from app.services.fhir.bundle.bundle_utils import (
     get_request_method_from_entry,
     get_resource_type_and_id_from_entry,
 )
-from app.services.fhir.bundle.bunlde_parser import (
+from app.services.fhir.bundle.bundle_parser import (
     create_bundle,
     create_bundle_request,
     get_entries_from_bundle_of_bundles,

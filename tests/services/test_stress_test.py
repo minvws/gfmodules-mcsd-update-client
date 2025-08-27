@@ -79,7 +79,8 @@ def mock_do_request(
                         f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
                     )
                     bundle = Bundle(**CACHE[file_path])
-                    return_bundle.entry.append(BundleEntry(resource=bundle))
+                    if return_bundle.entry is not None:
+                        return_bundle.entry.append(BundleEntry(resource=bundle))
             response = requests.Response()
             response.status_code = 200
             response._content = return_bundle.model_dump_json(indent=4).encode("utf-8")
@@ -105,7 +106,8 @@ def mock_do_request(
 
                     if resource is not None:
                         return_bundle = Bundle(type="batch-response", entry=[])
-                        return_bundle.entry.append(BundleEntry(resource=resource))
+                        if return_bundle.entry is not None:
+                            return_bundle.entry.append(BundleEntry(resource=resource))
                         response._content = return_bundle.model_dump_json(
                             indent=4
                         ).encode("utf-8")
@@ -145,11 +147,13 @@ def get_from_update_client(resource_type: str, resource_id: str) -> Any | None:
 def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
     global iteration
     with get_stats().timer(f"{iteration}.patch_timing"):
-        resource_type = url.path.split("/")[2]  # type:ignore
+        resource_type = url.path.split("/")[2]
         file_path = f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
         if file_path not in CACHE:
             assert False, f"File {file_path} not found in cache"
         bundle = Bundle(**CACHE[file_path])
+        if bundle.entry is None:
+            return None, []
         return None, bundle.entry
 
 

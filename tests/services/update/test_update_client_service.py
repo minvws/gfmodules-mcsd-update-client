@@ -76,10 +76,10 @@ def test_cleanup() -> None:
         assert called_bundle.entry is not None
         assert len(called_bundle.entry) == 2
         assert isinstance(called_bundle.entry[0], BundleEntry)
-        assert isinstance(called_bundle.entry[0].request, BundleEntryRequest)
-        assert called_bundle.entry[0].request.method == "DELETE"
-        assert called_bundle.entry[0].request.url is not None
-        split = called_bundle.entry[0].request.url.split("/")
+        assert isinstance(called_bundle.entry[0].request, BundleEntryRequest) # type: ignore[attr-defined]
+        assert called_bundle.entry[0].request.method == "DELETE" # type: ignore[attr-defined]
+        assert called_bundle.entry[0].request.url is not None # type: ignore[attr-defined]
+        split = called_bundle.entry[0].request.url.split("/") # type: ignore[attr-defined]
         assert split[0] == resource.value
         assert (
             split[1] == "resource_1?_cascade=delete"

@@ -153,11 +153,11 @@ def _namespace_practitioner_references(
     if qualification is not None:
         for i, q in enumerate(qualification):
             if isinstance(q, PractitionerQualification):
-                issuer = q.issuer
+                issuer = q.issuer   # type: ignore[attr-defined]
                 if issuer is not None:
                     new_ref = _namespace_reference(issuer, namespace)
                     if new_ref is not None:
-                        qualification[i].issuer = new_ref
+                        qualification[i].issuer = new_ref   # type: ignore[attr-defined]
 
         data.qualification = qualification
 

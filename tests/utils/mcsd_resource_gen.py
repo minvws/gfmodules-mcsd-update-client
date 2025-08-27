@@ -169,7 +169,7 @@ def setup_fhir_resource(
             ).model_dump_json()
     save_resource_version(
         resource_id_folder=f"{base_path}/{mcsd_res_type.value}/{resource_id}",
-        resource=resource,
+        resource=resource,      # type: ignore[arg-type]
         version=version,
     )
     return resource_id
