@@ -2,14 +2,8 @@ import json
 from typing import Any, List
 from fhir.resources.R4B.backboneelement import BackboneElement
 from fhir.resources.R4B.domainresource import DomainResource
-from fhir.resources.R4B.healthcareservice import HealthcareService
 from fhir.resources.R4B.reference import Reference
-from fhir.resources.R4B.organization import Organization
-from fhir.resources.R4B.organizationaffiliation import OrganizationAffiliation
-from fhir.resources.R4B.endpoint import Endpoint
-from fhir.resources.R4B.location import Location
-from fhir.resources.R4B.practitioner import Practitioner
-from fhir.resources.R4B.practitionerrole import PractitionerRole
+from app.models.fhir.types import McsdResources
 
 
 def _is_ref(data: Any) -> bool:
@@ -31,6 +25,9 @@ def _is_backbone_element(data: Any) -> bool:
 
 
 def _from_backbone_element(data: BackboneElement) -> List[Reference]:
+    """
+    Helpe function to extract references from Backbone Element.
+    """
     fields = [getattr(data, name) for name in data.elements_sequence()]  # type: ignore
     fields = [field for field in fields if fields]
 
@@ -106,30 +103,13 @@ def _make_unique(data: List[Reference]) -> List[Reference]:
     return [Reference(**d) for d in unique_dicts]
 
 
-def get_references(data: DomainResource) -> List[Reference]:
+def get_references(model: DomainResource) -> List[Reference]:
     """
     Takes a FHIR DomainResource as an argument and returns a list of References.
     """
-    refs: List[Reference] = []
-    if isinstance(data, Organization):
-        refs.extend(extract_model_references(data))
+    resource_type = model.get_resource_type()
+    if not any(resource_type in r.value for r in McsdResources):
+        raise ValueError(f"{resource_type} is not a valid mCSD Resource")
 
-    if isinstance(data, Endpoint):
-        refs.extend(extract_model_references(data))
-
-    if isinstance(data, OrganizationAffiliation):
-        refs.extend(extract_model_references(data))
-
-    if isinstance(data, Location):
-        refs.extend(extract_model_references(data))
-
-    if isinstance(data, Practitioner):
-        refs.extend(extract_model_references(data))
-
-    if isinstance(data, PractitionerRole):
-        refs.extend(extract_model_references(data))
-
-    if isinstance(data, HealthcareService):
-        refs.extend(extract_model_references(data))
-
+    refs = extract_model_references(model)
     return _make_unique(refs)

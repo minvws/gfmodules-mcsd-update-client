@@ -11,11 +11,11 @@ from app.models.adjacency.node import (
     NodeReference,
     NodeUpdateData,
 )
+from app.models.fhir.types import McsdResources
 from app.services.fhir.fhir_service import FhirService
 import numpy as np
 from app.container import get_database
 from app.db.repositories.resource_map_repository import ResourceMapRepository
-from app.services.update.update_client_service import McsdResources
 from .mcsd_resource_gen import (
     generate_history_bundles,
     generate_post_bundle,
