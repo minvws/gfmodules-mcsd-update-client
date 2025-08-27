@@ -5,10 +5,11 @@ on:
       - main
 
 jobs:
-  call-ti-suite:
-    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+  trigger-ci:
+    runs-on: ubuntu-24.04
     steps:
-      - name: Trigger a run on the ti-suite
-        run: |
-          curl -X POST -u "${{ secrets.ORAC_HTPASSWD }}" https://orac.test.gf.irealisatie.nl/run
+      - name: Trigger CI suite
+        uses: minvws/nl-irealisatie-generic-pipelines/.github/actions/gfmodules-trigger-ci@main
+        with:
+          orac_htpasswd: '${{ secrets.ORAC_HTPASSWD }}'
+          endpoint_url: '${{ secrets.ORAC_ENDPOINT }}'
