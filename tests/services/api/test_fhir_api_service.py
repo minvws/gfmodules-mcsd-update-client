@@ -9,7 +9,7 @@ import pytest
 from yarl import URL
 
 from app.services.api.fhir_api import FhirApi
-from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
+from app.services.fhir.bundle.bundle_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 
 PATCHED_MODULE = "app.services.api.api_service.HttpService.do_request"

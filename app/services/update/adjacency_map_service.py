@@ -155,7 +155,7 @@ class AdjacencyMapService:
                 entry_request = BundleEntryRequest.model_construct(
                     method="DELETE", url=url
                 )
-                entry.request = entry_request
+                entry.request = entry_request  # type: ignore[assignment]
 
                 if resource_map is None:
                     raise Exception(

@@ -36,7 +36,7 @@ class ExternalCachingService(CachingService):
             return None
 
         serialized_data = self.__redis.get(target_id)
-        return Node.model_validate_json(serialized_data)
+        return Node.model_validate_json(serialized_data)    # type: ignore[arg-type]
 
     def add_node(self, node: Node) -> None:
         target_id = self.make_target_id(node.resource_id)

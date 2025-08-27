@@ -29,9 +29,9 @@ def create_model(model: Type[T], data: Dict[str, Any], strict: bool) -> T:
     If strict is True, it will validate the data strictly, otherwise it will construct the model without validation.
     """
     if strict:
-        return model.model_validate(data)  # type: ignore
+        return model.model_validate(data)
 
-    return model.model_construct(**data)  # type: ignore
+    return model.model_construct(**data)
 
 
 def create_organization(data: Dict[str, Any], strict: bool) -> Organization:

@@ -8,7 +8,7 @@ from app.models.adjacency.node import Node, NodeReference
 from app.models.fhir.types import BundleRequestParams
 from app.models.resource_map.dto import ResourceMapDto
 from app.services.entity.resource_map_service import ResourceMapService
-from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
+from app.services.fhir.bundle.bundle_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from app.services.update.adjacency_map_service import AdjacencyMapService
 from app.services.update.computation_service import ComputationService

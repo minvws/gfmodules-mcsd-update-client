@@ -80,8 +80,8 @@ class FhirApi(HttpService):
         entries = page_bundle.entry if page_bundle.entry else []
         if page_bundle.link is not None and len(page_bundle.link) > 0:
             for link in page_bundle.link:
-                if link.relation == "next":
-                    next_url = URL(link.url)
+                if link.relation == "next": # type: ignore[attr-defined]
+                    next_url = URL(link.url)    # type: ignore[attr-defined]
 
         return next_url, entries
 
@@ -120,7 +120,7 @@ class FhirApi(HttpService):
         """
         Helper function to extract query parameter from URL.
         """
-        query = url.query  # type: ignore
+        query = url.query
         return dict(query)
 
     def get_history_batch(
@@ -146,7 +146,7 @@ class FhirApi(HttpService):
         entries = filter_history_entries(page_bundle.entry) if page_bundle.entry else []
         if page_bundle.link is not None and len(page_bundle.link) > 0:
             for link in page_bundle.link:
-                if link.relation == "next":
-                    next_params = self.get_next_params(URL(link.url))
+                if link.relation == "next":     # type: ignore[attr-defined]
+                    next_params = self.get_next_params(URL(link.url))       # type: ignore[attr-defined]
 
         return next_params, entries

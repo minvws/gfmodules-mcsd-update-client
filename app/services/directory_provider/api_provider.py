@@ -59,7 +59,7 @@ class DirectoryApiProvider(DirectoryProvider):
                 params=params,
             )
             try:
-                orgs, endpoint_map = self.__parse_bundle(entries)
+                orgs, endpoint_map = self.__parse_bundle(entries)  # type: ignore[arg-type]
 
                 for org in orgs:
                     directory = self.__create_directory_dto(org, endpoint_map)
@@ -92,7 +92,7 @@ class DirectoryApiProvider(DirectoryProvider):
                 params=params,
             )
 
-            orgs, endpoint_map = self.__parse_bundle(entries)
+            orgs, endpoint_map = self.__parse_bundle(entries)   # type: ignore[arg-type]
 
             org = next(iter(orgs), None)
             if not org:
@@ -133,11 +133,11 @@ class DirectoryApiProvider(DirectoryProvider):
         endpoint_map: Dict[str, Any] = {}
 
         for entry in entries:
-            resource = entry.resource
+            resource = entry.resource       # type: ignore[attr-defined]
             if isinstance(resource, Organization):
                 orgs.append(resource)
             elif isinstance(resource, Endpoint):
-                endpoint_map[resource.id] = resource
+                endpoint_map[resource.id] = resource    # type: ignore[index]
 
         return orgs, endpoint_map
 
@@ -158,8 +158,8 @@ class DirectoryApiProvider(DirectoryProvider):
             return None
 
         return DirectoryDto(
-            id=_id,
-            name=name,
+            id=_id or "",
+            name=name or "",
             endpoint=endpoint_address,  # type:ignore
             is_deleted=False,
         )
@@ -170,6 +170,8 @@ class DirectoryApiProvider(DirectoryProvider):
         ref = self.__fhir_service.get_references(org) if org.endpoint else None
         if ref:
             first_ref = ref[0]
+            if first_ref.reference is None:
+                return None
             if not first_ref.reference.startswith("Endpoint/"):
                 logger.warning(f"Unexpected reference format: {first_ref.reference}")
                 return None

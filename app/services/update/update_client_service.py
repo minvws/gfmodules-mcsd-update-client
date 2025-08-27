@@ -90,7 +90,7 @@ class UpdateClientService:
             )
             resources = list(resource_map)
             while len(resources) > 0:
-                if delete_bundle.total >= 100:
+                if delete_bundle.total is not None and delete_bundle.total >= 100:
                     logging.info(
                         f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
                     )
@@ -100,6 +100,9 @@ class UpdateClientService:
                     )
 
                 res_map_item = resources.pop()
+                if delete_bundle.entry is None:
+                    delete_bundle.entry = []
+
                 delete_bundle.entry.append(
                     BundleEntry(
                         request=BundleEntryRequest(
@@ -108,6 +111,8 @@ class UpdateClientService:
                         )
                     )
                 )
+                if delete_bundle.total is None:
+                    delete_bundle.total = 0
                 delete_bundle.total += 1
                 self.__resource_map_service.delete_one(
                     ResourceMapDeleteDto(
@@ -116,7 +121,7 @@ class UpdateClientService:
                         directory_resource_id=res_map_item.directory_resource_id,
                     )
                 )
-            if delete_bundle.total > 0:  # Final flush of remaining items
+            if delete_bundle.total is not None and delete_bundle.total > 0:  # Final flush of remaining items
                 logging.info(
                     f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
                 )

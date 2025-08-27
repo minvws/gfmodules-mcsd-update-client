@@ -12,7 +12,7 @@ from fhir.resources.R4B.reference import Reference
 from pydantic import ValidationError
 import pytest
 from app.models.fhir.types import BundleRequestParams
-from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
+from app.services.fhir.bundle.bundle_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from tests.services.fhir.conftest import (
     incomplete_resources,
@@ -323,8 +323,8 @@ def test_create_bundle_request_should_succeed(fhir_service: FhirService) -> None
     assert len(results.entry) == 1
     assert isinstance(results.entry, List)
     assert isinstance(results.entry[0], BundleEntry)
-    assert isinstance(results.entry[0].request, BundleEntryRequest)
-    assert results.entry[0].request.method == "GET"
+    assert isinstance(results.entry[0].request, BundleEntryRequest) # type: ignore[attr-defined]
+    assert results.entry[0].request.method == "GET" # type: ignore[attr-defined]
 
 
 def test_get_entries_from_bundle_of_bundles_should_succeed(
