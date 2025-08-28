@@ -42,18 +42,17 @@ For instance, take the following Organization resource found in a directory:
 }
 ```
 
-In this case, the reference of "partOf" points to another Organization resource within that directory. When this resource is updated to the addressing FHIR server, the reference will be modified to point to the addressing FHIR server instead:
+In this case, the "id" is the original logical [id](https://build.fhir.org/resource-definitions.html#Resource.id) that the directory has assigned. While the reference of "partOf" points to another Organization resource within that directory. When this resource is updated to the addressing FHIR server, the id will be namespaced and the reference will be modified to point to the addressing FHIR server instead:
 
 ```json
 {
   "resourceType": "Organization",
-  "id": "1",
+  "id": "directory-id-1",
   "name": "Good Health Clinic",
   "partOf": {
-    "reference": "http://addressing-fhir-server/Organization/random-identifier-2"
+    "reference": "http://addressing-fhir-server/Organization/directory-id-2"
   }
 }
-```
 
 This allows for a consistent and unified view of resources across multiple directories, ensuring that all references are correctly resolved to the addressing FHIR server.
 
