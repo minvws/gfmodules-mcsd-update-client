@@ -54,9 +54,7 @@ In this case, the "id" is the original logical [id](https://build.fhir.org/resou
   }
 }
 
-This allows for a consistent and unified view of resources across multiple directories, ensuring that all references are correctly resolved to the addressing FHIR server.
-
-The random identifier added to the identifier is generated to avoid conflicts with existing resource IDs on the addressing server since multiple directories may have resources with the same ID.
+This allows for a consistent and unified view of resources across multiple directories, ensuring that all references are correctly resolved to the addressing FHIR server. And avoid any id conflicts between different directories the app is trying to pull data from.
 
 
 
