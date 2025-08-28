@@ -1,15 +1,30 @@
 import json
-from typing import Any, List
+from typing import Any, Iterable, List, TypeVar
 from fhir.resources.R4B.backboneelement import BackboneElement
 from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.reference import Reference
 from app.models.fhir.types import McsdResources
 
 
+_T = TypeVar("_T")
+
+
+def filter_none(data: Iterable[_T | None]) -> Iterable[_T]:
+    return [entry for entry in data if entry]
+
+
+def flatten(sublists: Iterable[Iterable[_T]]) -> Iterable[_T]:
+    """
+    Helper function to flatten an Iterable of Iterables.
+    eg: [[1,2],[3,4]] -> [1,2,3,4]
+    """
+    return [element for sublist in sublists for element in sublist]
+
+
 def _is_ref(data: Any) -> bool:
     """
     Helper function to validate if data is a valid Reference by checking against
-    the class and Dict
+    the class and Dict.
     """
     if isinstance(data, Reference):
         return True
@@ -26,61 +41,58 @@ def _is_backbone_element(data: Any) -> bool:
 
 def _from_backbone_element(data: BackboneElement) -> List[Reference]:
     """
-    Helpe function to extract references from Backbone Element.
+    Helper function to extract references from Backbone Element.
     """
     fields = [getattr(data, name) for name in data.elements_sequence()]  # type: ignore
     fields = [field for field in fields if fields]
 
-    refs = [extract_references(ref) for ref in fields if _is_ref(ref)]
-    return [ref for ref in refs if ref]
+    refs = filter_none([extract_reference(ref) for ref in fields if _is_ref(ref)])
+    return [*refs]
 
 
-def extract_model_references(model: DomainResource) -> List[Reference]:
+def from_domain_resource(model: DomainResource) -> List[Reference]:
     """
     Extracts references from an mCSD resource by going through the properties
     of the model.
     """
     # extract fields of the model and filter the None values
-    fields = [getattr(model, field) for field in model.elements_sequence()]  # type: ignore
-    fields = [field for field in fields if field]
+    fields = filter_none([getattr(model, field) for field in model.elements_sequence()])  # type: ignore
 
     # get the refs on the root level and filter None
-    root_refs = [extract_references(ref) for ref in fields if _is_ref(ref)]
-    filtered_root_refs = [ref for ref in root_refs if ref]
+    root_refs = filter_none([extract_reference(ref) for ref in fields if _is_ref(ref)])
 
     # extract sublists of the model and flatten it
-    sub_lists = [sublist for sublist in fields if isinstance(sublist, list)]
-    flattened_list = [element for sublist in sub_lists for element in sublist]
+    sub_lists = flatten([sublist for sublist in fields if isinstance(sublist, list)])
 
     # get the refs from the flattened sublists and filter nones
-    sublist_refs = [
-        extract_references(data) for data in flattened_list if _is_ref(data)
-    ]
-    filtered_sublist_refs = [ref for ref in sublist_refs if ref]
+    sublist_refs = filter_none(
+        [extract_reference(data) for data in sub_lists if _is_ref(data)]
+    )
 
     # extract BackboneElements from the flattened sublists
     backbone_elements = [
-        element for element in flattened_list if _is_backbone_element(element)
+        element for element in sub_lists if _is_backbone_element(element)
     ]
-    nested_backbone_elements_refs = [
-        _from_backbone_element(data) for data in backbone_elements
-    ]
-    # get the refs of those sublists
-    flattened_backbone_elements_refs = [
-        ref for sublist in nested_backbone_elements_refs for ref in sublist
-    ]
+
+    # extract sublists of refs from backbone elements and flatten them
+    backbone_elements_refs = flatten(
+        [_from_backbone_element(data) for data in backbone_elements]
+    )
 
     return [
-        *filtered_root_refs,
-        *filtered_sublist_refs,
-        *flattened_backbone_elements_refs,
+        *root_refs,
+        *sublist_refs,
+        *backbone_elements_refs,
     ]
 
 
-def extract_references(data: Any) -> Reference | None:
+# TODO: deprecate this function once new namespace PR is merged
+def extract_reference(data: Any) -> Reference | None:
     """
     Helper function that extracts refs from a data by checking if the item is a Dict
     or an instance of the Reference. This function also ignores contained references.
+
+    Note: will be deprecated soon.
     """
     if isinstance(data, dict):
         if "reference" in data and data["reference"][0] != "#":
@@ -111,5 +123,5 @@ def get_references(model: DomainResource) -> List[Reference]:
     if not any(resource_type in r.value for r in McsdResources):
         raise ValueError(f"{resource_type} is not a valid mCSD Resource")
 
-    refs = extract_model_references(model)
+    refs = from_domain_resource(model)
     return _make_unique(refs)

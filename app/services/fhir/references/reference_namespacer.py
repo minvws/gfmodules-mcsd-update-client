@@ -11,14 +11,14 @@ from fhir.resources.R4B.practitioner import Practitioner, PractitionerQualificat
 from fhir.resources.R4B.practitionerrole import PractitionerRole
 
 from app.services.fhir.bundle.bundle_utils import get_resource_from_reference
-from app.services.fhir.references.reference_extractor import extract_references
+from app.services.fhir.references.reference_extractor import extract_reference
 
 
 def _namespace_reference(data: Any, namespace: str) -> Reference | None:
     """
     Finds a single reference in the data and converts it to namespaced references.
     """
-    ref = extract_references(data)
+    ref = extract_reference(data)
     if ref is None or ref.reference is None:
         return None
     res_type, _id = get_resource_from_reference(ref.reference)
