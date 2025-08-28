@@ -27,7 +27,7 @@ graph TD
 
 
 ## Update service
-The Update service is responsible for polling one or more FHIR directories for new or updated resources. When a resource is found, it modifies any internal references to point to the addressing FHIR server before updating the resource on that server.
+The Update service is responsible for polling from one or more FHIR directories for new or updated resources. It does so by comparing data against the addressing FHIR Directory and make decisions based on the outcome of the comparison. When an update is found, it modifies any internal id and references by namespacing them according to the id of the server it is polling data from. This is essential to avoid id collisions and so that references point to the addressing FHIR server before updating the resource on that server.
 
 For instance, take the following Organization resource found in a directory:
 
