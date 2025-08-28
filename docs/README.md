@@ -1,8 +1,8 @@
 # MCSD Update client
 
-The MCSD update client allows you to search for FHIR resources conforming to the mCSD specification.
+The MCSD update client allows you update FHIR resources conforming to the [mCSD specification](https://profiles.ihe.net/ITI/mCSD/volume-1.html#1-46-mobile-care-services-discovery-mcsd). This application is an implementation of [ITI-91](https://profiles.ihe.net/ITI/mCSD/ITI-91.html).
 
-The data found in this system is taken by continousily polling one or more external FHIR directories for FHIR resources, and convert their references to point to the addressing FHIR server before updating the resources on that server.
+Data from target FHIR directories is taken by continuously polling for mCSD resources, convert their references to point to the addressing FHIR server before updating the resources on that server.
 
 ```mermaid
 
