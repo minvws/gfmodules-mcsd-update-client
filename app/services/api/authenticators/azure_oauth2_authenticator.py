@@ -1,6 +1,7 @@
 import time
 import requests
 from typing import Any
+from requests.exceptions import RequestException
 from app.services.api.authenticators.authenticator import Authenticator
 
 
@@ -35,16 +36,27 @@ class AzureOAuth2Authenticator(Authenticator):
         return f"Bearer {self.token}"
 
     def __get_token(self) -> dict[str, Any]:
-        response = requests.post(
-            self.__token_url,
-            data={
-                "grant_type": "client_credentials",
-                "client_id": self.__client_id,
-                "client_secret": self.__client_secret,
-                "scope": self.__resource + "/.default",
-            },
-        )
-        if response.status_code > 300:
-            raise Exception(response.json())
+        try:
+            response = requests.post(
+                self.__token_url,
+                data={
+                    "grant_type": "client_credentials",
+                    "client_id": self.__client_id,
+                    "client_secret": self.__client_secret,
+                    "scope": self.__resource + "/.default",
+                },
+            )
+        except RequestException as e:
+            raise ConnectionError(f"Failed to connect to token endpoint: {e}")
 
-        return response.json()  # type: ignore
+        if response.status_code >= 400:
+            try:
+                error_details = response.json()
+                raise ValueError(f"Authentication failed with status {response.status_code}: {error_details}")
+            except requests.JSONDecodeError:
+                raise ValueError(f"Authentication failed with status {response.status_code}: {response.text}")
+
+        try:
+            return response.json()  # type: ignore
+        except requests.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON response from token endpoint: {e}")
