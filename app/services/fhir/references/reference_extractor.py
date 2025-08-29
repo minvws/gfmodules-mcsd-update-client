@@ -1,232 +1,108 @@
 import json
-from typing import Any, List
+from typing import Any, Iterable, List, TypeVar
+from fhir.resources.R4B.backboneelement import BackboneElement
 from fhir.resources.R4B.domainresource import DomainResource
-from fhir.resources.R4B.healthcareservice import HealthcareService
 from fhir.resources.R4B.reference import Reference
-from fhir.resources.R4B.organization import Organization
-from fhir.resources.R4B.organizationaffiliation import OrganizationAffiliation
-from fhir.resources.R4B.endpoint import Endpoint
-from fhir.resources.R4B.location import Location
-from fhir.resources.R4B.practitioner import Practitioner, PractitionerQualification
-from fhir.resources.R4B.practitionerrole import PractitionerRole
+from app.models.fhir.types import McsdResources
 
 
-def extract_references(data: Any) -> Reference | None:
+_T = TypeVar("_T")
+
+
+def filter_none(data: Iterable[_T | None]) -> Iterable[_T]:
+    return [entry for entry in data if entry]
+
+
+def flatten(sublists: Iterable[Iterable[_T]]) -> Iterable[_T]:
+    """
+    Helper function to flatten an Iterable of Iterables.
+    eg: [[1,2],[3,4]] -> [1,2,3,4]
+    """
+    return [element for sublist in sublists for element in sublist]
+
+
+def _is_ref(data: Any) -> bool:
+    """
+    Helper function to validate if data is a valid Reference by checking against
+    the class and Dict.
+    """
+    if isinstance(data, Reference):
+        return True
+
+    if isinstance(data, dict) and "reference" in data.keys():
+        return True
+
+    return False
+
+
+def _is_backbone_element(data: Any) -> bool:
+    return isinstance(data, BackboneElement)
+
+
+def _from_backbone_element(data: BackboneElement) -> List[Reference]:
+    """
+    Helper function to extract references from Backbone Element.
+    """
+    fields = [getattr(data, name) for name in data.elements_sequence()]  # type: ignore
+    fields = [field for field in fields if fields]
+
+    refs = filter_none([extract_reference(ref) for ref in fields if _is_ref(ref)])
+    return [*refs]
+
+
+def from_domain_resource(model: DomainResource) -> List[Reference]:
+    """
+    Extracts references from an mCSD resource by going through the properties
+    of the model.
+    """
+    # extract fields of the model and filter the None values
+    fields = filter_none([getattr(model, field) for field in model.elements_sequence()])  # type: ignore
+
+    # get the refs on the root level and filter None
+    root_refs = filter_none([extract_reference(ref) for ref in fields if _is_ref(ref)])
+
+    # extract sublists of the model and flatten it
+    sub_lists = flatten([sublist for sublist in fields if isinstance(sublist, list)])
+
+    # get the refs from the flattened sublists and filter nones
+    sublist_refs = filter_none(
+        [extract_reference(data) for data in sub_lists if _is_ref(data)]
+    )
+
+    # extract BackboneElements from the flattened sublists
+    backbone_elements = [
+        element for element in sub_lists if _is_backbone_element(element)
+    ]
+
+    # extract sublists of refs from backbone elements and flatten them
+    backbone_elements_refs = flatten(
+        [_from_backbone_element(data) for data in backbone_elements]
+    )
+
+    return [
+        *root_refs,
+        *sublist_refs,
+        *backbone_elements_refs,
+    ]
+
+
+# TODO: deprecate this function once new namespace PR is merged
+def extract_reference(data: Any) -> Reference | None:
+    """
+    Helper function that extracts refs from a data by checking if the item is a Dict
+    or an instance of the Reference. This function also ignores contained references.
+
+    Note: will be deprecated soon.
+    """
     if isinstance(data, dict):
         if "reference" in data and data["reference"][0] != "#":
-            return Reference.model_construct(**data)
+            return Reference(**data)
 
     if isinstance(data, Reference):
         if data.reference is not None and not data.reference.startswith("#"):
             return data
 
     return None
-
-
-def _get_org_references(model: Organization) -> List[Reference]:
-    """
-    Extracts "endpoint" and "part-of" references from an Organization resource.
-    """
-    refs: List[Reference] = []
-    endpoints = model.endpoint
-    part_of = model.partOf
-    if endpoints is not None:
-        for endpoint in endpoints:
-            ref = extract_references(endpoint)
-            if ref is not None:
-                refs.append(ref)
-    if part_of is not None:
-        new_ref = extract_references(part_of)
-        if new_ref is not None:
-            refs.append(new_ref)
-    return refs
-
-
-def _get_endpoint_references(model: Endpoint) -> List[Reference]:
-    """
-    Extracts "managing-organization" references from an Endpoint resource.
-    """
-    refs: List[Reference] = []
-    managing_org = model.managingOrganization
-    if managing_org is not None:
-        new_ref = extract_references(managing_org)
-        if new_ref is not None:
-            refs.append(new_ref)
-
-    return refs
-
-
-def _get_org_affiliation_references(model: OrganizationAffiliation) -> List[Reference]:
-    """
-    Extracts references from an OrganizationAffiliation resource, including organization,
-    """
-    refs: List[Reference] = []
-    organization = model.organization
-    participating_org = model.participatingOrganization
-    network = model.network
-    location = model.location
-    healthcare_service = model.healthcareService
-    endpoints = model.endpoint
-
-    if organization is not None:
-        new_ref = extract_references(organization)
-        if new_ref is not None:
-            refs.append(new_ref)
-
-    if participating_org is not None:
-        new_ref = extract_references(participating_org)
-        if new_ref is not None:
-            refs.append(new_ref)
-
-    if network is not None:
-        for org in network:
-            new_ref = extract_references(org)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    if location is not None:
-        for loc in location:
-            new_ref = extract_references(loc)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    if healthcare_service is not None:
-        for service in healthcare_service:
-            new_ref = extract_references(service)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    if endpoints is not None:
-        for endpoint in endpoints:
-            new_ref = extract_references(endpoint)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    return refs
-
-
-def _get_location_references(model: Location) -> List[Reference]:
-    """
-    Extracts references from a Location resource, including managing-organization,
-    """
-    refs: List[Reference] = []
-    managing_org = model.managingOrganization
-    part_of = model.partOf
-    endpoints = model.endpoint
-
-    if managing_org is not None:
-        new_ref = extract_references(managing_org)
-        if new_ref is not None:
-            refs.append(new_ref)
-
-    if part_of is not None:
-        new_ref = extract_references(part_of)
-        if new_ref is not None:
-            refs.append(new_ref)
-
-    if endpoints is not None:
-        for endpoint in endpoints:
-            new_ref = extract_references(endpoint)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    return refs
-
-
-def _get_practitioner_references(model: Practitioner) -> List[Reference]:
-    """
-    Extracts references from a Practitioner resource, including qualification issuer.
-    """
-    refs: List[Reference] = []
-    qualifications = model.qualification
-    if qualifications is not None:
-        for qualification in qualifications:
-            if isinstance(qualification, PractitionerQualification):
-                issuer = qualification.issuer       # type: ignore[attr-defined]
-
-                new_ref = extract_references(issuer)
-                if new_ref is not None:
-                    refs.append(new_ref)
-
-    return refs
-
-
-def _get_practitioner_role_references(model: PractitionerRole) -> List[Reference]:
-    """
-    Extracts references from a PractitionerRole resource, including practitioner,
-    """
-    refs: List[Reference] = []
-    practitioner = model.practitioner
-    organization = model.organization
-    locations = model.location
-    healthcare_services = model.healthcareService
-    endpoints = model.endpoint
-
-    if practitioner is not None:
-        new_ref = extract_references(practitioner)
-        if new_ref is not None:
-            refs.append(new_ref)
-
-    if organization is not None:
-        new_ref = extract_references(organization)
-        if new_ref is not None:
-            refs.append(new_ref)
-
-    if locations is not None:
-        for location in locations:
-            new_ref = extract_references(location)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    if healthcare_services is not None:
-        for healthcare_service in healthcare_services:
-            new_ref = extract_references(healthcare_service)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    if endpoints is not None:
-        for endpoint in endpoints:
-            new_ref = extract_references(endpoint)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    return refs
-
-
-def _get_healthcare_service_references(model: HealthcareService) -> List[Reference]:
-    """
-    Extracts references from a HealthcareService resource, including location,
-    """
-    refs: List[Reference] = []
-    locations = model.location
-    coverage_areas = model.coverageArea
-    endpoints = model.endpoint
-    provided_by = model.providedBy
-
-    if locations is not None:
-        for loc in locations:
-            new_ref = extract_references(loc)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    if coverage_areas is not None:
-        for cov in coverage_areas:
-            new_ref = extract_references(cov)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    if endpoints is not None:
-        for endpoint in endpoints:
-            new_ref = extract_references(endpoint)
-            if new_ref is not None:
-                refs.append(new_ref)
-
-    if provided_by is not None:
-        new_ref = extract_references(provided_by)
-        if new_ref is not None:
-            refs.append(new_ref)
-
-    return refs
 
 
 def _make_unique(data: List[Reference]) -> List[Reference]:
@@ -239,30 +115,13 @@ def _make_unique(data: List[Reference]) -> List[Reference]:
     return [Reference(**d) for d in unique_dicts]
 
 
-def get_references(data: DomainResource) -> List[Reference]:
+def get_references(model: DomainResource) -> List[Reference]:
     """
     Takes a FHIR DomainResource as an argument and returns a list of References.
     """
-    refs: List[Reference] = []
-    if isinstance(data, Organization):
-        refs.extend(_get_org_references(data))
+    resource_type = model.get_resource_type()
+    if not any(resource_type in r.value for r in McsdResources):
+        raise ValueError(f"{resource_type} is not a valid mCSD Resource")
 
-    if isinstance(data, Endpoint):
-        refs.extend(_get_endpoint_references(data))
-
-    if isinstance(data, OrganizationAffiliation):
-        refs.extend(_get_org_affiliation_references(data))
-
-    if isinstance(data, Location):
-        refs.extend(_get_location_references(data))
-
-    if isinstance(data, Practitioner):
-        refs.extend(_get_practitioner_references(data))
-
-    if isinstance(data, PractitionerRole):
-        refs.extend(_get_practitioner_role_references(data))
-
-    if isinstance(data, HealthcareService):
-        refs.extend(_get_healthcare_service_references(data))
-
+    refs = from_domain_resource(model)
     return _make_unique(refs)

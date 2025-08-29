@@ -1,9 +1,9 @@
 from datetime import datetime
 import time
-from enum import Enum
 import logging
 from typing import Dict, List, Any
 from uuid import uuid4
+from app.models.fhir.types import McsdResources
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.cache.caching_service import (
     CachingService,
@@ -29,16 +29,6 @@ from app.services.fhir.fhir_service import FhirService
 from app.services.api.fhir_api import FhirApi
 
 logger = logging.getLogger(__name__)
-
-
-class McsdResources(Enum):
-    ORGANIZATION_AFFILIATION = "OrganizationAffiliation"
-    PRACTITIONER_ROLE = "PractitionerRole"
-    HEALTH_CARE_SERVICE = "HealthcareService"
-    LOCATION = "Location"
-    PRACTITIONER = "Practitioner"
-    ORGANIZATION = "Organization"
-    ENDPOINT = "Endpoint"
 
 
 class UpdateClientService:
@@ -124,7 +114,9 @@ class UpdateClientService:
                         directory_resource_id=res_map_item.directory_resource_id,
                     )
                 )
-            if delete_bundle.total is not None and delete_bundle.total > 0:  # Final flush of remaining items
+            if (
+                delete_bundle.total is not None and delete_bundle.total > 0
+            ):  # Final flush of remaining items
                 logging.info(
                     f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
                 )

@@ -2,7 +2,7 @@ from random import choice
 from typing import Any, Dict
 from uuid import uuid4
 
-from app.services.update.update_client_service import McsdResources
+from app.models.fhir.types import McsdResources
 from seeds.generate_data import DataGenerator
 import os
 import json
@@ -169,7 +169,7 @@ def setup_fhir_resource(
             ).model_dump_json()
     save_resource_version(
         resource_id_folder=f"{base_path}/{mcsd_res_type.value}/{resource_id}",
-        resource=resource,      # type: ignore[arg-type]
+        resource=resource,  # type: ignore[arg-type]
         version=version,
     )
     return resource_id
@@ -223,10 +223,12 @@ def generate_post_bundle(base_path: str) -> None:
                         },
                     }
                     resource_2 = copy.deepcopy(resource)
-                    resource_2["identifier"] = [{
-                        "system": f"http://example.com/{str(uuid4())}",
-                        "value": str(uuid4())
-                    }]
+                    resource_2["identifier"] = [
+                        {
+                            "system": f"http://example.com/{str(uuid4())}",
+                            "value": str(uuid4()),
+                        }
+                    ]
                     entry_2 = {
                         "fullUrl": f"{resource_type.value}/{resource_id}",
                         "resource": resource_2,

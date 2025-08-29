@@ -8,6 +8,7 @@ from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.organizationaffiliation import OrganizationAffiliation
 from fhir.resources.R4B.practitioner import Practitioner
 from fhir.resources.R4B.practitionerrole import PractitionerRole
+from fhir.resources.R4B.medication import Medication
 from fhir.resources.R4B.reference import Reference
 from pydantic import ValidationError
 import pytest
@@ -133,6 +134,16 @@ def test_get_references_should_ignore_contained_refs(
     actual_refs = fhir_service.get_references(resource)
 
     assert expected_refs == actual_refs
+
+
+def test_get_references_should_raise_exception_with_non_mcsd_resource(
+    fhir_service: FhirService,
+) -> None:
+    non_mcsd_resource = Medication(
+        id="some-id", manufacturer=Reference(reference="Organization/some-org-id")
+    )
+    with pytest.raises(ValueError):
+        fhir_service.get_references(non_mcsd_resource)
 
 
 @pytest.mark.parametrize(
@@ -323,8 +334,8 @@ def test_create_bundle_request_should_succeed(fhir_service: FhirService) -> None
     assert len(results.entry) == 1
     assert isinstance(results.entry, List)
     assert isinstance(results.entry[0], BundleEntry)
-    assert isinstance(results.entry[0].request, BundleEntryRequest) # type: ignore[attr-defined]
-    assert results.entry[0].request.method == "GET" # type: ignore[attr-defined]
+    assert isinstance(results.entry[0].request, BundleEntryRequest)  # type: ignore[attr-defined]
+    assert results.entry[0].request.method == "GET"  # type: ignore[attr-defined]
 
 
 def test_get_entries_from_bundle_of_bundles_should_succeed(
