@@ -166,7 +166,8 @@ def test_namespace_references_should_not_change_anything_in_resource_when_refs_a
 ) -> None:
     resource = fhir_service.create_resource(data)
     actual = fhir_service.namespace_resource_references(resource, "example")
-    assert fhir_service.create_resource(expected) == actual
+    # Matching on dict since namespacing sets model objects
+    assert fhir_service.create_resource(expected).model_dump_json() == actual.model_dump_json()
 
 
 def test_split_reference_should_succeed(fhir_service: FhirService) -> None:
