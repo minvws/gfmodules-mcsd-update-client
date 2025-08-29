@@ -3,8 +3,7 @@ from typing import Any, Iterable, List, TypeVar
 from fhir.resources.R4B.backboneelement import BackboneElement
 from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.reference import Reference
-from app.models.fhir.types import McsdResources
-
+from app.services.fhir.utils import validate_resource_type
 
 _T = TypeVar("_T")
 
@@ -94,9 +93,9 @@ def extract_reference(data: Any) -> Reference | None:
 
     Note: will be deprecated soon.
     """
-    if isinstance(data, dict):
-        if "reference" in data and data["reference"][0] != "#":
-            return Reference(**data)
+    # if isinstance(data, dict):
+    #     if "reference" in data and data["reference"][0] != "#":
+    #         return Reference(**data)
 
     if isinstance(data, Reference):
         if data.reference is not None and not data.reference.startswith("#"):
@@ -120,7 +119,8 @@ def get_references(model: DomainResource) -> List[Reference]:
     Takes a FHIR DomainResource as an argument and returns a list of References.
     """
     resource_type = model.get_resource_type()
-    if not any(resource_type in r.value for r in McsdResources):
+    valid_resource_type = validate_resource_type(resource_type)
+    if not valid_resource_type:
         raise ValueError(f"{resource_type} is not a valid mCSD Resource")
 
     refs = from_domain_resource(model)

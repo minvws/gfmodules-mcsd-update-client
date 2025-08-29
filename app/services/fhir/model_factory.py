@@ -10,6 +10,8 @@ from fhir.resources.R4B.practitionerrole import PractitionerRole
 from fhir.resources.R4B.healthcareservice import HealthcareService
 from pydantic import ValidationError
 
+from app.services.fhir.utils import get_resource_type
+
 """
 Factory functions to create FHIR mCSD resource models from generic dictionaries.
 """
@@ -41,7 +43,9 @@ def create_organization(data: Dict[str, Any], strict: bool) -> Organization:
     return create_model(Organization, data, strict)
 
 
-def create_organization_affiliation(data: Dict[str, Any], strict: bool) -> OrganizationAffiliation:
+def create_organization_affiliation(
+    data: Dict[str, Any], strict: bool
+) -> OrganizationAffiliation:
     return create_model(OrganizationAffiliation, data, strict)
 
 
@@ -57,15 +61,15 @@ def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
         logger.warning(warning_message("Endpoint", "address", "example url"))
 
     if "status" not in data:
-        logger.warning(
-            warning_message("Endpoint", "status", "Error code")
-        )
+        logger.warning(warning_message("Endpoint", "status", "Error code"))
         data["status"] = "error"
 
     if "connectionType" not in data:
-        logger.warning(warning_message(
-            "Endpoint", "connectionType", "code system with warning text"
-        ))
+        logger.warning(
+            warning_message(
+                "Endpoint", "connectionType", "code system with warning text"
+            )
+        )
         data["connectionType"] = {
             "conding": [{"system": "System not available"}],
             "text": "system was added dyrung update to bypass validation",
@@ -114,8 +118,7 @@ def create_resource(data: Dict[str, Any], strict: bool = False) -> DomainResourc
     if resource_type_does_not_exist:
         raise ValueError("Model is not a valid FHIR model")
 
-    res_type_key = "resource_type" if "resource_type" in data else "resourceType"
-    resource_type: str = data[res_type_key]
+    resource_type = get_resource_type(data)
     match resource_type:
         case "Organization":
             return create_organization(data, strict)
