@@ -46,23 +46,21 @@ def create_organization_affiliation(data: Dict[str, Any], strict: bool) -> Organ
 
 
 def create_endpoint(data: Dict[str, Any], strict: bool) -> Endpoint:
+    if strict:
+        return create_model(Endpoint, data, strict)
     if "payloadType" not in data:
         data["payloadType"] = []
         logger.warning(warning_message("Endpoint", "payloadType", "empty array"))
 
     if "address" not in data:
-        data["address"] = ""
-        logger.warning(warning_message("Endpoint", "address", "empty string"))
+        data["address"] = "https://example.com/"
+        logger.warning(warning_message("Endpoint", "address", "example url"))
 
     if "status" not in data:
         logger.warning(
-            warning_message("Endpoint", "status", "code system with warning text")
+            warning_message("Endpoint", "status", "Error code")
         )
-        code = {
-            "coding": [{"system": "System not available"}],
-            "text": "system was added during update to bypass validation",
-        }
-        data["status"] = code
+        data["status"] = "error"
 
     if "connectionType" not in data:
         logger.warning(warning_message(
@@ -81,6 +79,8 @@ def create_location(data: Dict[str, Any], strict: bool) -> Location:
 
 
 def create_practitioner(data: Dict[str, Any], strict: bool) -> Practitioner:
+    if strict:
+        return create_model(Practitioner, data, strict)
     if "qualification" in data:
         for i, q in enumerate(data["qualification"]):
             if "code" not in q:

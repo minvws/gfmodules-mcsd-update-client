@@ -42,7 +42,7 @@ def test_cleanup() -> None:
 
     # Instantiate the service
     service = UpdateClientService(
-        update_client_url="http://mock-update_client-url",
+        update_client_url="https://mock-update_client-url",
         strict_validation=True,
         timeout=30,
         backoff=0.1,

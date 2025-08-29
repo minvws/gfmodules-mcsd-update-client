@@ -121,9 +121,6 @@ class UpdateClientService:
                     f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
                 )
                 self.__update_client_fhir_api.post_bundle(delete_bundle)
-                delete_bundle = Bundle(
-                    id=str(uuid4()), type="transaction", entry=[], total=0
-                )
 
     def update(self, directory: DirectoryDto, since: datetime | None = None) -> Any:
         self.__create_cache_run()

@@ -2,8 +2,11 @@ from enum import Enum
 import configparser
 import re
 from typing import Any, Optional
+import logging
 
 from pydantic import BaseModel, Field, ValidationError, computed_field, field_validator
+
+logger = logging.getLogger(__name__)
 
 _PATH = "app.conf"
 _CONFIG = None
@@ -47,16 +50,8 @@ class Scheduler(BaseModel):
             return 20
         return int(v)
 
-    @field_validator("automatic_background_update", mode="before")
-    def validate_automatic_background_update(cls, v: Any) -> Any:
-        if v in (None, "", " "):
-            return True
-        if isinstance(v, str):
-            return v.lower() in ("yes", "true", "t", "1")
-        return bool(v)
-
-    @field_validator("automatic_background_cleanup", mode="before")
-    def validate_automatic_background_cleanup(cls, v: Any) -> Any:
+    @field_validator("automatic_background_update", "automatic_background_cleanup", mode="before")
+    def validate_automatic_background_action(cls, v: Any) -> Any:
         if v in (None, "", " "):
             return True
         if isinstance(v, str):
@@ -371,6 +366,7 @@ def get_config(path: str | None = None) -> Config:
 
         _CONFIG = Config(**ini_data)
     except ValidationError as e:
+        logger.error(f"Configuration validation error: {e}")
         raise e
 
     return _CONFIG

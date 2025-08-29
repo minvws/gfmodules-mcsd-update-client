@@ -43,44 +43,65 @@ class DirectoryApiProvider(DirectoryProvider):
         self, include_ignored: bool, include_ignored_ids: List[str] | None = None
     ) -> List[DirectoryDto]:
         directories: List[DirectoryDto] = []
-        ignored_directories: Sequence[IgnoredDirectory] = []
-        if not include_ignored or include_ignored_ids:
-            ignored_directories = (
-                self.__ignored_directory_service.get_all_ignored_directories()
-            )
+        ignored_directories = self.__ignored_directory_service.get_all_ignored_directories() if not include_ignored or include_ignored_ids else []
 
-        # Keep on fetching until next_url is None (ie: no more pages)
-        params = {
-            "_include": "Organization:endpoint",
-        }
         next_url: URL | None = URL("")
         while next_url is not None:
+            params = {"_include": "Organization:endpoint"}
             next_url, entries = self.__fhir_api.search_resource(
                 resource_type="Organization",
                 params=params,
             )
-            try:
-                orgs, endpoint_map = self.__parse_bundle(entries)  # type: ignore[arg-type]
-
-                for org in orgs:
-                    directory = self.__create_directory_dto(org, endpoint_map)
-                    if directory:
-                        is_ignored = any(
-                            dir.directory_id == directory.id
-                            for dir in ignored_directories
-                        )
-                        is_included = (
-                            include_ignored_ids and directory.id in include_ignored_ids
-                        )
-
-                        if is_ignored and not include_ignored and not is_included:
-                            continue
-                        directories.append(directory)
-            except Exception as e:
-                logger.exception(f"Failed to retrieve directories: {e}")
-                raise e
+            page_directories = self.__process_organizations_page(
+                entries, ignored_directories, include_ignored, include_ignored_ids
+            )
+            directories.extend(page_directories)
 
         return directories
+
+    def __process_organizations_page(
+        self,
+        entries: List[BundleEntry],
+        ignored_directories: Sequence[IgnoredDirectory],
+        include_ignored: bool,
+        include_ignored_ids: List[str] | None,
+    ) -> List[DirectoryDto]:
+        directories: List[DirectoryDto] = []
+        try:
+            orgs, endpoint_map = self.__parse_bundle(entries)
+            for org in orgs:
+                directory = self.__create_directory_dto(org, endpoint_map)
+                if not directory:
+                    continue
+                    
+                if self.__should_include_directory(
+                    directory, ignored_directories, include_ignored, include_ignored_ids
+                ):
+                    directories.append(directory)
+            return directories
+        except Exception as e:
+            logger.exception(f"Failed to retrieve directories: {e}")
+            raise e
+
+    def __should_include_directory(
+        self,
+        directory: DirectoryDto,
+        ignored_directories: Sequence[IgnoredDirectory],
+        include_ignored: bool,
+        include_ignored_ids: List[str] | None,
+    ) -> bool:
+        is_ignored = any(dir.directory_id == directory.id for dir in ignored_directories)
+
+        if not is_ignored:
+            return True
+            
+        if include_ignored:
+            return True
+            
+        if include_ignored_ids and directory.id in include_ignored_ids:
+            return True
+            
+        return False
 
     def get_one_directory(self, directory_id: str) -> DirectoryDto:
         params = {
@@ -93,7 +114,7 @@ class DirectoryApiProvider(DirectoryProvider):
                 params=params,
             )
 
-            orgs, endpoint_map = self.__parse_bundle(entries)  # type: ignore[arg-type]
+            orgs, endpoint_map = self.__parse_bundle(entries)
 
             org = next(iter(orgs), None)
             if not org:
@@ -129,18 +150,16 @@ class DirectoryApiProvider(DirectoryProvider):
             logger.warning(f"Check for deleted directory {directory_id} failed: {e}")
             return False
 
-    def __parse_bundle(
-        self, entries: BundleEntry
-    ) -> tuple[List[Organization], Dict[str, Endpoint]]:
+    def __parse_bundle(self, entries: List[BundleEntry]) -> tuple[List[Organization], Dict[str, Endpoint]]:
         orgs: List[Organization] = []
         endpoint_map: Dict[str, Any] = {}
 
         for entry in entries:
-            resource = entry.resource  # type: ignore[attr-defined]
+            resource = entry.resource
             if isinstance(resource, Organization):
                 orgs.append(resource)
             elif isinstance(resource, Endpoint):
-                endpoint_map[resource.id] = resource  # type: ignore[index]
+                endpoint_map[resource.id] = resource
 
         return orgs, endpoint_map
 
