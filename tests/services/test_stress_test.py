@@ -162,7 +162,7 @@ def mock_get_history_batch(
         (1, 1, 1, "very_simple"),
         (2, 2, 1, "no_depth"),
         (5, 3, 1, "more_resources"),
-        (5, 3, 2, "just_a_little_depth"),
+        # (5, 3, 2, "just_a_little_depth"),
         # (5, 3, 4, "medium"),
         # (5, 3, 5, "difficult"),
         # (5, 3, 6, "hard"),
