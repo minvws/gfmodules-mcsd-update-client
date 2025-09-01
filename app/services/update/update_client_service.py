@@ -30,6 +30,12 @@ from app.services.api.fhir_api import FhirApi
 
 logger = logging.getLogger(__name__)
 
+class UpdateClientException(Exception):
+    pass
+
+class CacheServiceUnavailableException(UpdateClientException):
+    def __init__(self, *args: object) -> None:
+        super().__init__("Unable to continue with update, cache service is not available", *args)
 
 class UpdateClientService:
     def __init__(
@@ -75,59 +81,88 @@ class UpdateClientService:
 
     def cleanup(self, directory_id: str) -> None:
         for res_type in McsdResources:
-            delete_bundle = Bundle(
-                id=str(uuid4()), type="transaction", entry=[], total=0
-            )
-            resource_map = self.__resource_map_service.find(
-                directory_id=directory_id, resource_type=res_type.value
-            )
-            resources = list(resource_map)
-            while len(resources) > 0:
-                if delete_bundle.total is not None and delete_bundle.total >= 100:
-                    logging.info(
-                        f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
-                    )
-                    self.__update_client_fhir_api.post_bundle(delete_bundle)
-                    delete_bundle = Bundle(
-                        id=str(uuid4()), type="transaction", entry=[], total=0
-                    )
+            self.__cleanup_resource_type(directory_id, res_type)
 
-                res_map_item = resources.pop()
-                if delete_bundle.entry is None:
-                    delete_bundle.entry = []
+    def __cleanup_resource_type(self, directory_id: str, res_type: McsdResources) -> None:
+        resource_map = self.__resource_map_service.find(
+            directory_id=directory_id, resource_type=res_type.value
+        )
+        resources = list(resource_map)
+        
+        if not resources:
+            return
+            
+        delete_bundle = self.__create_empty_delete_bundle()
+        
+        for res_map_item in resources:
+            delete_bundle = self.__process_resource_for_deletion(
+                delete_bundle, res_map_item, res_type, directory_id
+            )
+        
+        self.__flush_delete_bundle(delete_bundle, directory_id)
 
-                delete_bundle.entry.append(
-                    BundleEntry(
-                        request=BundleEntryRequest(
-                            method="DELETE",
-                            url=f"{res_type.value}/{res_map_item.update_client_resource_id}?_cascade=delete",
-                        )
-                    )
+    def __create_empty_delete_bundle(self) -> Bundle:
+        return Bundle(
+            id=str(uuid4()), type="transaction", entry=[], total=0
+        )
+
+    def __process_resource_for_deletion(
+        self, 
+        delete_bundle: Bundle, 
+        res_map_item: Any, 
+        res_type: McsdResources, 
+        directory_id: str
+    ) -> Bundle:
+        if delete_bundle.total is not None and delete_bundle.total >= 100:
+            self.__flush_delete_bundle(delete_bundle, directory_id)
+            delete_bundle = self.__create_empty_delete_bundle()
+        
+        self.__add_delete_entry_to_bundle(delete_bundle, res_map_item, res_type)
+        self.__delete_from_resource_map(res_map_item, res_type, directory_id)
+        
+        return delete_bundle
+
+    def __add_delete_entry_to_bundle(
+        self, bundle: Bundle, res_map_item: Any, res_type: McsdResources
+    ) -> None:
+        if bundle.entry is None:
+            bundle.entry = []
+        
+        bundle.entry.append(
+            BundleEntry(
+                request=BundleEntryRequest(
+                    method="DELETE",
+                    url=f"{res_type.value}/{res_map_item.update_client_resource_id}?_cascade=delete",
                 )
-                if delete_bundle.total is None:
-                    delete_bundle.total = 0
-                delete_bundle.total += 1
-                self.__resource_map_service.delete_one(
-                    ResourceMapDeleteDto(
-                        directory_id=directory_id,
-                        resource_type=res_type.value,
-                        directory_resource_id=res_map_item.directory_resource_id,
-                    )
-                )
-            if (
-                delete_bundle.total is not None and delete_bundle.total > 0
-            ):  # Final flush of remaining items
-                logging.info(
-                    f"Removing {delete_bundle.total} items from update client originating from stale directory {directory_id}"
-                )
-                self.__update_client_fhir_api.post_bundle(delete_bundle)
+            )
+        )
+        
+        if bundle.total is None:
+            bundle.total = 0
+        bundle.total += 1
+
+    def __delete_from_resource_map(
+        self, res_map_item: Any, res_type: McsdResources, directory_id: str
+    ) -> None:
+        self.__resource_map_service.delete_one(
+            ResourceMapDeleteDto(
+                directory_id=directory_id,
+                resource_type=res_type.value,
+                directory_resource_id=res_map_item.directory_resource_id,
+            )
+        )
+
+    def __flush_delete_bundle(self, bundle: Bundle, directory_id: str) -> None:
+        if bundle.total is not None and bundle.total > 0:
+            logging.info(
+                f"Removing {bundle.total} items from update client originating from stale directory {directory_id}"
+            )
+            self.__update_client_fhir_api.post_bundle(bundle)
 
     def update(self, directory: DirectoryDto, since: datetime | None = None) -> Any:
         self.__create_cache_run()
         if self.__cache is None:
-            raise Exception(
-                "Unable to continue with update, cache service is not available"
-            )
+            raise CacheServiceUnavailableException()
         start_time = time.time()
 
         for res in McsdResources:
@@ -142,9 +177,7 @@ class UpdateClientService:
         self, directory: DirectoryDto, resource_type: str, since: datetime | None = None
     ) -> None:
         if self.__cache is None:
-            raise Exception(
-                "Unable to continue with update, cache service is not available"
-            )
+            raise CacheServiceUnavailableException()
 
         directory_fhir_api = FhirApi(
             timeout=self.timeout,
@@ -186,11 +219,17 @@ class UpdateClientService:
                         continue
                     targets.append(e)
 
-            updated_nodes = self.update_page(targets, adjacency_map_service)
-            for node in updated_nodes:
-                if not self.__cache.key_exists(node.resource_id):
-                    node.clear_for_cash()
-                    self.__cache.add_node(node)
+            self.__clear_and_add_nodes(
+                self.update_page(targets, adjacency_map_service)
+            )
+            
+    def __clear_and_add_nodes(self, updated_nodes: List[Node]) -> None:
+        if self.__cache is None:
+            raise CacheServiceUnavailableException()
+        for node in updated_nodes:
+            if not self.__cache.key_exists(node.resource_id):
+                node.clear_for_cash()
+                self.__cache.add_node(node)
 
     def update_page(
         self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
@@ -235,17 +274,20 @@ class UpdateClientService:
 
         self.__update_client_fhir_api.post_bundle(bundle)
 
+        self.__handle_dtos(dtos)
+
+        for node in nodes:
+            node.updated = True
+
+        return nodes
+    
+    def __handle_dtos(self, dtos: List[ResourceMapDto | ResourceMapUpdateDto]) -> None:
         for dto in dtos:
             if isinstance(dto, ResourceMapDto):
                 self.__resource_map_service.add_one(dto)
 
             if isinstance(dto, ResourceMapUpdateDto):
                 self.__resource_map_service.update_one(dto)
-
-        for node in nodes:
-            node.updated = True
-
-        return nodes
 
     def __create_cache_run(self) -> None:
         cache_service = self.__cache_provider.create()
