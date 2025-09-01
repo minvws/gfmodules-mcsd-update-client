@@ -1,16 +1,18 @@
 from typing import Any, Dict
 
+from app.models.fhir.types import McsdResourcesWithRequiredFields
 
-def create_code() -> Dict[str, Any]:
+
+def create_coding() -> Dict[str, Any]:
     return {
         "system": "System not available",
-        "text": "system was added during update cycle to bypass validation",
+        "display": "system was added during update cycle to bypass validation",
     }
 
 
-def fill_pracitioner_qualification(qualification: Dict[str, Any]) -> Dict[str, Any]:
+def fill_practioner_qualification(qualification: Dict[str, Any]) -> Dict[str, Any]:
     if "code" not in qualification:
-        qualification["code"] = create_code()
+        qualification["code"] = {"coding": [create_coding()]}
 
     return qualification
 
@@ -43,7 +45,7 @@ def fill_endpoint(data: Dict[str, Any]) -> Dict[str, Any]:
         data["status"] = "test"
 
     if "connectionType" not in data:
-        data["connectionType"] = create_code()
+        data["connectionType"] = create_coding()
 
     if "payloadType" not in data:
         data["payloadType"] = []
@@ -57,15 +59,9 @@ def fill_endpoint(data: Dict[str, Any]) -> Dict[str, Any]:
 def fill_practitioner(data: Dict[str, Any]) -> Dict[str, Any]:
     if "qualification" in data:
         for i, q in enumerate(data["qualification"]):
-            filled_qualification = fill_pracitioner_qualification(q)
+            filled_qualification = fill_practioner_qualification(q)
             data["qualification"][i] = filled_qualification
 
-    return data
-
-
-def fill_healthcare_service(data: Dict[str, Any]) -> Dict[str, Any]:
-    if "notAvailable" in data:
-        pass
     return data
 
 
@@ -86,22 +82,21 @@ def fill_location(data: Dict[str, Any]) -> Dict[str, Any]:
     return data
 
 
-def fill_resource(resource_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
+def fill_resource(
+    resource_type: McsdResourcesWithRequiredFields, data: Dict[str, Any]
+) -> Dict[str, Any]:
     match resource_type:
-        case "Endpoint":
+        case McsdResourcesWithRequiredFields.ENDPOINT:
             return fill_endpoint(data)
 
-        case "Pracitioner":
+        case McsdResourcesWithRequiredFields.PRACTITIONER:
             return fill_practitioner(data)
 
-        case "PractitionerRole":
+        case McsdResourcesWithRequiredFields.PRACTITIONER_ROLE:
             return fill_not_available(data)
 
-        case "HealthcareService":
+        case McsdResourcesWithRequiredFields.HEALTHCARE_SERVICE:
             return fill_not_available(data)
 
-        case "Location":
+        case McsdResourcesWithRequiredFields.LOCATION:
             return fill_location(data)
-
-        case _:
-            return data

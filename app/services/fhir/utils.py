@@ -1,9 +1,13 @@
 from typing import Any, Dict
-from app.models.fhir.types import McsdResources
+from app.models.fhir.types import McsdResources, McsdResourcesWithRequiredFields
 
 
 def validate_resource_type(resource_type: str) -> bool:
     return any(resource_type in r.value for r in McsdResources)
+
+
+def check_for_required_fields(resource_type: str) -> bool:
+    return any(resource_type in r.value for r in McsdResourcesWithRequiredFields)
 
 
 def get_resource_type(resource: Dict[str, Any]) -> str:

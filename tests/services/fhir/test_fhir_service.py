@@ -12,7 +12,7 @@ from fhir.resources.R4B.medication import Medication
 from fhir.resources.R4B.reference import Reference
 from pydantic import ValidationError
 import pytest
-from app.models.fhir.types import BundleRequestParams
+from app.models.fhir.types import BundleRequestParams, McsdResources
 from app.services.fhir.bundle.bundle_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from tests.services.fhir.conftest import (
@@ -25,7 +25,7 @@ from tests.services.fhir.conftest import (
 
 
 @pytest.mark.parametrize("data", incomplete_resources)
-def test_create_resource_should_succeeed_when_strict_mode_is_off(
+def test_create_resource_should_succeed_when_strict_mode_is_off(
     fhir_service: FhirService, data: Dict[str, Any]
 ) -> None:
     actual = fhir_service.create_resource(data)
@@ -33,55 +33,60 @@ def test_create_resource_should_succeeed_when_strict_mode_is_off(
     assert isinstance(actual, DomainResource)
     assert "resourceType" in data
 
-    resource_type = data["resourceType"]
+    resource_type = McsdResources(data["resourceType"])
     match resource_type:
-        case "Organization":
+        case McsdResources.ORGANIZATION:
             assert isinstance(actual, Organization)
 
-        case "Endpoint":
+        case McsdResources.ENDPOINT:
             assert isinstance(actual, Endpoint)
 
-        case "Practitioner":
+        case McsdResources.PRACTITIONER:
             assert isinstance(actual, Practitioner)
 
-        case "PractitionerRole":
+        case McsdResources.PRACTITIONER_ROLE:
             assert isinstance(actual, PractitionerRole)
 
-        case "Location":
+        case McsdResources.LOCATION:
             assert isinstance(actual, Location)
 
-        case "HealthcareService":
+        case McsdResources.HEALTHCARE_SERVICE:
             assert isinstance(actual, HealthcareService)
 
-        case "OrganizationAffiliation":
+        case McsdResources.ORGANIZATION_AFFILIATION:
             assert isinstance(actual, OrganizationAffiliation)
-
-        case _:
-            pytest.fail()
 
 
 @pytest.mark.parametrize("data", incomplete_resources_with_required_fields)
-def test_create_resource_should_fail_with_incomplete_resource_when_strict_mode_is_on(
+def test_create_resource_should_raise_exception_when_incomplete_resource_when_strict_mode_is_on(
     fhir_service_strict_validation: FhirService, data: Dict[str, Any]
 ) -> None:
     with pytest.raises(ValidationError):
         fhir_service_strict_validation.create_resource(data)
 
 
-def test_create_resource_should_fail_with_non_mcsd_resource(
+def test_create_resource_should_raise_exception_with_non_mcsd_resource(
     fhir_service: FhirService,
     fhir_service_strict_validation: FhirService,
     non_mcsd_resource: Dict[str, Any],
 ) -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         fhir_service.create_resource(non_mcsd_resource)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         fhir_service_strict_validation.create_resource(non_mcsd_resource)
 
 
+def test_create_resource_should_raise_exception_when_resource_type_property_is_missing(
+    fhir_service: FhirService, mock_org: Dict[str, Any]
+) -> None:
+    mock_org.pop("resourceType")
+    with pytest.raises(KeyError):
+        fhir_service.create_resource(mock_org)
+
+
 @pytest.mark.parametrize("data", complete_resources)
-def test_create_resource_should_succeeed_when_strict_mode_is_one(
+def test_create_resource_should_succeed_when_strict_mode_is_on(
     fhir_service_strict_validation: FhirService, data: Dict[str, Any]
 ) -> None:
     actual = fhir_service_strict_validation.create_resource(data)
@@ -167,7 +172,10 @@ def test_namespace_references_should_not_change_anything_in_resource_when_refs_a
     resource = fhir_service.create_resource(data)
     actual = fhir_service.namespace_resource_references(resource, "example")
     # Matching on dict since namespacing sets model objects
-    assert fhir_service.create_resource(expected).model_dump_json() == actual.model_dump_json()
+    assert (
+        fhir_service.create_resource(expected).model_dump_json()
+        == actual.model_dump_json()
+    )
 
 
 def test_split_reference_should_succeed(fhir_service: FhirService) -> None:

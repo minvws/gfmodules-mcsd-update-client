@@ -8,54 +8,63 @@ from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.organizationaffiliation import OrganizationAffiliation
 from fhir.resources.R4B.practitioner import Practitioner
 from fhir.resources.R4B.practitionerrole import PractitionerRole
+from app.models.fhir.types import McsdResources, McsdResourcesWithRequiredFields
 from app.services.fhir.resources.fillers import fill_resource
-from app.services.fhir.utils import get_resource_type, validate_resource_type
+from app.services.fhir.utils import (
+    check_for_required_fields,
+    get_resource_type,
+    validate_resource_type,
+)
 
 
-def _create_resource(resource_type: str, data: Dict[str, Any]) -> DomainResource:
+def _create_resource(
+    resource_type: McsdResources,
+    data: Dict[str, Any],
+) -> DomainResource:
     match resource_type:
-        case "Organization":
+        case McsdResources.ORGANIZATION:
             return Organization.model_validate(data)
 
-        case "Endpoint":
+        case McsdResources.ENDPOINT:
             return Endpoint.model_validate(data)
 
-        case "OrganizationAffiliation":
+        case McsdResources.ORGANIZATION_AFFILIATION:
             return OrganizationAffiliation.model_validate(data)
 
-        case "Location":
+        case McsdResources.LOCATION:
             return Location.model_validate(data)
 
-        case "Practitioner":
+        case McsdResources.PRACTITIONER:
             return Practitioner.model_validate(data)
 
-        case "PractitionerRole":
+        case McsdResources.PRACTITIONER_ROLE:
             return PractitionerRole.model_validate(data)
 
-        case "HealthcareService":
+        case McsdResources.HEALTHCARE_SERVICE:
             return HealthcareService.model_validate(data)
-
-        case _:
-            raise ValueError(
-                f"Unable to create mode for {resource_type}, value: \n{data}"
-            )
 
 
 def create_resource(data: Dict[str, Any], strict: bool = False) -> DomainResource:
-    resource_type_does_not_exist = all(
+    resource_type_in_keys = any(
         "resourceType" in k or "resource_type" in k for k in data
     )
-    if resource_type_does_not_exist:
-        raise ValueError("Model is not a valid FHIR model")
+    if not resource_type_in_keys:
+        raise KeyError(
+            "Model is not a valid FHIR object, missing 'resourceType' property"
+        )
 
     resource_type = get_resource_type(data)
-    valid_resource_type = validate_resource_type(resource_type)
-
-    if not valid_resource_type:
+    valid_mcsd_resource_type = validate_resource_type(resource_type)
+    if not valid_mcsd_resource_type:
         raise ValueError(f"{resource_type} is not a valid mCSD Resource")
 
-    if strict:
-        return _create_resource(resource_type, data)
+    has_required_fields = check_for_required_fields(resource_type)
+    mcsd_resource_type = McsdResources(resource_type)
+    if strict or has_required_fields is False:
+        return _create_resource(mcsd_resource_type, data)
 
-    filled_resource = fill_resource(resource_type, data)
-    return _create_resource(resource_type, filled_resource)
+    mcsd_resource_type_with_required_fileds = McsdResourcesWithRequiredFields(
+        resource_type
+    )
+    filled_resource = fill_resource(mcsd_resource_type_with_required_fileds, data)
+    return _create_resource(mcsd_resource_type, filled_resource)

@@ -13,8 +13,16 @@ class BundleRequestParams(BaseModel):
 class McsdResources(Enum):
     ORGANIZATION_AFFILIATION = "OrganizationAffiliation"
     PRACTITIONER_ROLE = "PractitionerRole"
-    HEALTH_CARE_SERVICE = "HealthcareService"
+    HEALTHCARE_SERVICE = "HealthcareService"
     LOCATION = "Location"
     PRACTITIONER = "Practitioner"
     ORGANIZATION = "Organization"
     ENDPOINT = "Endpoint"
+
+
+class McsdResourcesWithRequiredFields(Enum):
+    ENDPOINT = "Endpoint"
+    PRACTITIONER = "Practitioner"
+    PRACTITIONER_ROLE = "PractitionerRole"
+    HEALTHCARE_SERVICE = "HealthcareService"
+    LOCATION = "Location"

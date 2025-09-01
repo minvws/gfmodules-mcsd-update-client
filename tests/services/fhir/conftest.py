@@ -74,7 +74,7 @@ def resource_with_contained_refs() -> Dict[str, Any]:
         "name": "example",
         "active": True,
         "endpoint": [{"reference": "Endpoint/ep-id"}],
-        "managingOrganization": {"reference": "#org-id-2"},
+        "partOf": {"reference": "#org-id-2"},
         "contained": [
             {"resourceType": "Organization", "id": "org-id-2", "name": "Parent-org"}
         ],
