@@ -80,7 +80,7 @@ class HttpService(ABC):
                     time.sleep(self.__backoff * (2**attempt))
 
         logger.error(f"Failed to make request to {url} after {self.__retries} attempts")
-        raise Exception("Failed to make request after too many retries")
+        raise ConnectionError("Failed to make request after too many retries")
 
     def make_headers(self) -> Dict[str, Any]:
         # We always assume application/json as the content type

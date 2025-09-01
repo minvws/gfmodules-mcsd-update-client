@@ -17,6 +17,14 @@ from app.services.fhir.fhir_service import FhirService
 from app.services.api.fhir_api import FhirApi
 from app.services.update.computation_service import ComputationService
 
+class AdjacencyMapException(Exception):
+    """Base exception for adjacency map operations"""
+    pass
+
+
+class InvalidNodeStateException(AdjacencyMapException):
+    pass
+
 
 class AdjacencyMapService:
     def __init__(
@@ -158,8 +166,8 @@ class AdjacencyMapService:
                 entry.request = entry_request  # type: ignore[assignment]
 
                 if resource_map is None:
-                    raise Exception(
-                        f"Resource map for {node.resource_id} {node.resource_type} cannot be None and marked as delete "
+                    raise InvalidNodeStateException(
+                        f"Resource map for {node.resource_id} {node.resource_type} cannot be None and node marked as delete "
                     )
 
                 dto = ResourceMapUpdateDto(
@@ -176,12 +184,12 @@ class AdjacencyMapService:
                     method="PUT", url=url
                 )
                 if node.directory_entry is None:
-                    raise Exception(
+                    raise InvalidNodeStateException(
                         f"Directory entry for {node.resource_id} {node.resource_type} cannot be None and node marked as `new`"
                     )
                 resource = copy.deepcopy(node.directory_entry.resource)
                 if resource is None:
-                    raise Exception(
+                    raise InvalidNodeStateException(
                         f"Resource {node.resource_id} {node.resource_type} cannot be None when a node is marked `new`"
                     )
                 self.__fhir_service.namespace_resource_references(
@@ -206,13 +214,13 @@ class AdjacencyMapService:
                     method="PUT", url=url
                 )
                 if node.directory_entry is None:
-                    raise Exception(
+                    raise InvalidNodeStateException(
                         f"Directory entry for {node.resource_id} {node.resource_type} cannot be None and node marked as `update`"
                     )
 
                 resource = copy.deepcopy(node.directory_entry.resource)
                 if resource is None:
-                    raise Exception(
+                    raise InvalidNodeStateException(
                         f"Resource {node.resource_id} {node.resource_type} cannot be None and node marked as `update`"
                     )
 
@@ -224,7 +232,7 @@ class AdjacencyMapService:
                 entry.resource = resource
 
                 if resource_map is None:
-                    raise Exception(
+                    raise InvalidNodeStateException(
                         f"Resource map for {node.resource_id} {node.resource_type} cannot be None and marked as `update`"
                     )
 
@@ -237,7 +245,7 @@ class AdjacencyMapService:
                 return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
 
             case "unknown":
-                raise Exception(
+                raise InvalidNodeStateException(
                     f"node {node.resource_id} {node.resource_type} cannot be unknown at this stage"
                 )
 

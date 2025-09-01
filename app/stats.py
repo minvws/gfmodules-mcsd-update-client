@@ -32,15 +32,19 @@ class Stats:
 
 class NoopStats(Stats):
     def timing(self, key: str, value: int) -> None:
+        """Empty method due to NoopStats implementation"""
         pass
 
     def inc(self, key: str, count: int = 1, rate: int = 1) -> None:
+        """Empty method due to NoopStats implementation"""
         pass
 
     def dec(self, key: str, count: int = 1, rate: int = 1) -> None:
+        """Empty method due to NoopStats implementation"""
         pass
 
     def gauge(self, key: str, value: int, delta: bool = False) -> None:
+        """Empty method due to NoopStats implementation"""
         pass
 
     def timer(self, key: str) -> Timer:
