@@ -21,6 +21,7 @@ hapi:
         server_address: 'http://localhost:8081/fhir'
         refuse_to_fetch_third_party_urls: false
         fhir_version: R4
+    allow_external_references: true
     allow_multiple_delete: true
     allow_expunge: true
     delete_expunge_enabled: true

@@ -46,7 +46,7 @@ def test_post_bundle_should_fail_on_status_code(
     with pytest.raises(HTTPException) as e:
         fhir_api.post_bundle(mock_bundle_request)
 
-    assert e.value.status_code == 500
+    assert e.value.status_code == 401
 
 
 @patch(PATCHED_MODULE)

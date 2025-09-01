@@ -224,7 +224,9 @@ class UpdateClientService:
                         continue
                     targets.append(e)
 
-            self.__clear_and_add_nodes(self.update_page(targets, adjacency_map_service))
+            nodes = self.update_page(targets, adjacency_map_service, directory.endpoint)
+            self.__clear_and_add_nodes(nodes)
+
 
     def __clear_and_add_nodes(self, updated_nodes: List[Node]) -> None:
         if self.__cache is None:
@@ -234,8 +236,9 @@ class UpdateClientService:
                 node.clear_for_cash()
                 self.__cache.add_node(node)
 
+
     def update_page(
-        self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
+        self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService, origin_url: str
     ) -> List[Node]:
         updated = []
         adj_map = adjacency_map_service.build_adjacency_map(entries)

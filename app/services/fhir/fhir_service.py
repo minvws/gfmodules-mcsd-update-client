@@ -2,6 +2,8 @@ from typing import Any, Dict, List
 from fhir.resources.R4B.bundle import BundleEntry, Bundle
 from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.reference import Reference
+
+from app.models.adjacency.node import NodeReference
 from app.models.fhir.types import BundleRequestParams, HttpValidVerbs
 from app.services.fhir.bundle.bundle_utils import (
     filter_history_entries,
@@ -17,7 +19,7 @@ from app.services.fhir.resources.factory import create_resource
 from app.services.fhir.references.reference_extractor import (
     get_references,
 )
-from app.services.fhir.references.reference_misc import split_reference
+from app.services.fhir.references.reference_misc import build_node_reference
 from app.services.fhir.references.reference_namespacer import (
     namespace_resource_reference,
 )
@@ -51,11 +53,17 @@ class FhirService:
         """
         return namespace_resource_reference(data, namespace)
 
-    def split_reference(self, data: Reference) -> tuple[str, str]:
+    # def split_reference(self, data: Reference) -> tuple[str, str]:
+    #     """
+    #     Returns a split resource from a reference (e.g. "Patient/123" -> ("Patient", "123"))
+    #     """
+    #     return split_reference(data)
+
+    def make_reference_node(self, data: Reference, base_url: str) -> NodeReference:
         """
-        Returns a split resource from a reference (e.g. "Patient/123" -> ("Patient", "123"))
+        Returns a reference variant from either an absolute or relative reference
         """
-        return split_reference(data)
+        return build_node_reference(data, base_url)
 
     def create_bundle(self, data: Dict[str, Any]) -> Bundle:
         """

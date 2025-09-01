@@ -4,7 +4,6 @@ from typing import Dict, List, Deque
 
 from app.models.adjacency.node import Node, NodeReference
 
-
 AdjacencyData = Dict[str, Node]
 
 
@@ -20,7 +19,7 @@ class AdjacencyMap:
 
     def get_group(self, node: Node) -> List[Node]:
         """
-        Use Breadth First Search approach to retrieve Node and silbings.
+        Use Breadth First Search approach to retrieve Node and siblings.
         """
         queue: Deque["Node"] = deque()
         group = []
@@ -41,13 +40,19 @@ class AdjacencyMap:
         return group
 
     def get_missing_refs(self) -> List[NodeReference]:
+        """
+        Returns a list of references that are not present in the adjacency map.
+        """
         refs = list(
             chain.from_iterable([node.references for node in self.data.values()])
         )
-        return list(filter(self._ref_in_ajd_map, refs))
+        return [r for r in refs if not self._ref_in_adj_map(r)]
 
-    def _ref_in_ajd_map(self, adj_ref: NodeReference) -> bool:
-        return adj_ref.id not in self.data.keys()
+    def _ref_in_adj_map(self, adj_ref: NodeReference) -> bool:
+        """
+        Returns true when the node reference is present in the adjacency map.
+        """
+        return adj_ref.id in self.data.keys()
 
     def _create_adj_map(self, nodes: List[Node]) -> AdjacencyData:
         ids = [node.resource_id for node in nodes]

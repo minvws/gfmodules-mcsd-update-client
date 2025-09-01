@@ -178,37 +178,6 @@ def test_namespace_references_should_not_change_anything_in_resource_when_refs_a
     )
 
 
-def test_split_reference_should_succeed(fhir_service: FhirService) -> None:
-    expected = ("Organization", "org-id")
-    actual_relative = fhir_service.split_reference(
-        Reference.model_construct(reference="Organization/org-id")
-    )
-    actual_absolute = fhir_service.split_reference(
-        Reference.model_construct(
-            reference="http://example.com/fhir/Organization/org-id"
-        )
-    )
-    assert expected == actual_relative
-    assert expected == actual_absolute
-
-
-def test_spit_reference_should_fail_when_key_reference_is_missing(
-    fhir_service: FhirService,
-) -> None:
-    with pytest.raises(ValueError):
-        fhir_service.split_reference(
-            Reference.model_construct(fhir_comment="some comment")
-        )
-
-
-def test_split_refernece_should_fail_with_invalid_refs(
-    fhir_service: FhirService,
-) -> None:
-    with pytest.raises(ValueError):
-        fhir_service.split_reference(
-            Reference.model_construct(reference="some_invalid_ref")
-        )
-
 
 def test_create_bundle_should_succeed_when_fill_required_fields_mode_is_off(
     fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]

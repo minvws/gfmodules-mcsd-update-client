@@ -15,6 +15,42 @@ from fhir.resources.R4B.bundle import Bundle
 
 logger = logging.getLogger(__name__)
 
+ERROR_SEVERITIES = {"error", "fatal"}
+
+
+def _issues_has_error(outcome: dict[str, Any]) -> bool:
+    """
+    Determine if an issue has an error
+    """
+    issues = (outcome or {}).get("issue") or []
+    return any((i.get("severity", "").lower() in ERROR_SEVERITIES) for i in issues if isinstance(i, dict))
+
+
+def _collect_errors(bundle: dict[str, Any]) -> List[dict[str, Any]]:
+    """
+    Collect errors from bundle
+    """
+    errs = []
+    for idx, e in enumerate(bundle.get("entry", []) or []):
+        resp = e.get("response") or {}
+        status_str = str(resp.get("status", "")).strip()
+        status_code = None
+        if status_str:
+            try:
+                status_code = int(status_str.split()[0])
+            except ValueError:
+                pass
+
+        if status_code and status_code >= 400:
+            errs.append({"entry": idx, "status": status_code, "reason": f"HTTP error: {status_code}"})
+        elif _issues_has_error(resp.get("outcome")):  # type: ignore[arg-type]
+            errs.append({"entry": idx, "status": status_code, "reason": "OperationOutcome error"})
+
+        res = e.get("resource")
+        if isinstance(res, dict) and res.get("resourceType") == "OperationOutcome" and _issues_has_error(res):
+            errs.append({"entry": idx, "status": status_code, "reason": "Resource-level OperationOutcome error"})
+    return errs
+
 
 class FhirApi(HttpService):
     def __init__(
@@ -48,16 +84,46 @@ class FhirApi(HttpService):
             response = self.do_request(
                 "POST", json=jsonable_encoder(bundle.model_dump())
             )
-
-            if response.status_code > 300:
-                logger.error(response.text)
-                raise HTTPException(status_code=500, detail=response.json())
-
-            data = response.json()
-            return self.__fhir_service.create_bundle(data)
         except Exception as e:
-            logging.error(e)
-            raise e
+            logging.error("PostBundle error: %s", e)
+            raise HTTPException(status_code=500, detail=str(e))
+
+        # Make sure we have a valid HTTP response status
+        if response.status_code < 200 or response.status_code > 299:
+            # See if we can get an Operation Outcome from the error response
+            try:
+                data = response.json()
+            except Exception:
+                # No json data found, just return generic error
+                logging.error("PostBundle error: %s", response.text)
+                raise HTTPException(status_code=500, detail="HTTP error")
+
+            # Show details if we have a correct json output
+            if isinstance(data, dict) and data.get("resourceType") == "OperationOutcome" and _issues_has_error(data):
+                logging.error("PostBundle error: %s", data)
+                raise HTTPException(status_code=response.status_code, detail=data)
+
+            # Json data is found, but it doesn't seem like an operation outcome. Just return a global error
+            logging.error("PostBundle error: %s", data)
+            raise HTTPException(status_code=response .status_code, detail="HTTP error")
+
+
+        # Sucecssful HTTP status. Check if we have a JSON body
+        try:
+            data = response.json()
+        except Exception:
+            logger.error("PostBundle error: %s", response.text)
+            raise HTTPException(status_code=response.status_code, detail="HTTP error")
+
+        # Check for errors, if any
+        # if isinstance(data, dict) and data.get('resourceType') == "Bundle":
+            # print(data)
+            # entry_errs = _collect_errors(data)
+            # if entry_errs:
+            #     logging.error("Bundle error: %s", entry_errs)
+            #     raise HTTPException(status_code=response.status_code, detail=entry_errs)
+
+        return self.__fhir_service.create_bundle(data)
 
     def search_resource(
         self, resource_type: str, params: dict[str, Any]
