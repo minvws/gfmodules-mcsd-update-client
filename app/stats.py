@@ -32,15 +32,19 @@ class Stats:
 
 class NoopStats(Stats):
     def timing(self, key: str, value: int) -> None:
+        """Empty method due to NoopStats implementation"""
         pass
 
     def inc(self, key: str, count: int = 1, rate: int = 1) -> None:
+        """Empty method due to NoopStats implementation"""
         pass
 
     def dec(self, key: str, count: int = 1, rate: int = 1) -> None:
+        """Empty method due to NoopStats implementation"""
         pass
 
     def gauge(self, key: str, value: int, delta: bool = False) -> None:
+        """Empty method due to NoopStats implementation"""
         pass
 
     def timer(self, key: str) -> Timer:
@@ -59,7 +63,7 @@ class MemoryClient:
         return Timer(self, stat, rate)
 
     def timing(self, stat: str, delta: timedelta | float, rate: int = 1) -> None:
-        """Record a timing stat. | Warning: Own implementation, not from statsd."""
+        """Record a timing stat. | Warning: Own implementation, not from statsd. | rate unused"""
         if isinstance(delta, timedelta):
             # Convert timedelta to number of milliseconds.
             delta = delta.total_seconds() * 1000.0
@@ -68,7 +72,7 @@ class MemoryClient:
         self.memory[stat].append(delta)
 
     def incr(self, stat: str, count: int = 1, rate: int = 1) -> None:
-        """Increment a stat by `count`. | Warning: Own implementation, not from statsd."""
+        """Increment a stat by `count`. | Warning: Own implementation, not from statsd. | rate unused"""
         if stat not in self.memory:
             self.memory[stat] = 0
         self.memory[stat] += count
@@ -78,7 +82,7 @@ class MemoryClient:
         self.incr(stat, -count, rate)
 
     def gauge(self, stat: str, value: int, rate: int = 1, delta: bool = False) -> None:
-        """Set a gauge value. | Warning: Own implementation, not from statsd."""
+        """Set a gauge value. | Warning: Own implementation, not from statsd. | rate and delta unused"""
         if stat not in self.memory:
             self.memory[stat] = []
         snapshot = {"value": value, "timestamp": time.time()}

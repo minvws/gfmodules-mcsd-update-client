@@ -3,7 +3,7 @@ import pytest
 import copy
 
 from app.services.fhir.fhir_service import FhirService
-from app.services.fhir.model_factory import create_resource
+from app.services.fhir.resources.factory import create_resource
 from app.services.fhir.references.reference_extractor import get_references
 from app.services.fhir.references.reference_namespacer import (
     namespace_resource_reference,
@@ -74,7 +74,7 @@ def resource_with_contained_refs() -> Dict[str, Any]:
         "name": "example",
         "active": True,
         "endpoint": [{"reference": "Endpoint/ep-id"}],
-        "managingOrganization": {"reference": "#org-id-2"},
+        "partOf": {"reference": "#org-id-2"},
         "contained": [
             {"resourceType": "Organization", "id": "org-id-2", "name": "Parent-org"}
         ],
@@ -82,5 +82,5 @@ def resource_with_contained_refs() -> Dict[str, Any]:
 
 
 @pytest.fixture()
-def fhir_service_strict_validation() -> FhirService:
-    return FhirService(strict_validation=True)
+def fhir_service_with_fill_required_fields() -> FhirService:
+    return FhirService(fill_required_fields=True)

@@ -16,18 +16,25 @@ endpoint_incomplete: Final[Dict[str, Any]] = {
         "code": "EX",
         "display": "example",
     },
+    "managingOrganization": {},
 }
 
 location_incomplete: Final[Dict[str, Any]] = {
     "resourceType": "Location",
     "id": "location-1",
     "name": "example location",
+    "position": {"altitude": 1.5},
 }
 
 practitioner_incomplete: Final[Dict[str, Any]] = {
     "resourceType": "Practitioner",
     "id": "practitioner-1",
     "name": [{"family": "Example", "given": ["Test"]}],
+    "qualification": [
+        {
+            "identifier": [{"system": "http://example.org", "value": "some-value"}],
+        }
+    ],
 }
 
 
@@ -40,9 +47,7 @@ healthcare_service_incomplete: Final[Dict[str, Any]] = {
     "resourceType": "HealthcareService",
     "id": "healthcareservice-1",
     "name": "example service",
-    "serviceType": [
-        {"coding": [{"system": "http://snomed.info/sct", "code": "394682007"}]}
-    ],
+    "notAvailable": [{"during": {"start": "2025-12-24", "end": "2025-12-26"}}],
 }
 
 organization_affiliation_incomplete: Final[Dict[str, Any]] = {

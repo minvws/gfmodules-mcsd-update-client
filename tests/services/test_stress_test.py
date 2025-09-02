@@ -1,4 +1,4 @@
-import json
+import json as json_package
 import os
 import time
 import threading
@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Tuple
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 import requests
-from yarl import URL
 from app.container import get_database
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
 from app.models.directory.dto import DirectoryDto
@@ -40,7 +39,7 @@ def mock_bundles_cache() -> Dict[str, Any]:
             if f.endswith(".json"):
                 path = os.path.join(root, f)
                 with open(path, "r") as file:
-                    cache[path] = json.load(file)
+                    cache[path] = json_package.load(file)
     CACHE = cache
     return CACHE
 
@@ -62,12 +61,12 @@ def monitor_resources(interval: float = 0.1) -> None:
         time.sleep(interval)
 
 
-def mock_do_request(
-    method: str, url: URL, json_data: Dict[str, Any] | None = None
-) -> requests.Response:
+def mock_requests_request(method: str, url: str, **kwargs: Any) -> requests.Response:
     global iteration
     with get_stats().timer(f"{iteration}.patch_timing"):
-        if str(url) == "http://testserver/test":
+        json_data = kwargs.get("json")
+
+        if str(url) == "https://testserver/test":
             return_bundle = Bundle(type="batch-response", entry=[])
             assert json_data is not None
             for entry in json_data.get("entry", []):
@@ -79,12 +78,13 @@ def mock_do_request(
                         f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
                     )
                     bundle = Bundle(**CACHE[file_path])
-                    return_bundle.entry.append(BundleEntry(resource=bundle))
+                    if return_bundle.entry is not None:
+                        return_bundle.entry.append(BundleEntry(resource=bundle))
             response = requests.Response()
             response.status_code = 200
             response._content = return_bundle.model_dump_json(indent=4).encode("utf-8")
             return response
-        if str(url) == "http://testserver/update_client/test":
+        if str(url) == "https://testserver/update_client/test":
             response = requests.Response()
             assert json_data is not None
             for entry in json_data.get("entry", []):
@@ -105,7 +105,8 @@ def mock_do_request(
 
                     if resource is not None:
                         return_bundle = Bundle(type="batch-response", entry=[])
-                        return_bundle.entry.append(BundleEntry(resource=resource))
+                        if return_bundle.entry is not None:
+                            return_bundle.entry.append(BundleEntry(resource=resource))
                         response._content = return_bundle.model_dump_json(
                             indent=4
                         ).encode("utf-8")
@@ -114,19 +115,8 @@ def mock_do_request(
             if response.status_code != 200:
                 response = requests.Response()
                 response.status_code = 200
-                response._content = json.dumps(
-                    {
-                        "resourceType": "OperationOutcome",
-                        "issue": [
-                            {
-                                "severity": "information",
-                                "code": "informational",
-                                "details": {
-                                    "text": f"Resource not found: method {method}, url {url}, json_data {json_data}"
-                                },
-                            }
-                        ],
-                    }
+                response._content = json_package.dumps(
+                    {"resourceType": "Bundle", "type": "batch-response", "entry": []}
                 ).encode("utf-8")
             return response
         assert False, "Should not reach here"
@@ -142,14 +132,17 @@ def get_from_update_client(resource_type: str, resource_id: str) -> Any | None:
     return CACHE.get(key)
 
 
-def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
+def mock_get_history_batch(
+    resource_type: str, next_params: Dict[str, Any] | None = None
+) -> Tuple[Dict[str, Any] | None, List[BundleEntry]]:
     global iteration
     with get_stats().timer(f"{iteration}.patch_timing"):
-        resource_type = url.path.split("/")[2]  # type:ignore
         file_path = f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
         if file_path not in CACHE:
             assert False, f"File {file_path} not found in cache"
         bundle = Bundle(**CACHE[file_path])
+        if bundle.entry is None:
+            return None, []
         return None, bundle.entry
 
 
@@ -176,8 +169,8 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
     side_effect=mock_get_history_batch,
 )
 @patch(
-    "app.services.api.api_service.AuthenticationBasedApiService.do_request",
-    side_effect=mock_do_request,
+    "app.services.api.api_service.request",
+    side_effect=mock_requests_request,
 )
 @patch(
     "app.services.directory_provider.api_provider.DirectoryApiProvider.get_all_directories",
@@ -185,7 +178,7 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
         DirectoryDto(
             id="test-directory",
             name="Test Directory",
-            endpoint="http://testserver/test",
+            endpoint="https://testserver/test",
             is_deleted=False,
         )
     ],
@@ -195,13 +188,13 @@ def mock_get_history_batch(url: URL) -> tuple[URL | None, List[BundleEntry]]:
     return_value=DirectoryDto(
         id="test-directory",
         name="Test Directory",
-        endpoint="http://testserver/test",
+        endpoint="https://testserver/test",
         is_deleted=False,
     ),
 )
 def test_stress_test_update(
-    mock_do_request: requests.Response,
-    mock_get_history_batch: Tuple[URL | None, List[BundleEntry]],
+    mock_requests_request: requests.Response,
+    mock_get_history_batch: Tuple[Dict[str, Any] | None, List[BundleEntry]],
     mock_get_all_directories: List[DirectoryDto],
     mock_get_one_directory: DirectoryDto,
     api_client: TestClient,
@@ -303,4 +296,4 @@ def test_stress_test_update(
     if not os.path.exists(TEST_RESULTS_PATH):
         os.makedirs(TEST_RESULTS_PATH)
     with open(f"{TEST_RESULTS_PATH}/test_{test_name}.json", "w") as f:
-        json.dump(report, f, indent=4)
+        json_package.dump(report, f, indent=4)

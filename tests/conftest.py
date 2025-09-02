@@ -64,7 +64,7 @@ def api_client(fastapi_app: FastAPI) -> TestClient:
 
 @pytest.fixture()
 def fhir_service() -> FhirService:
-    return FhirService(strict_validation=False)
+    return FhirService(fill_required_fields=False)
 
 
 @pytest.fixture()

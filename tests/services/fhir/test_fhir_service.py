@@ -8,11 +8,12 @@ from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.organizationaffiliation import OrganizationAffiliation
 from fhir.resources.R4B.practitioner import Practitioner
 from fhir.resources.R4B.practitionerrole import PractitionerRole
+from fhir.resources.R4B.medication import Medication
 from fhir.resources.R4B.reference import Reference
 from pydantic import ValidationError
 import pytest
-from app.models.fhir.types import BundleRequestParams
-from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
+from app.models.fhir.types import BundleRequestParams, McsdResources
+from app.services.fhir.bundle.bundle_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from tests.services.fhir.conftest import (
     incomplete_resources,
@@ -24,7 +25,7 @@ from tests.services.fhir.conftest import (
 
 
 @pytest.mark.parametrize("data", incomplete_resources)
-def test_create_resource_should_succeeed_when_strict_mode_is_off(
+def test_create_resource_should_succeed_when_fill_required_fields_mode_is_off(
     fhir_service: FhirService, data: Dict[str, Any]
 ) -> None:
     actual = fhir_service.create_resource(data)
@@ -32,58 +33,63 @@ def test_create_resource_should_succeeed_when_strict_mode_is_off(
     assert isinstance(actual, DomainResource)
     assert "resourceType" in data
 
-    resource_type = data["resourceType"]
+    resource_type = McsdResources(data["resourceType"])
     match resource_type:
-        case "Organization":
+        case McsdResources.ORGANIZATION:
             assert isinstance(actual, Organization)
 
-        case "Endpoint":
+        case McsdResources.ENDPOINT:
             assert isinstance(actual, Endpoint)
 
-        case "Practitioner":
+        case McsdResources.PRACTITIONER:
             assert isinstance(actual, Practitioner)
 
-        case "PractitionerRole":
+        case McsdResources.PRACTITIONER_ROLE:
             assert isinstance(actual, PractitionerRole)
 
-        case "Location":
+        case McsdResources.LOCATION:
             assert isinstance(actual, Location)
 
-        case "HealthcareService":
+        case McsdResources.HEALTHCARE_SERVICE:
             assert isinstance(actual, HealthcareService)
 
-        case "OrganizationAffiliation":
+        case McsdResources.ORGANIZATION_AFFILIATION:
             assert isinstance(actual, OrganizationAffiliation)
-
-        case _:
-            pytest.fail()
 
 
 @pytest.mark.parametrize("data", incomplete_resources_with_required_fields)
-def test_create_resource_should_fail_with_incomplete_resource_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, data: Dict[str, Any]
+def test_create_resource_should_raise_exception_when_incomplete_resource_fill_required_field_mode_is_on(
+    fhir_service_with_fill_required_fields: FhirService, data: Dict[str, Any]
 ) -> None:
     with pytest.raises(ValidationError):
-        fhir_service_strict_validation.create_resource(data)
+        fhir_service_with_fill_required_fields.create_resource(data)
 
 
-def test_create_resource_should_fail_with_non_mcsd_resource(
+def test_create_resource_should_raise_exception_with_non_mcsd_resource(
     fhir_service: FhirService,
-    fhir_service_strict_validation: FhirService,
+    fhir_service_with_fill_required_fields: FhirService,
     non_mcsd_resource: Dict[str, Any],
 ) -> None:
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         fhir_service.create_resource(non_mcsd_resource)
 
-    with pytest.raises(TypeError):
-        fhir_service_strict_validation.create_resource(non_mcsd_resource)
+    with pytest.raises(ValueError):
+        fhir_service_with_fill_required_fields.create_resource(non_mcsd_resource)
+
+
+def test_create_resource_should_raise_exception_when_resource_type_property_is_missing(
+    fhir_service: FhirService, mock_org: Dict[str, Any]
+) -> None:
+    mock_org.pop("resourceType")
+    with pytest.raises(KeyError):
+        fhir_service.create_resource(mock_org)
 
 
 @pytest.mark.parametrize("data", complete_resources)
-def test_create_resource_should_succeeed_when_strict_mode_is_one(
-    fhir_service_strict_validation: FhirService, data: Dict[str, Any]
+def test_create_resource_should_succeed_when_fill_required_fields_mode_is_on(
+    fhir_service_with_fill_required_fields: FhirService, data: Dict[str, Any]
 ) -> None:
-    actual = fhir_service_strict_validation.create_resource(data)
+    actual = fhir_service_with_fill_required_fields.create_resource(data)
     assert isinstance(actual, DomainResource)
     resource_type = data["resourceType"]
     match resource_type:
@@ -135,6 +141,16 @@ def test_get_references_should_ignore_contained_refs(
     assert expected_refs == actual_refs
 
 
+def test_get_references_should_raise_exception_with_non_mcsd_resource(
+    fhir_service: FhirService,
+) -> None:
+    non_mcsd_resource = Medication(
+        id="some-id", manufacturer=Reference(reference="Organization/some-org-id")
+    )
+    with pytest.raises(ValueError):
+        fhir_service.get_references(non_mcsd_resource)
+
+
 @pytest.mark.parametrize(
     "data, expected", zip(complete_resources, namespaced_resources)
 )
@@ -155,7 +171,11 @@ def test_namespace_references_should_not_change_anything_in_resource_when_refs_a
 ) -> None:
     resource = fhir_service.create_resource(data)
     actual = fhir_service.namespace_resource_references(resource, "example")
-    assert fhir_service.create_resource(expected) == actual
+    # Matching on dict since namespacing sets model objects
+    assert (
+        fhir_service.create_resource(expected).model_dump_json()
+        == actual.model_dump_json()
+    )
 
 
 def test_split_reference_should_succeed(fhir_service: FhirService) -> None:
@@ -190,7 +210,7 @@ def test_split_refernece_should_fail_with_invalid_refs(
         )
 
 
-def test_create_bundle_should_succeed_when_strict_mode_is_off(
+def test_create_bundle_should_succeed_when_fill_required_fields_mode_is_off(
     fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
     mock_org_history_bundle.pop("type")
@@ -198,19 +218,23 @@ def test_create_bundle_should_succeed_when_strict_mode_is_off(
     assert isinstance(bundle, Bundle)
 
 
-def test_create_bundle_should_succeed_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, mock_org_history_bundle: Dict[str, Any]
+def test_create_bundle_should_succeed_when_fill_required_fields_mode_is_on(
+    fhir_service_with_fill_required_fields: FhirService,
+    mock_org_history_bundle: Dict[str, Any],
 ) -> None:
-    bundle = fhir_service_strict_validation.create_bundle(mock_org_history_bundle)
+    bundle = fhir_service_with_fill_required_fields.create_bundle(
+        mock_org_history_bundle
+    )
     assert isinstance(bundle, Bundle)
 
 
-def test_create_bundle_should_fail_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, mock_org_history_bundle: Dict[str, Any]
+def test_create_bundle_should_fail_when_fill_required_mode_is_on(
+    fhir_service_with_fill_required_fields: FhirService,
+    mock_org_history_bundle: Dict[str, Any],
 ) -> None:
     mock_org_history_bundle.pop("type")
     with pytest.raises(ValidationError):
-        fhir_service_strict_validation.create_bundle(mock_org_history_bundle)
+        fhir_service_with_fill_required_fields.create_bundle(mock_org_history_bundle)
 
 
 def test_get_resource_type_and_id_from_entry_should_succeed(
@@ -323,8 +347,8 @@ def test_create_bundle_request_should_succeed(fhir_service: FhirService) -> None
     assert len(results.entry) == 1
     assert isinstance(results.entry, List)
     assert isinstance(results.entry[0], BundleEntry)
-    assert isinstance(results.entry[0].request, BundleEntryRequest)
-    assert results.entry[0].request.method == "GET"
+    assert isinstance(results.entry[0].request, BundleEntryRequest)  # type: ignore[attr-defined]
+    assert results.entry[0].request.method == "GET"  # type: ignore[attr-defined]
 
 
 def test_get_entries_from_bundle_of_bundles_should_succeed(

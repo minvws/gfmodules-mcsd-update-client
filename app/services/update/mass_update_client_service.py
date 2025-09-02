@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from app.db.entities.directory_info import DirectoryInfo
 from app.services.entity.directory_cache_service import DirectoryCacheService
 from app.services.entity.ignored_directory_service import IgnoredDirectoryService
 from app.services.entity.directory_info_service import DirectoryInfoService
@@ -70,38 +71,69 @@ class MassUpdateClientService:
     
     def cleanup_old_directories(self) -> None:
         with self.__stats.timer("cleanup_old_directories"):
-            directories = self.__directory_info_service.get_all_directories_info(include_ignored=True) # WITH ignored ones
+            directories = self.__directory_info_service.get_all_directories_info(include_ignored=True)
+
             for directory_info in directories:
-                dir_id = directory_info.directory_id
-                is_not_ignored = self.__ignored_directory_service.get_ignored_directory(directory_id=dir_id) is None
-                
-                if directory_info.last_success_sync is not None: # Process directories that have been synced at least once
-                    elapsed_time = (datetime.now(timezone.utc) - directory_info.last_success_sync.astimezone(timezone.utc)).total_seconds()
+                self.__process_directory(directory_info)
 
-                    directory_is_stale = elapsed_time > self.__ignore_directory_after_success_timeout_seconds and is_not_ignored
-                    directory_is_obsolete = elapsed_time > self.__cleanup_client_directory_after_success_timeout_seconds
-
-                    if directory_is_stale: # Ignore directories that are not ignored and have not been updated for a certain time
-                        logging.warning(f"Directory {dir_id} has not been updated for {elapsed_time} seconds, ignoring it.")
-                        self.__ignored_directory_service.add_directory_to_ignore_list(dir_id) # Add to ignored directories
-
-                    if directory_is_obsolete: # Cleanup directories that have not been updated for a certain time
-                        logging.info(f"Cleaning up directory for outdated directory {dir_id}")
-                        self.__delete_data(dir_id)
-                        
-                else: # Process directories that have never been synced successfully
-                    if directory_info.failed_attempts >= self.__ignore_directory_after_failed_attempts_threshold and is_not_ignored:
-                        logging.warning(f"Directory {dir_id} has failed {directory_info.failed_attempts} times and will be ignored.")
-                        self.__ignored_directory_service.add_directory_to_ignore_list(dir_id) # Add to ignored directories
-
-            # Delete all deleted directories
-            if not self.__cleanup_client_directory_after_directory_delete:
+            if self.__cleanup_client_directory_after_directory_delete:
+                self.__cleanup_deleted_directories()
+            else:
                 logging.info("Skipping cleanup of deleted directories as per configuration.")
-                return
-            deleted_directories = self.__directory_cache_service.get_deleted_directories()
-            for directory in deleted_directories:
-                logging.info(f"Cleaning up deleted directory {directory.id}")
-                self.__delete_data(directory.id)
+
+    def __process_directory(self, directory_info: DirectoryInfo) -> None:
+        """Process one directory: either synced at least once, or never synced."""
+        dir_id = directory_info.directory_id
+        is_not_ignored = (
+            self.__ignored_directory_service.get_ignored_directory(directory_id=dir_id) is None
+        )
+
+        if directory_info.last_success_sync is not None:
+            self.__process_successful_directory(directory_info, dir_id, is_not_ignored)
+        else:
+            self.__process_never_synced_directory(directory_info, dir_id, is_not_ignored)
+
+    def __process_successful_directory(self, directory_info: DirectoryInfo, dir_id: str, is_not_ignored: bool) -> None:
+        """Handle directories that have been synced successfully at least once."""
+        elapsed_time = (
+            datetime.now(timezone.utc) - directory_info.last_success_sync.astimezone(timezone.utc)
+        ).total_seconds()
+
+        directory_is_stale = (
+            elapsed_time > self.__ignore_directory_after_success_timeout_seconds and is_not_ignored
+        )
+        directory_is_obsolete = (
+            elapsed_time > self.__cleanup_client_directory_after_success_timeout_seconds
+        )
+
+        if directory_is_stale:
+            logging.warning(
+                f"Directory {dir_id} has not been updated for {elapsed_time} seconds, ignoring it."
+            )
+            self.__ignored_directory_service.add_directory_to_ignore_list(dir_id)
+
+        if directory_is_obsolete:
+            logging.info(f"Cleaning up directory for outdated directory {dir_id}")
+            self.__delete_data(dir_id)
+
+    def __process_never_synced_directory(self, directory_info: DirectoryInfo, dir_id: str, is_not_ignored: bool) -> None:
+        """Handle directories that have never synced successfully."""
+        if (
+            directory_info.failed_attempts
+            >= self.__ignore_directory_after_failed_attempts_threshold
+            and is_not_ignored
+        ):
+            logging.warning(
+                f"Directory {dir_id} has failed {directory_info.failed_attempts} times and will be ignored."
+            )
+            self.__ignored_directory_service.add_directory_to_ignore_list(dir_id)
+
+    def __cleanup_deleted_directories(self) -> None:
+        """Delete all directories that have been marked as deleted."""
+        deleted_directories = self.__directory_cache_service.get_deleted_directories()
+        for directory in deleted_directories:
+            logging.info(f"Cleaning up deleted directory {directory.id}")
+            self.__delete_data(directory.id)
 
     def __delete_data(self, directory_id: str) -> None:
         """Delete all data related to a directory."""

@@ -8,14 +8,13 @@ from app.services.fhir.bundle.bundle_utils import (
     get_request_method_from_entry,
     get_resource_type_and_id_from_entry,
 )
-from app.services.fhir.bundle.bunlde_parser import (
+from app.services.fhir.bundle.bundle_parser import (
     create_bundle,
     create_bundle_request,
     get_entries_from_bundle_of_bundles,
 )
-from app.services.fhir.model_factory import create_resource
+from app.services.fhir.resources.factory import create_resource
 from app.services.fhir.references.reference_extractor import (
-    extract_references,
     get_references,
 )
 from app.services.fhir.references.reference_misc import split_reference
@@ -27,21 +26,15 @@ from app.services.fhir.references.reference_namespacer import (
 class FhirService:
     def __init__(
         self,
-        strict_validation: bool,
+        fill_required_fields: bool,
     ) -> None:
-        self.strict_validation = strict_validation
+        self.fill_required_fields = fill_required_fields
 
     def create_resource(self, data: Dict[str, Any]) -> DomainResource:
         """
         Creates a defined FHIR mCSD resource model.
         """
-        return create_resource(data, self.strict_validation)
-
-    def extract_references(self, data: Any) -> Reference | None:
-        """
-        Builds a Reference object only if the "reference" exists in the object
-        """
-        return extract_references(data)
+        return create_resource(data, self.fill_required_fields)
 
     def get_references(self, data: DomainResource) -> List[Reference]:
         """
@@ -68,7 +61,7 @@ class FhirService:
         """
         Returns a Bundle instance from a Dict object
         """
-        return create_bundle(data, self.strict_validation)
+        return create_bundle(data, self.fill_required_fields)
 
     def get_resource_type_and_id_from_entry(
         self, entry: BundleEntry

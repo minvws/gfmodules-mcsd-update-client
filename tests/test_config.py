@@ -41,13 +41,13 @@ def get_test_config() -> Config:
             ssl_key_file=None,
         ),
         mcsd=ConfigMcsd(
-            update_client_url="http://testserver/update_client/test",
+            update_client_url="https://testserver/update_client/test",
             authentication="off",
             request_count=20,
-            strict_validation=False,
+            fill_required_fields=True,
             mtls_client_cert_path=None,
             mtls_client_key_path=None,
-            mtls_server_ca_path=None
+            mtls_server_ca_path=None,
         ),
         telemetry=ConfigTelemetry(
             enabled=False,
@@ -64,7 +64,7 @@ def get_test_config() -> Config:
         azure_oauth2=None,
         aws=None,
         directory_api=ConfigDirectoryApi(
-            directories_provider_url="http://testserver/test",
+            directories_provider_url="https://testserver/test",
             directory_urls_path=None,
             timeout=1,
             backoff=0.1,

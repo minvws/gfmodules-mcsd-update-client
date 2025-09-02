@@ -91,7 +91,7 @@ authentication = off
 # When configured, all connections to the supplier register and mCSD FHIR directories will use mTLS
 # Path to client certificate file for mTLS authentication
 mtls_client_cert_path = client.crt
-# Path to client private key file for mTLS authentication  
+# Path to client private key file for mTLS authentication
 mtls_client_key_path = client.key
 # Path to CA certificate file for server verification
 mtls_server_ca_path = ca.crt
@@ -99,8 +99,9 @@ mtls_server_ca_path = ca.crt
 # query parameter for the number of entries in Bundle per request (limit)
 # This is usually used in the directory request service and not directory API (LRZa)
 request_count = 20
-# choose weather to use a strict validation for FHIR mCSD resources or nor
-strict_validation = False
+# choose whether to fill required mCSD fields with placeholders or
+# let the app handle the validations.
+fill_required_fields = False
 
 [azure_oauth2]
 # Token url is the url of the oauth2 endpoint of the microsoft services

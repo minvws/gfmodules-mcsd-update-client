@@ -12,7 +12,7 @@ from app.services.entity.ignored_directory_service import (
 )
 from app.services.entity.directory_cache_service import DirectoryCacheService
 from app.services.entity.directory_info_service import DirectoryInfoService
-from app.services.fhir.bundle.bunlde_parser import create_bundle_entry
+from app.services.fhir.bundle.bundle_parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 
@@ -191,7 +191,7 @@ def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
         auth=null_authenticator,
         base_url="http://example.com/fhir",
         request_count=10,
-        strict_validation=False,
+        fill_required_fields=False,
     )
 
 
