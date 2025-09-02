@@ -50,10 +50,10 @@ def setup_fhir_resource(
                 ],
                 healthcare_service_ids=[
                     setup_fhir_resource(
-                        base_path, McsdResources.HEALTH_CARE_SERVICE, max_depth - 1, 0
+                        base_path, McsdResources.HEALTHCARE_SERVICE, max_depth - 1, 0
                     ),
                     setup_fhir_resource(
-                        base_path, McsdResources.HEALTH_CARE_SERVICE, max_depth - 1, 0
+                        base_path, McsdResources.HEALTHCARE_SERVICE, max_depth - 1, 0
                     ),
                 ],
                 endpoint_ids=[
@@ -81,10 +81,10 @@ def setup_fhir_resource(
                 ],
                 healthcare_service_ids=[
                     setup_fhir_resource(
-                        base_path, McsdResources.HEALTH_CARE_SERVICE, max_depth - 1, 0
+                        base_path, McsdResources.HEALTHCARE_SERVICE, max_depth - 1, 0
                     ),
                     setup_fhir_resource(
-                        base_path, McsdResources.HEALTH_CARE_SERVICE, max_depth - 1, 0
+                        base_path, McsdResources.HEALTHCARE_SERVICE, max_depth - 1, 0
                     ),
                 ],
                 endpoint_ids=[
@@ -93,7 +93,7 @@ def setup_fhir_resource(
                     )
                 ],
             ).model_dump_json()
-        case McsdResources.HEALTH_CARE_SERVICE:
+        case McsdResources.HEALTHCARE_SERVICE:
             resource = dg.generate_healthcare_service(
                 res_id=resource_id,
                 location_ids=[

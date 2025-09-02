@@ -13,7 +13,7 @@ from app.services.fhir.bundle.bundle_parser import (
     create_bundle_request,
     get_entries_from_bundle_of_bundles,
 )
-from app.services.fhir.model_factory import create_resource
+from app.services.fhir.resources.factory import create_resource
 from app.services.fhir.references.reference_extractor import (
     get_references,
 )

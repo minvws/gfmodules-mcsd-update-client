@@ -61,11 +61,7 @@ def monitor_resources(interval: float = 0.1) -> None:
         time.sleep(interval)
 
 
-def mock_requests_request(
-    method: str,
-    url: str,
-    **kwargs: Any
-) -> requests.Response:
+def mock_requests_request(method: str, url: str, **kwargs: Any) -> requests.Response:
     global iteration
     with get_stats().timer(f"{iteration}.patch_timing"):
         json_data = kwargs.get("json")
@@ -120,11 +116,7 @@ def mock_requests_request(
                 response = requests.Response()
                 response.status_code = 200
                 response._content = json_package.dumps(
-                    {
-                        "resourceType": "Bundle",
-                        "type": "batch-response",
-                        "entry": []
-                    }
+                    {"resourceType": "Bundle", "type": "batch-response", "entry": []}
                 ).encode("utf-8")
             return response
         assert False, "Should not reach here"
@@ -141,9 +133,8 @@ def get_from_update_client(resource_type: str, resource_id: str) -> Any | None:
 
 
 def mock_get_history_batch(
-        resource_type: str,
-        next_params: Dict[str, Any] | None = None
-    ) -> Tuple[Dict[str, Any] | None, List[BundleEntry]]:
+    resource_type: str, next_params: Dict[str, Any] | None = None
+) -> Tuple[Dict[str, Any] | None, List[BundleEntry]]:
     global iteration
     with get_stats().timer(f"{iteration}.patch_timing"):
         file_path = f"{MOCK_DATA_PATH}/{resource_type}/{resource_type}_history.json"
