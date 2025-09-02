@@ -191,7 +191,7 @@ def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
         auth=null_authenticator,
         base_url="http://example.com/fhir",
         request_count=10,
-        strict_validation=False,
+        fill_required_fields=False,
     )
 
 

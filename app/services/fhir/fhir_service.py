@@ -26,15 +26,15 @@ from app.services.fhir.references.reference_namespacer import (
 class FhirService:
     def __init__(
         self,
-        strict_validation: bool,
+        fill_required_fields: bool,
     ) -> None:
-        self.strict_validation = strict_validation
+        self.fill_required_fields = fill_required_fields
 
     def create_resource(self, data: Dict[str, Any]) -> DomainResource:
         """
         Creates a defined FHIR mCSD resource model.
         """
-        return create_resource(data, self.strict_validation)
+        return create_resource(data, self.fill_required_fields)
 
     def get_references(self, data: DomainResource) -> List[Reference]:
         """
@@ -61,7 +61,7 @@ class FhirService:
         """
         Returns a Bundle instance from a Dict object
         """
-        return create_bundle(data, self.strict_validation)
+        return create_bundle(data, self.fill_required_fields)
 
     def get_resource_type_and_id_from_entry(
         self, entry: BundleEntry

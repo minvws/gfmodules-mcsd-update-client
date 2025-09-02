@@ -45,7 +45,7 @@ class DirectoryProviderFactory:
                     auth=self.__auth,
                     base_url=self.__directory_config.directories_provider_url,
                     request_count=5,
-                    strict_validation=False,
+                    fill_required_fields=False,
                     retries=10,
                     mtls_cert=self.__mcsd_config.mtls_client_cert_path,
                     mtls_key=self.__mcsd_config.mtls_client_key_path,

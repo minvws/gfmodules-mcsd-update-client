@@ -39,7 +39,7 @@ def container_config(binder: inject.Binder) -> None:
     cache_provider = CacheProvider(config=config.external_cache)
     update_service = UpdateClientService(
         update_client_url=config.mcsd.update_client_url,
-        strict_validation=config.mcsd.strict_validation,
+        fill_required_fields=config.mcsd.fill_required_fields,
         timeout=config.directory_api.timeout,
         backoff=config.directory_api.backoff,
         request_count=config.mcsd.request_count,

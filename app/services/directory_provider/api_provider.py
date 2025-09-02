@@ -24,7 +24,7 @@ class DirectoryApiProvider(DirectoryProvider):
         Service to manage directories from a FHIR-based API.
         """
         self.__fhir_api = fhir_api
-        self.__fhir_service = FhirService(strict_validation=False)
+        self.__fhir_service = FhirService(fill_required_fields=False)
         self.__ignored_directory_service = ignored_directory_service
 
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
@@ -43,7 +43,11 @@ class DirectoryApiProvider(DirectoryProvider):
         self, include_ignored: bool, include_ignored_ids: List[str] | None = None
     ) -> List[DirectoryDto]:
         directories: List[DirectoryDto] = []
-        ignored_directories = self.__ignored_directory_service.get_all_ignored_directories() if not include_ignored or include_ignored_ids else []
+        ignored_directories = (
+            self.__ignored_directory_service.get_all_ignored_directories()
+            if not include_ignored or include_ignored_ids
+            else []
+        )
 
         next_url: URL | None = URL("")
         while next_url is not None:
@@ -73,7 +77,7 @@ class DirectoryApiProvider(DirectoryProvider):
                 directory = self.__create_directory_dto(org, endpoint_map)
                 if not directory:
                     continue
-                    
+
                 if self.__should_include_directory(
                     directory, ignored_directories, include_ignored, include_ignored_ids
                 ):
@@ -90,17 +94,19 @@ class DirectoryApiProvider(DirectoryProvider):
         include_ignored: bool,
         include_ignored_ids: List[str] | None,
     ) -> bool:
-        is_ignored = any(dir.directory_id == directory.id for dir in ignored_directories)
+        is_ignored = any(
+            dir.directory_id == directory.id for dir in ignored_directories
+        )
 
         if not is_ignored:
             return True
-            
+
         if include_ignored:
             return True
-            
+
         if include_ignored_ids and directory.id in include_ignored_ids:
             return True
-            
+
         return False
 
     def get_one_directory(self, directory_id: str) -> DirectoryDto:
@@ -150,7 +156,9 @@ class DirectoryApiProvider(DirectoryProvider):
             logger.warning(f"Check for deleted directory {directory_id} failed: {e}")
             return False
 
-    def __parse_bundle(self, entries: List[BundleEntry]) -> tuple[List[Organization], Dict[str, Endpoint]]:
+    def __parse_bundle(
+        self, entries: List[BundleEntry]
+    ) -> tuple[List[Organization], Dict[str, Endpoint]]:
         orgs: List[Organization] = []
         endpoint_map: Dict[str, Any] = {}
 

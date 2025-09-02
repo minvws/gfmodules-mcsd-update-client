@@ -44,10 +44,10 @@ def get_test_config() -> Config:
             update_client_url="https://testserver/update_client/test",
             authentication="off",
             request_count=20,
-            strict_validation=True,
+            fill_required_fields=True,
             mtls_client_cert_path=None,
             mtls_client_key_path=None,
-            mtls_server_ca_path=None
+            mtls_server_ca_path=None,
         ),
         telemetry=ConfigTelemetry(
             enabled=False,

@@ -32,7 +32,9 @@ def create_entry_search(data: Dict[str, Any]) -> BundleEntrySearch:
     return entry_search
 
 
-def create_bundle_entry(data: Dict[str, Any], strict: bool = False) -> BundleEntry:
+def create_bundle_entry(
+    data: Dict[str, Any], fill_required_fields: bool = False
+) -> BundleEntry:
     bundle_entry = BundleEntry.model_construct()
     if "fullUrl" in data:
         bundle_entry.fullUrl = data["fullUrl"]
@@ -49,9 +51,9 @@ def create_bundle_entry(data: Dict[str, Any], strict: bool = False) -> BundleEnt
             "resourceType" in data["resource"]
             and data["resource"]["resourceType"] == "Bundle"
         ):
-            bundle_entry.resource = create_bundle(data["resource"], strict)  # type: ignore[assignment]
+            bundle_entry.resource = create_bundle(data["resource"], fill_required_fields)  # type: ignore[assignment]
         else:
-            bundle_entry.resource = create_resource(data["resource"], strict)  # type: ignore[assignment]
+            bundle_entry.resource = create_resource(data["resource"], fill_required_fields)  # type: ignore[assignment]
 
     if "response" in data:
         bundle_entry.response = create_entry_response(data["response"])  # type: ignore[assignment]
@@ -65,8 +67,8 @@ def create_bundle_entry(data: Dict[str, Any], strict: bool = False) -> BundleEnt
     return bundle_entry
 
 
-def create_bundle(data: Dict[str, Any], strict: bool = False) -> Bundle:
-    if strict:
+def create_bundle(data: Dict[str, Any], fill_required_fields: bool = False) -> Bundle:
+    if fill_required_fields:
         return Bundle.model_validate(data)
 
     bundle = Bundle.model_construct(type="")
@@ -82,7 +84,7 @@ def create_bundle(data: Dict[str, Any], strict: bool = False) -> Bundle:
     if "entry" in data:
         bundle.entry = []
         for entry in data["entry"]:
-            bundle.entry.append(create_bundle_entry(entry, strict))
+            bundle.entry.append(create_bundle_entry(entry, fill_required_fields))
 
     if "total" in data:
         bundle.total = int(data["total"])

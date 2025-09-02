@@ -82,5 +82,5 @@ def resource_with_contained_refs() -> Dict[str, Any]:
 
 
 @pytest.fixture()
-def fhir_service_strict_validation() -> FhirService:
-    return FhirService(strict_validation=True)
+def fhir_service_with_fill_required_fields() -> FhirService:
+    return FhirService(fill_required_fields=True)

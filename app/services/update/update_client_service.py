@@ -30,18 +30,23 @@ from app.services.api.fhir_api import FhirApi
 
 logger = logging.getLogger(__name__)
 
+
 class UpdateClientException(Exception):
     pass
 
+
 class CacheServiceUnavailableException(UpdateClientException):
     def __init__(self, *args: object) -> None:
-        super().__init__("Unable to continue with update, cache service is not available", *args)
+        super().__init__(
+            "Unable to continue with update, cache service is not available", *args
+        )
+
 
 class UpdateClientService:
     def __init__(
         self,
         update_client_url: str,
-        strict_validation: bool,
+        fill_required_fields: bool,
         timeout: int,
         backoff: float,
         retries: int,
@@ -53,7 +58,7 @@ class UpdateClientService:
         mtls_key: str | None = None,
         mtls_ca: str | None = None,
     ) -> None:
-        self.strict_validation = strict_validation
+        self.fill_required_fields = fill_required_fields
         self.timeout = timeout
         self.backoff = backoff
         self.auth = auth
@@ -73,9 +78,9 @@ class UpdateClientService:
             mtls_key=self.mtls_key,
             mtls_ca=self.mtls_ca,
             request_count=request_count,
-            strict_validation=strict_validation,
+            fill_required_fields=fill_required_fields,
         )
-        self.__fhir_service = FhirService(strict_validation)
+        self.__fhir_service = FhirService(fill_required_fields)
         self.__cache_provider = cache_provider
         self.__cache: CachingService | None = None
 
@@ -83,43 +88,43 @@ class UpdateClientService:
         for res_type in McsdResources:
             self.__cleanup_resource_type(directory_id, res_type)
 
-    def __cleanup_resource_type(self, directory_id: str, res_type: McsdResources) -> None:
+    def __cleanup_resource_type(
+        self, directory_id: str, res_type: McsdResources
+    ) -> None:
         resource_map = self.__resource_map_service.find(
             directory_id=directory_id, resource_type=res_type.value
         )
         resources = list(resource_map)
-        
+
         if not resources:
             return
-            
+
         delete_bundle = self.__create_empty_delete_bundle()
-        
+
         for res_map_item in resources:
             delete_bundle = self.__process_resource_for_deletion(
                 delete_bundle, res_map_item, res_type, directory_id
             )
-        
+
         self.__flush_delete_bundle(delete_bundle, directory_id)
 
     def __create_empty_delete_bundle(self) -> Bundle:
-        return Bundle(
-            id=str(uuid4()), type="transaction", entry=[], total=0
-        )
+        return Bundle(id=str(uuid4()), type="transaction", entry=[], total=0)
 
     def __process_resource_for_deletion(
-        self, 
-        delete_bundle: Bundle, 
-        res_map_item: Any, 
-        res_type: McsdResources, 
-        directory_id: str
+        self,
+        delete_bundle: Bundle,
+        res_map_item: Any,
+        res_type: McsdResources,
+        directory_id: str,
     ) -> Bundle:
         if delete_bundle.total is not None and delete_bundle.total >= 100:
             self.__flush_delete_bundle(delete_bundle, directory_id)
             delete_bundle = self.__create_empty_delete_bundle()
-        
+
         self.__add_delete_entry_to_bundle(delete_bundle, res_map_item, res_type)
         self.__delete_from_resource_map(res_map_item, res_type, directory_id)
-        
+
         return delete_bundle
 
     def __add_delete_entry_to_bundle(
@@ -127,7 +132,7 @@ class UpdateClientService:
     ) -> None:
         if bundle.entry is None:
             bundle.entry = []
-        
+
         bundle.entry.append(
             BundleEntry(
                 request=BundleEntryRequest(
@@ -136,7 +141,7 @@ class UpdateClientService:
                 )
             )
         )
-        
+
         if bundle.total is None:
             bundle.total = 0
         bundle.total += 1
@@ -184,7 +189,7 @@ class UpdateClientService:
             backoff=self.backoff,
             auth=self.auth,
             request_count=self.request_count,
-            strict_validation=self.strict_validation,
+            fill_required_fields=self.fill_required_fields,
             base_url=directory.endpoint,
             retries=10,
             mtls_cert=self.mtls_cert,
@@ -219,10 +224,8 @@ class UpdateClientService:
                         continue
                     targets.append(e)
 
-            self.__clear_and_add_nodes(
-                self.update_page(targets, adjacency_map_service)
-            )
-            
+            self.__clear_and_add_nodes(self.update_page(targets, adjacency_map_service))
+
     def __clear_and_add_nodes(self, updated_nodes: List[Node]) -> None:
         if self.__cache is None:
             raise CacheServiceUnavailableException()
@@ -280,7 +283,7 @@ class UpdateClientService:
             node.updated = True
 
         return nodes
-    
+
     def __handle_dtos(self, dtos: List[ResourceMapDto | ResourceMapUpdateDto]) -> None:
         for dto in dtos:
             if isinstance(dto, ResourceMapDto):
