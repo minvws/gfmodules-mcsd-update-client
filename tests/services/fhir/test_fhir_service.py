@@ -25,7 +25,7 @@ from tests.services.fhir.conftest import (
 
 
 @pytest.mark.parametrize("data", incomplete_resources)
-def test_create_resource_should_succeed_when_strict_mode_is_off(
+def test_create_resource_should_succeed_when_fill_required_fields_mode_is_off(
     fhir_service: FhirService, data: Dict[str, Any]
 ) -> None:
     actual = fhir_service.create_resource(data)
@@ -58,23 +58,23 @@ def test_create_resource_should_succeed_when_strict_mode_is_off(
 
 
 @pytest.mark.parametrize("data", incomplete_resources_with_required_fields)
-def test_create_resource_should_raise_exception_when_incomplete_resource_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, data: Dict[str, Any]
+def test_create_resource_should_raise_exception_when_incomplete_resource_fill_required_field_mode_is_on(
+    fhir_service_with_fill_required_fields: FhirService, data: Dict[str, Any]
 ) -> None:
     with pytest.raises(ValidationError):
-        fhir_service_strict_validation.create_resource(data)
+        fhir_service_with_fill_required_fields.create_resource(data)
 
 
 def test_create_resource_should_raise_exception_with_non_mcsd_resource(
     fhir_service: FhirService,
-    fhir_service_strict_validation: FhirService,
+    fhir_service_with_fill_required_fields: FhirService,
     non_mcsd_resource: Dict[str, Any],
 ) -> None:
     with pytest.raises(ValueError):
         fhir_service.create_resource(non_mcsd_resource)
 
     with pytest.raises(ValueError):
-        fhir_service_strict_validation.create_resource(non_mcsd_resource)
+        fhir_service_with_fill_required_fields.create_resource(non_mcsd_resource)
 
 
 def test_create_resource_should_raise_exception_when_resource_type_property_is_missing(
@@ -86,10 +86,10 @@ def test_create_resource_should_raise_exception_when_resource_type_property_is_m
 
 
 @pytest.mark.parametrize("data", complete_resources)
-def test_create_resource_should_succeed_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, data: Dict[str, Any]
+def test_create_resource_should_succeed_when_fill_required_fields_mode_is_on(
+    fhir_service_with_fill_required_fields: FhirService, data: Dict[str, Any]
 ) -> None:
-    actual = fhir_service_strict_validation.create_resource(data)
+    actual = fhir_service_with_fill_required_fields.create_resource(data)
     assert isinstance(actual, DomainResource)
     resource_type = data["resourceType"]
     match resource_type:
@@ -210,7 +210,7 @@ def test_split_refernece_should_fail_with_invalid_refs(
         )
 
 
-def test_create_bundle_should_succeed_when_strict_mode_is_off(
+def test_create_bundle_should_succeed_when_fill_required_fields_mode_is_off(
     fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
 ) -> None:
     mock_org_history_bundle.pop("type")
@@ -218,19 +218,23 @@ def test_create_bundle_should_succeed_when_strict_mode_is_off(
     assert isinstance(bundle, Bundle)
 
 
-def test_create_bundle_should_succeed_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, mock_org_history_bundle: Dict[str, Any]
+def test_create_bundle_should_succeed_when_fill_required_fields_mode_is_on(
+    fhir_service_with_fill_required_fields: FhirService,
+    mock_org_history_bundle: Dict[str, Any],
 ) -> None:
-    bundle = fhir_service_strict_validation.create_bundle(mock_org_history_bundle)
+    bundle = fhir_service_with_fill_required_fields.create_bundle(
+        mock_org_history_bundle
+    )
     assert isinstance(bundle, Bundle)
 
 
-def test_create_bundle_should_fail_when_strict_mode_is_on(
-    fhir_service_strict_validation: FhirService, mock_org_history_bundle: Dict[str, Any]
+def test_create_bundle_should_fail_when_fill_required_mode_is_on(
+    fhir_service_with_fill_required_fields: FhirService,
+    mock_org_history_bundle: Dict[str, Any],
 ) -> None:
     mock_org_history_bundle.pop("type")
     with pytest.raises(ValidationError):
-        fhir_service_strict_validation.create_bundle(mock_org_history_bundle)
+        fhir_service_with_fill_required_fields.create_bundle(mock_org_history_bundle)
 
 
 def test_get_resource_type_and_id_from_entry_should_succeed(

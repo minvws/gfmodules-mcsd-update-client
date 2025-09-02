@@ -44,7 +44,9 @@ def _create_resource(
             return HealthcareService.model_validate(data)
 
 
-def create_resource(data: Dict[str, Any], strict: bool = False) -> DomainResource:
+def create_resource(
+    data: Dict[str, Any], fill_required_fields: bool = False
+) -> DomainResource:
     resource_type_in_keys = any(
         "resourceType" in k or "resource_type" in k for k in data
     )
@@ -60,7 +62,7 @@ def create_resource(data: Dict[str, Any], strict: bool = False) -> DomainResourc
 
     has_required_fields = check_for_required_fields(resource_type)
     mcsd_resource_type = McsdResources(resource_type)
-    if strict or has_required_fields is False:
+    if fill_required_fields or has_required_fields is False:
         return _create_resource(mcsd_resource_type, data)
 
     mcsd_resource_type_with_required_fileds = McsdResourcesWithRequiredFields(
