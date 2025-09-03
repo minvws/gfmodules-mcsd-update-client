@@ -7,8 +7,6 @@ from app.models.adjacency.node import NodeReference
 logger = logging.getLogger(__name__)
 
 def build_node_reference(data: Reference, base_url: str) -> NodeReference:
-    print(data)
-    print(base_url)
     """
     Converts a FHIR Reference to a NodeReference, making it relative to the given base URL if necessary.
     """
