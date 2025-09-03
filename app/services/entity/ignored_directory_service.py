@@ -1,5 +1,4 @@
-import logging
-from typing import Sequence, TypeVar
+from typing import Sequence
 
 from fastapi import HTTPException
 
@@ -7,18 +6,16 @@ from app.db.db import Database
 from app.db.entities.ignored_directory import IgnoredDirectory
 from app.db.repositories.ignored_directory_repository import IgnoredDirectoryRepository
 
-logger = logging.getLogger(__name__)
-
-T = TypeVar("T")
 
 class IgnoredDirectoryService:
     """
     Service to manage ignored directories in the database.
     """
+
     def __init__(self, database: Database) -> None:
         self.__database = database
 
-    def get_ignored_directory(self, directory_id: str) -> IgnoredDirectory| None:
+    def get_ignored_directory(self, directory_id: str) -> IgnoredDirectory | None:
         """
         Retrieves an ignored directory entry by its ID.
         """
