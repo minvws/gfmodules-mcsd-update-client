@@ -1,19 +1,19 @@
 from datetime import datetime, timezone
-import logging
 from typing import List, Sequence
 
 from app.db.db import Database
 from app.db.entities.directory_info import DirectoryInfo
 from app.db.repositories.directory_info_repository import DirectoryInfoRepository
 
-logger = logging.getLogger(__name__)
-
 
 class DirectoryInfoService:
     """
     Service to manage directory information in the database.
     """
-    def __init__(self, database: Database, directory_stale_timeout_seconds: int) -> None:
+
+    def __init__(
+        self, database: Database, directory_stale_timeout_seconds: int
+    ) -> None:
         self.__database = database
         self.__directory_stale_timeout_seconds = directory_stale_timeout_seconds
 
@@ -35,7 +35,9 @@ class DirectoryInfoService:
             repository = session.get_repository(DirectoryInfoRepository)
             return repository.get(directory_id)
 
-    def get_all_directories_info(self, include_ignored: bool = False) -> Sequence[DirectoryInfo]:
+    def get_all_directories_info(
+        self, include_ignored: bool = False
+    ) -> Sequence[DirectoryInfo]:
         """
         Retrieves all directory information entries.
         """
@@ -55,6 +57,7 @@ class DirectoryInfoService:
         """
         Checks the health of all directories based on their last successful sync time.
         """
+
         def is_directory_healthy(directory_info: DirectoryInfo) -> bool:
             if not directory_info.last_success_sync:
                 return False
