@@ -28,10 +28,10 @@ def test_post_bundle_should_succeed(
     mock_request.json.return_value = mock_bundle_response.model_dump()
     mock_response.return_value = mock_request
 
-    actual = fhir_api.post_bundle(mock_bundle_request)
+    actual, errs = fhir_api.post_bundle(mock_bundle_request)
 
     assert actual == mock_bundle_response
-
+    assert errs == []
 
 @patch(PATCHED_MODULE)
 def test_post_bundle_should_fail_on_status_code(
@@ -47,6 +47,23 @@ def test_post_bundle_should_fail_on_status_code(
         fhir_api.post_bundle(mock_bundle_request)
 
     assert e.value.status_code == 401
+
+
+@patch(PATCHED_MODULE)
+def test_post_bundle_with_failed_elements(
+    mock_response: MagicMock,
+    fhir_api: FhirApi,
+    mock_bundle_with_errors_request: Bundle,
+    mock_bundle_with_errors_response: Bundle,
+) -> None:
+    mock_request = MagicMock()
+    mock_request.status_code = 200
+    mock_request.json.return_value = mock_bundle_with_errors_response.model_dump()
+    mock_response.return_value = mock_request
+
+    actual, errs = fhir_api.post_bundle(mock_bundle_with_errors_request)
+    assert len(errs) == 2
+    assert actual == mock_bundle_with_errors_response
 
 
 @patch(PATCHED_MODULE)

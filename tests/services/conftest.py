@@ -72,6 +72,24 @@ def mock_bundle_request(
         }
     )
 
+@pytest.fixture()
+def mock_bundle_with_errors_request(
+    mock_org: Dict[str, Any], mock_ep: Dict[str, Any], fhir_service: FhirService
+) -> Bundle:
+    return fhir_service.create_bundle(
+        {
+            "type": "batch",
+            "entry": [
+                {"request": {"method": "GET", "url": f"Organization/{mock_org['id']}"}},
+                {"request": {"method": "GET", "url": f"Organization/{mock_org['id']}"}},
+                {"request": {"method": "GET", "url": f"Organization/{mock_org['id']}"}},
+                {"request": {"method": "GET", "url": f"Organization/{mock_org['id']}"}},
+                {"request": {"method": "GET", "url": f"Organization/{mock_org['id']}"}},
+            ],
+        }
+    )
+
+
 
 @pytest.fixture()
 def mock_bundle_response(
@@ -83,6 +101,23 @@ def mock_bundle_response(
             "entry": [
                 {"resource": mock_org, "response": {"status": "200 OK"}},
                 {"resource": mock_ep, "response": {"status": "200 OK"}},
+            ],
+        }
+    )
+
+@pytest.fixture()
+def mock_bundle_with_errors_response(
+    mock_org: Dict[str, Any], mock_ep: Dict[str, Any], fhir_service: FhirService
+) -> Bundle:
+    return fhir_service.create_bundle(
+        {
+            "type": "batch-response",
+            "entry": [
+                {"resource": mock_org, "response": {"status": "200 OK"}},
+                {"resource": mock_org, "response": {"status": "404 Not Found", "outcome": {"issue": [{"severity": "error", "code": "not-found", "diagnostics": "Resource not found"}]}}},
+                {"resource": mock_org, "response": {"status": "200 OK"}},
+                {"resource": mock_org, "response": {"status": "404 Not Found", "outcome": {"issue": [{"severity": "error", "code": "not-found", "diagnostics": "Resource not found"}]}}},
+                {"resource": mock_org, "response": {"status": "200 OK"}},
             ],
         }
     )

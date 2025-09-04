@@ -141,6 +141,27 @@ def __mock_bundle_entry3() -> List[BundleEntry]:
         ),
     ]
 
+def __mock_bundle_entry4() -> List[BundleEntry]:
+    return [
+        BundleEntry(
+            resource=Organization(
+                id="test-org-12347",
+                identifier=[
+                    {
+                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
+                        "value": "12345678",
+                    }
+                ],
+                name="Example Organization",
+                endpoint=[
+                    {
+                        "reference": "https://base_url.example.com/fhir/Endpoint/bar",
+                    }
+                ],
+            )
+        ),
+    ]
+
 def test_get_all_directories_should_ignore_ignored_if_specified(
     api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock, ignored_directory_service: IgnoredDirectoryService
 ) -> None:
@@ -263,3 +284,4 @@ def test_absolute_endpoint_with_same_origin(
     assert result is not None
     assert len(result) == 1
     assert result[0].endpoint == "http://example.com/foo/bar"
+

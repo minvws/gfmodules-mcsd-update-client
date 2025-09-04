@@ -75,8 +75,7 @@ class AdjacencyMapService:
                 # Find regular reference in cache
                 node = self.__cache_service.get_node(ref.id)
                 if node:
-                    adj_map.add_nodes([node])
-
+                    adj_map.add_node(node)
 
             # Step 2: Get the remaining relative references that are not yet found directly from the Directory
             # API in one single request bundle
@@ -121,10 +120,13 @@ class AdjacencyMapService:
 
     def __get_entries(self, refs: List[BundleRequestParams], fhir_api: FhirApi) -> List[BundleEntry]:
         bundle_request = self.__fhir_service.create_bundle_request(refs)
+        entries, errors = fhir_api.post_bundle(bundle_request)
+        if errors:
+            logger.error("Errors occurred when fetching entries: %s", errors)
+            raise AdjacencyMapException("Errors occurred when fetching entries")
+
         res = self.__fhir_service.filter_history_entries(
-            self.__fhir_service.get_entries_from_bundle_of_bundles(
-                fhir_api.post_bundle(bundle_request)
-            )
+            self.__fhir_service.get_entries_from_bundle_of_bundles(entries)
         )
         return res
 
