@@ -3,6 +3,7 @@ import time
 import logging
 from typing import Dict, List, Any
 from uuid import uuid4
+from app.db.entities.resource_map import ResourceMap
 from app.models.fhir.types import McsdResources
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.cache.caching_service import (
@@ -63,7 +64,6 @@ class UpdateClientService:
         self.backoff = backoff
         self.auth = auth
         self.request_count = request_count
-        self.auth = auth
         self.__resource_map_service = resource_map_service
         self.mtls_cert = mtls_cert
         self.mtls_key = mtls_key
@@ -112,11 +112,11 @@ class UpdateClientService:
         return Bundle(id=str(uuid4()), type="transaction", entry=[], total=0)
 
     def __process_resource_for_deletion(
-        self,
-        delete_bundle: Bundle,
-        res_map_item: Any,
-        res_type: McsdResources,
-        directory_id: str,
+        self, 
+        delete_bundle: Bundle, 
+        res_map_item: ResourceMap, 
+        res_type: McsdResources, 
+        directory_id: str
     ) -> Bundle:
         if delete_bundle.total is not None and delete_bundle.total >= 100:
             self.__flush_delete_bundle(delete_bundle, directory_id)
@@ -128,7 +128,7 @@ class UpdateClientService:
         return delete_bundle
 
     def __add_delete_entry_to_bundle(
-        self, bundle: Bundle, res_map_item: Any, res_type: McsdResources
+        self, bundle: Bundle, res_map_item: ResourceMap, res_type: McsdResources
     ) -> None:
         if bundle.entry is None:
             bundle.entry = []
@@ -147,7 +147,7 @@ class UpdateClientService:
         bundle.total += 1
 
     def __delete_from_resource_map(
-        self, res_map_item: Any, res_type: McsdResources, directory_id: str
+        self, res_map_item: ResourceMap, res_type: McsdResources, directory_id: str
     ) -> None:
         self.__resource_map_service.delete_one(
             ResourceMapDeleteDto(
@@ -162,7 +162,7 @@ class UpdateClientService:
             logging.info(
                 f"Removing {bundle.total} items from update client originating from stale directory {directory_id}"
             )
-            entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
+            _entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
             if len(errors) > 0:
                 logging.error(
                     f"Errors occurred when flushing delete bundle for stale directory {directory_id}: {errors}"
@@ -285,7 +285,7 @@ class UpdateClientService:
                 if node.update_data.resource_map_dto is not None:
                     dtos.append(node.update_data.resource_map_dto)
 
-        entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
+        _entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
         if len(errors) > 0:
             logger.error(f"Errors occurred when updating bundle: {errors}")
             raise UpdateClientException(f"Errors occurred when updating bundle: {errors}")
