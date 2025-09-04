@@ -53,12 +53,6 @@ class FhirService:
         """
         return namespace_resource_reference(data, namespace)
 
-    # def split_reference(self, data: Reference) -> tuple[str, str]:
-    #     """
-    #     Returns a split resource from a reference (e.g. "Patient/123" -> ("Patient", "123"))
-    #     """
-    #     return split_reference(data)
-
     def make_reference_node(self, data: Reference, base_url: str) -> NodeReference:
         """
         Returns a reference variant from either an absolute or relative reference

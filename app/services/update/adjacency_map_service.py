@@ -68,7 +68,7 @@ class AdjacencyMapService:
             # Nothing left? Then we only have failed references left
             if not unresolved:
                 logger.error("Unresolved references found: %s", failed_refs)
-                raise Exception("Found references that could not be resolved")
+                raise AdjacencyMapException("Found references that could not be resolved")
 
             # Step 1: Check if we find references in the cache
             for ref in unresolved:
