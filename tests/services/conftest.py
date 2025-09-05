@@ -114,7 +114,11 @@ def mock_bundle_with_errors_response(
             "type": "batch-response",
             "entry": [
                 {"resource": mock_org, "response": {"status": "200 OK"}},
-                {"resource": mock_org, "response": {"status": "404 Not Found", "outcome": {"issue": [{"severity": "error", "code": "not-found", "diagnostics": "Resource not found"}]}}},
+                {"resource": mock_org, "response": {"status": "404 Not Found", "outcome": {"issue": [
+                    {"severity": "error", "code": "not-found", "diagnostics": "Resource not found"},
+                    {"severity": "warning", "code": "le-warn", "diagnostics": "Just a warning"},
+                    {"severity": "fatal", "code": "le-fatal", "diagnostics": "Fatal stuff happened"},
+                ]}}},
                 {"resource": mock_org, "response": {"status": "200 OK"}},
                 {"resource": mock_org, "response": {"status": "404 Not Found", "outcome": {"issue": [{"severity": "error", "code": "not-found", "diagnostics": "Resource not found"}]}}},
                 {"resource": mock_org, "response": {"status": "200 OK"}},

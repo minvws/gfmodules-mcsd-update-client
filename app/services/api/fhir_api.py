@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -17,23 +18,30 @@ logger = logging.getLogger(__name__)
 
 ERROR_SEVERITIES = {"error", "fatal"}
 
-BundleErrors = List[Dict[str, Any]]
+@dataclass
+class BundleError:
+    # Index in the bundle for this error
+    entry: int
+    # Status code of the error (http status code)
+    status: int
+    # Severity of the error
+    severity: str
+    # Error code
+    code: str
+    # Any diagnostics
+    diagnostics: str|None
 
-def _issues_has_error(outcome: dict[str, Any]) -> bool:
-    """
-    Determine if an issue has an error
-    """
-    issues = (outcome or {}).get("issue") or []
-    return any((i.get("severity", "").lower() in ERROR_SEVERITIES) for i in issues if isinstance(i, dict))
 
-def _collect_errors(bundle: dict[str, Any]) -> BundleErrors:
+def _collect_errors(bundle: Bundle) -> list[BundleError]:
     """
     Collect errors from bundle
     """
-    errs = []
-    for idx, e in enumerate(bundle.get("entry", []) or []):
-        resp = e.get("response") or {}
-        status_str = str(resp.get("status", "")).strip()
+    errs: list[BundleError] = []
+    for idx, e in enumerate(bundle.entry or []):
+        if e is None or e.response is None:
+            continue
+        resp = e.response
+        status_str = str(resp.status).strip()
         status_code = None
         if status_str:
             try:
@@ -41,14 +49,23 @@ def _collect_errors(bundle: dict[str, Any]) -> BundleErrors:
             except ValueError:
                 pass
 
-        if status_code and status_code >= 400:
-            errs.append({"entry": idx, "status": status_code, "reason": f"HTTP error: {status_code}"})
-        elif _issues_has_error(resp.get("outcome")):  # type: ignore[arg-type]
-            errs.append({"entry": idx, "status": status_code, "reason": "OperationOutcome error"})
+        if status_code and status_code < 400:
+            continue
 
-        res = e.get("resource")
-        if isinstance(res, dict) and res.get("resourceType") == "OperationOutcome" and _issues_has_error(res):
-            errs.append({"entry": idx, "status": status_code, "reason": "Resource-level OperationOutcome error"})
+        resp = e.response or {}
+        if not resp.outcome:
+            continue
+        for issue in resp.outcome.get("issue", []):
+            if issue.get("severity") not in ERROR_SEVERITIES:
+                continue
+
+            errs.append(BundleError(
+                entry=idx,
+                status=status_code,
+                code=issue.get("code"),
+                severity=issue.get("severity"),
+                diagnostics=issue.get("diagnostics") or ""
+            ))
     return errs
 
 
@@ -79,10 +96,10 @@ class FhirApi(HttpService):
         self.request_count = request_count
         self.__fhir_service = FhirService(fill_required_fields)
 
-    def post_bundle(self, bundle: Bundle) -> tuple[Bundle, BundleErrors]:
+    def post_bundle(self, bundle: Bundle) -> tuple[Bundle, list[BundleError]]:
         """
         Post a FHIR bundle to the server and return the response as a Bundle object.
-        Will return a
+        Will return a tuple containing a parsed Bundle and BundleErrors if present
         """
         try:
             response = self.do_request(
@@ -93,7 +110,7 @@ class FhirApi(HttpService):
             raise HTTPException(status_code=500, detail=str(e))
 
         # Make sure we have a valid HTTP response status
-        if response.status_code < 200 or response.status_code > 299:
+        if response.status_code >= 400:
             # See if we can get an Operation Outcome from the error response
             try:
                 data = response.json()
@@ -102,12 +119,7 @@ class FhirApi(HttpService):
                 logging.error("PostBundle error: %s", response.text)
                 raise HTTPException(status_code=500, detail="HTTP error")
 
-            # Show details if we have a correct json output
-            if isinstance(data, dict) and data.get("resourceType") == "OperationOutcome" and _issues_has_error(data):
-                logging.error("PostBundle error: %s", data)
-                raise HTTPException(status_code=response.status_code, detail=data)
-
-            # Json data is found, but it doesn't seem like an operation outcome. Just return a global error
+            # Return a global error
             logging.error("PostBundle error: %s", data)
             raise HTTPException(status_code=response .status_code, detail="HTTP error")
 
@@ -118,13 +130,10 @@ class FhirApi(HttpService):
             logger.error("PostBundle error: %s", response.text)
             raise HTTPException(status_code=response.status_code, detail="HTTP error")
 
-        entry_errs = []
+        bundle = self.__fhir_service.create_bundle(data)
+        bundle_errors = _collect_errors(bundle)
 
-        # Check for errors, if any
-        if isinstance(data, dict) and data.get('resourceType') == "Bundle":
-            entry_errs = _collect_errors(data)
-
-        return self.__fhir_service.create_bundle(data), entry_errs
+        return bundle, bundle_errors
 
     def search_resource(
         self, resource_type: str, params: dict[str, Any]

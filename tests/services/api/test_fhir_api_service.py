@@ -62,7 +62,13 @@ def test_post_bundle_with_failed_elements(
     mock_response.return_value = mock_request
 
     actual, errs = fhir_api.post_bundle(mock_bundle_with_errors_request)
-    assert len(errs) == 2
+    assert len(errs) == 3
+    assert errs[0].entry == 1
+    assert errs[0].severity == "error"
+    assert errs[1].entry == 1
+    assert errs[1].severity == "fatal"
+    assert errs[2].entry == 3
+    assert errs[2].severity == "error"
     assert actual == mock_bundle_with_errors_response
 
 
