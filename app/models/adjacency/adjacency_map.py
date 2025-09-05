@@ -17,6 +17,12 @@ class AdjacencyMap:
     def add_node(self, node: Node) -> None:
         self.data[node.resource_id] = node
 
+    def node_count(self) -> int:
+        """
+        Returns the number of nodes in the adjacency map.
+        """
+        return len(self.data)
+
     def get_group(self, node: Node) -> List[Node]:
         """
         Use Breadth First Search approach to retrieve Node and siblings.

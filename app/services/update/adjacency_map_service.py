@@ -30,6 +30,12 @@ class InvalidNodeStateException(AdjacencyMapException):
     pass
 
 
+def ref_key(ref: NodeReference) -> tuple[str, str]:
+    """
+    Returns an id we can use for our attempted_keys set.
+    """
+    return (ref.resource_type, ref.id)
+
 class AdjacencyMapService:
     def __init__(
         self,
@@ -54,37 +60,59 @@ class AdjacencyMapService:
         nodes = [self.create_node(entry) for entry in entries]
         adj_map = AdjacencyMap(nodes)
 
-        failed_refs: list[NodeReference] = []
-        while True:
-            missing_refs = adj_map.get_missing_refs()
+        # Keeps track of the references we resolved from remote directory
+        attempted_keys: set[tuple[str,str]] = set()
 
-            # Nothing left to do
+        MAX_PASSES = 50
+        passes = 0
+
+        while True:
+            passes += 1
+            if passes > MAX_PASSES:
+                logger.error("Aborting after %d passes to avoid infinitive loop", passes)
+                raise AdjacencyMapException("Too many passes")
+
+            # Check if we have resolved all references
+            missing_refs = adj_map.get_missing_refs()
             if not missing_refs:
                 break
 
-            # Remove all failed refs first
-            unresolved = [r for r in missing_refs if r not in failed_refs]
-
-            # Nothing left? Then we only have failed references left
-            if not unresolved:
-                logger.error("Unresolved references found: %s", failed_refs)
-                raise AdjacencyMapException("Found references that could not be resolved")
+            nodes_before = adj_map.node_count()
 
             # Step 1: Check if we find references in the cache
-            for ref in unresolved:
+            for ref in missing_refs:
                 # Find regular reference in cache
                 node = self.__cache_service.get_node(ref.id)
                 if node:
                     adj_map.add_node(node)
 
-            # Step 2: Get the remaining relative references that are not yet found directly from the Directory
-            # API in one single request bundle
-            missing_entries = self.get_directory_data(
-                [BundleRequestParams(**ref.model_dump()) for ref in unresolved]
-            )
-            missing_nodes = [self.create_node(entry) for entry in missing_entries]
-            adj_map.add_nodes(missing_nodes)
+            # Find references that are not resolved from the cache
+            still_missing = adj_map.get_missing_refs()
+            if not still_missing:
+                # All resolved this pass
+                continue
 
+
+            # Step 2: Find all the references we are still missing AND we haven't tried before yet
+            to_fetch = [r for r in still_missing if ref_key(r) not in attempted_keys]
+            if to_fetch:
+                missing_entries = self.get_directory_data(
+                    [BundleRequestParams(**ref.model_dump()) for ref in missing_refs]
+                )
+                missing_nodes = [self.create_node(entry) for entry in missing_entries]
+                if missing_nodes:
+                    adj_map.add_nodes(missing_nodes)
+
+                # Update our list with elements we have feched
+                attempted_keys.update(ref_key(r) for r in to_fetch)
+
+
+            # Check if we resolved anything this pass
+            nodes_after = adj_map.node_count()
+            if nodes_after == nodes_before:
+                unresolved = adj_map.get_missing_refs()
+                logger.error("Cannot resolve all references: %s", unresolved)
+                raise AdjacencyMapException("Unresolved references found")
 
         # All references are now resolved.
 
