@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -14,6 +15,58 @@ from app.services.fhir.fhir_service import FhirService
 from fhir.resources.R4B.bundle import Bundle
 
 logger = logging.getLogger(__name__)
+
+ERROR_SEVERITIES = {"error", "fatal"}
+
+@dataclass
+class BundleError:
+    # Index in the bundle for this error
+    entry: int
+    # Status code of the error (http status code)
+    status: int
+    # Severity of the error
+    severity: str
+    # Error code
+    code: str
+    # Any diagnostics
+    diagnostics: str|None
+
+
+def _collect_errors(bundle: Bundle) -> list[BundleError]:
+    """
+    Collect errors from bundle
+    """
+    errs: list[BundleError] = []
+    for idx, e in enumerate(bundle.entry or []):
+        if e is None or e.response is None:
+            continue
+        resp = e.response
+        status_str = str(resp.status).strip()
+        status_code = None
+        if status_str:
+            try:
+                status_code = int(status_str.split()[0])
+            except ValueError:
+                pass
+
+        if status_code and status_code < 400:
+            continue
+
+        resp = e.response or {}
+        if not resp.outcome:
+            continue
+        for issue in resp.outcome.get("issue", []):
+            if issue.get("severity") not in ERROR_SEVERITIES:
+                continue
+
+            errs.append(BundleError(
+                entry=idx,
+                status=status_code,
+                code=issue.get("code"),
+                severity=issue.get("severity"),
+                diagnostics=issue.get("diagnostics") or ""
+            ))
+    return errs
 
 
 class FhirApi(HttpService):
@@ -43,21 +96,44 @@ class FhirApi(HttpService):
         self.request_count = request_count
         self.__fhir_service = FhirService(fill_required_fields)
 
-    def post_bundle(self, bundle: Bundle) -> Bundle:
+    def post_bundle(self, bundle: Bundle) -> tuple[Bundle, list[BundleError]]:
+        """
+        Post a FHIR bundle to the server and return the response as a Bundle object.
+        Will return a tuple containing a parsed Bundle and BundleErrors if present
+        """
         try:
             response = self.do_request(
                 "POST", json=jsonable_encoder(bundle.model_dump())
             )
-
-            if response.status_code > 300:
-                logger.error(response.text)
-                raise HTTPException(status_code=500, detail=response.json())
-
-            data = response.json()
-            return self.__fhir_service.create_bundle(data)
         except Exception as e:
-            logging.error(e)
-            raise e
+            logging.error("PostBundle error: %s", e)
+            raise HTTPException(status_code=500, detail=str(e))
+
+        # Make sure we have a valid HTTP response status
+        if response.status_code >= 400:
+            # See if we can get an Operation Outcome from the error response
+            try:
+                data = response.json()
+            except Exception:
+                # No json data found, just return generic error
+                logging.error("PostBundle error: %s", response.text)
+                raise HTTPException(status_code=500, detail="HTTP error")
+
+            # Return a global error
+            logging.error("PostBundle error: %s", data)
+            raise HTTPException(status_code=response .status_code, detail="HTTP error")
+
+        # Sucecssful HTTP status. Check if we have a JSON body
+        try:
+            data = response.json()
+        except Exception:
+            logger.error("PostBundle error: %s", response.text)
+            raise HTTPException(status_code=response.status_code, detail="HTTP error")
+
+        bundle = self.__fhir_service.create_bundle(data)
+        bundle_errors = _collect_errors(bundle)
+
+        return bundle, bundle_errors
 
     def search_resource(
         self, resource_type: str, params: dict[str, Any]

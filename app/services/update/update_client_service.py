@@ -162,7 +162,14 @@ class UpdateClientService:
             logging.info(
                 f"Removing {bundle.total} items from update client originating from stale directory {directory_id}"
             )
-            self.__update_client_fhir_api.post_bundle(bundle)
+            entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
+            if len(errors) > 0:
+                logging.error(
+                    f"Errors occurred when flushing delete bundle for stale directory {directory_id}: {errors}"
+                )
+                raise UpdateClientException(
+                    f"Errors occurred when flushing delete bundle for stale directory {directory_id}: {errors}"
+                )
 
     def update(self, directory: DirectoryDto, since: datetime | None = None) -> Any:
         self.__create_cache_run()
@@ -224,7 +231,9 @@ class UpdateClientService:
                         continue
                     targets.append(e)
 
-            self.__clear_and_add_nodes(self.update_page(targets, adjacency_map_service))
+            nodes = self.update_page(targets, adjacency_map_service)
+            self.__clear_and_add_nodes(nodes)
+
 
     def __clear_and_add_nodes(self, updated_nodes: List[Node]) -> None:
         if self.__cache is None:
@@ -233,6 +242,7 @@ class UpdateClientService:
             if not self.__cache.key_exists(node.resource_id):
                 node.clear_for_cash()
                 self.__cache.add_node(node)
+
 
     def update_page(
         self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
@@ -275,7 +285,10 @@ class UpdateClientService:
                 if node.update_data.resource_map_dto is not None:
                     dtos.append(node.update_data.resource_map_dto)
 
-        self.__update_client_fhir_api.post_bundle(bundle)
+        entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
+        if len(errors) > 0:
+            logger.error(f"Errors occurred when updating bundle: {errors}")
+            raise UpdateClientException(f"Errors occurred when updating bundle: {errors}")
 
         self.__handle_dtos(dtos)
 

@@ -92,6 +92,11 @@ an app.conf mount.
 Both containers only differ in their init script and the default version usually will mount its own local src directory
 into the container's /src dir.
 
+## URL resolving of references
+
+When encountering absolute URLS in references, they will be resolved ONLY when the URL is of the same origin. Otherwise
+it will throw an exception.
+
 ## Contribution
 
 As stated in the [Disclaimer](#disclaimer) this project and all associated code serve solely as documentation and 

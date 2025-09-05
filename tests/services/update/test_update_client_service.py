@@ -14,6 +14,9 @@ def test_cleanup() -> None:
     mock_resource_map_service = MagicMock()
     mock_update_client_fhir_api = MagicMock()
 
+    mock_update_client_fhir_api.post_bundle = MagicMock(return_value=[Bundle, []])
+
+
     directory_id = "directory_1"
 
     def mock_resource_map_service_find(
