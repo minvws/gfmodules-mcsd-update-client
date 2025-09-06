@@ -12,6 +12,9 @@ the FHIR store type.
 
 This codebase serves as an example of how the mCSD ITI-91 update mechanism can be implemented. It is **NOT** intended for production use.
 
+This application does NOT process, store, or handle any Personally Identifiable Information (PII).
+All data used for testing or demonstration is synthetic or non-sensitive.
+
 ### Purpose
 
 - Demonstrate mCSD system communication patterns
