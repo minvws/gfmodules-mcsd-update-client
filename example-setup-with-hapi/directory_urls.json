@@ -3,7 +3,7 @@
         {
             "id": "hapi-directory", 
             "name": "HAPI directory", 
-            "endpoint": "http://hapi-directory:8080/fhir"
+            "endpoint": "https://hapi-directory:8443/fhir"
         }
     ]
 }

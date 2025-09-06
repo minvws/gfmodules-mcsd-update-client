@@ -1,5 +1,15 @@
 server:
-  port: 8080
+  port: 8443
+  ssl:
+    enabled: true
+    protocol: TLS
+    key-store: /certificates/directory-server-keystore.p12
+    key-store-password: secret
+    key-store-type: PKCS12
+    trust-store: /certificates/truststore.p12
+    trust-store-password: secret
+    trust-store-type: PKCS12
+    client-auth: need
 
 spring:
   datasource:
@@ -10,7 +20,7 @@ spring:
   jpa:
     properties:
       hibernate.dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
-      hibernate.search.enabled: false
+      hibernate.search.enabled: true
 
 hapi:
   fhir:
@@ -18,7 +28,7 @@ hapi:
       home:
         id: home
         name: hapi2 Tester
-        server_address: 'http://localhost:8080/fhir'
+        server_address: 'https://localhost:8444/fhir'
         refuse_to_fetch_third_party_urls: false
         fhir_version: R4
     allow_multiple_delete: true

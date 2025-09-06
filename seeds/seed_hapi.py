@@ -2,21 +2,42 @@ import requests
 from fastapi.encoders import jsonable_encoder
 from seeds.generate_data import DataGenerator
 import sys
+import os
 
 generator = DataGenerator()
 
 def generate_data():
-    if len(sys.argv) != 2:
-        raise ValueError("Usage: python seed_hapi.py <mock_directory_url> \n For example: python seed_hapi.py http://example.com/fhir/")
+    if len(sys.argv) < 2:
+        raise ValueError("Usage: python seed_hapi.py <mock_directory_url> [use_mtls] \n For example: python seed_hapi.py https://hapi-directory:8443/fhir/ true")
 
     _DIRECTORY_URL = sys.argv[1]
+    use_mtls = len(sys.argv) > 2 and sys.argv[2].lower() == "true"
+    
+    # Setup mTLS configuration if requested
+    session = requests.Session()
+    if use_mtls:
+        cert_file = "/certificates/client.crt"
+        key_file = "/certificates/client.key" 
+        ca_file = "/certificates/ca.crt"
+        
+        # Check if certificate files exist
+        if not all(os.path.exists(f) for f in [cert_file, key_file, ca_file]):
+            print("Warning: Certificate files not found, falling back to no SSL verification")
+            session.verify = False
+        else:
+            session.cert = (cert_file, key_file)
+            session.verify = ca_file
+            print(f"Using mTLS with certificates: {cert_file}, {key_file}, {ca_file}")
+    
+    print(f"Seeding directory at: {_DIRECTORY_URL}")
+    print(f"Using mTLS: {use_mtls}")
 
     for x in range(10):
         print(f"Generating data set {x+1}")
 
         endpoint = generator.generate_endpoint()
         print("Generated endpoint")
-        endpoint_response = requests.post(
+        endpoint_response = session.post(
             url=_DIRECTORY_URL+"Endpoint",
             json=jsonable_encoder(endpoint.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -27,7 +48,7 @@ def generate_data():
 
         org = generator.generate_organization(endpoint_ids=[endpoint_id])
         print("Generated organization")
-        org_response = requests.post(
+        org_response = session.post(
             url=_DIRECTORY_URL+"Organization",
             json=jsonable_encoder(org.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -41,7 +62,7 @@ def generate_data():
             part_of=org_id,
         )
         print("Generated child organization")
-        child_response = requests.post(
+        child_response = session.post(
             url=_DIRECTORY_URL+"Organization",
             json=jsonable_encoder(child_org.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -55,7 +76,7 @@ def generate_data():
             endpoint_ids=[endpoint_id],
         )
         print("Generated location")
-        loc_response = requests.post(
+        loc_response = session.post(
             url=_DIRECTORY_URL+"Location",
             json=jsonable_encoder(loc.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -70,7 +91,7 @@ def generate_data():
             part_of_location=loc_id,
         )
         print("Generated child location")
-        child_loc_resp = requests.post(
+        child_loc_resp = session.post(
             url=_DIRECTORY_URL+"Location",
             json=jsonable_encoder(child_loc.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -86,7 +107,7 @@ def generate_data():
             endpoint_ids=[endpoint_id],
         )
         print("Generated healthcare service")
-        health_serv_response = requests.post(
+        health_serv_response = session.post(
             url=_DIRECTORY_URL+"HealthcareService",
             json=jsonable_encoder(health_serv.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -99,7 +120,7 @@ def generate_data():
             qualification_issuer_org_ids=[org_id],
         )
         print("Generated practitioner")
-        practitioner_response = requests.post(
+        practitioner_response = session.post(
             url=_DIRECTORY_URL+"Practitioner",
             json=jsonable_encoder(practitioner.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -116,7 +137,7 @@ def generate_data():
             endpoint_ids=[endpoint_id],
         )
         print("Generated practitioner role")
-        practitioner_role_response = requests.post(
+        practitioner_role_response = session.post(
             url=_DIRECTORY_URL+"PractitionerRole",
             json=jsonable_encoder(practitioner_role.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -128,7 +149,7 @@ def generate_data():
         # Setup some affiliations between multiple organizations
         org2 = generator.generate_organization(endpoint_ids=[endpoint_id])
         print("Generated second organization")
-        org2_response = requests.post(
+        org2_response = session.post(
             url=_DIRECTORY_URL+"Organization",
             json=jsonable_encoder(org2.model_dump()),
             headers={"Content-Type": "application/json"},
@@ -146,7 +167,7 @@ def generate_data():
             endpoint_ids=[endpoint_id],
         )
         print("Generated organization affiliation")
-        org_afil_response = requests.post(
+        org_afil_response = session.post(
             url=_DIRECTORY_URL+"OrganizationAffiliation",
             json=jsonable_encoder(org_afil.model_dump()),
             headers={"Content-Type": "application/json"},

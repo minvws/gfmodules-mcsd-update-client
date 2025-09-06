@@ -22,6 +22,7 @@ services:
       - ../pyproject.toml:/src/pyproject.toml
       - ../Makefile:/src/Makefile
       - ../README.md:/src/README.md
+      - ./certificates:/certificates:ro
     configs:
       - source: mcsd_update_client_conf
         target: /src/app.conf
@@ -45,26 +46,31 @@ services:
   hapi-update-client:
     image: "hapiproject/hapi:latest"
     ports:
-      - "8081:8081"
+      - "8443:8443"
+    volumes:
+      - ./certificates:/certificates:ro
     configs:
       - source: hapi_update_client_config
         target: /app/config/application.yaml
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - mcsd_update_client_net
 
   hapi-directory:
     image: "hapiproject/hapi:latest"
     ports:
-      - "8080:8080"
+      - "8444:8443"
+    volumes:
+      - ./certificates:/certificates:ro
     configs:
       - source: hapi_directory_config
         target: /app/config/application.yaml
     depends_on:
       - postgres
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-k", "--cert", "/certificates/client.crt", "--key", "/certificates/client.key", "--cacert", "/certificates/ca.crt", "-f", "https://localhost:8443/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -79,12 +85,19 @@ services:
           "CMD",
           "curl",
           "-f",
-          "http://hapi-update-client:8081/actuator/health",
+          "-k",
+          "--cert", "/certificates/client.crt",
+          "--key", "/certificates/client.key",
+          "--cacert", "/certificates/ca.crt",
+          "https://hapi-update-client:8443/actuator/health",
         ]
       start_period: 100s
       start_interval: 5s
+    volumes:
+      - ./certificates:/certificates:ro
     depends_on:
-      - hapi-update-client
+      hapi-update-client:
+        condition: service_started
     stop_signal: SIGKILL
     networks:
       - mcsd_update_client_net
@@ -97,11 +110,20 @@ services:
         [
           "CMD",
           "curl",
+          "-k",
+          "--cert",
+          "/certificates/client.crt",
+          "--key",
+          "/certificates/client.key",
+          "--cacert",
+          "/certificates/ca.crt",
           "-f",
-          "http://hapi-directory:8080/actuator/health",
+          "https://hapi-directory:8443/actuator/health",
         ]
       start_period: 100s
       start_interval: 5s
+    volumes:
+      - ./certificates:/certificates:ro
     depends_on:
       - hapi-directory
     stop_signal: SIGKILL
