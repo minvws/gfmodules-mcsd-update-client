@@ -24,11 +24,8 @@ from tests.services.fhir.conftest import (
 )
 
 
-@pytest.mark.parametrize("data", incomplete_resources)
-def test_create_resource_should_succeed_when_fill_required_fields_mode_is_off(
-    fhir_service: FhirService, data: Dict[str, Any]
-) -> None:
-    actual = fhir_service.create_resource(data)
+def _do_create_test(service: FhirService, data: Dict[str, Any]) -> None:
+    actual = service.create_resource(data)
 
     assert isinstance(actual, DomainResource)
     assert "resourceType" in data
@@ -57,12 +54,26 @@ def test_create_resource_should_succeed_when_fill_required_fields_mode_is_off(
             assert isinstance(actual, OrganizationAffiliation)
 
 
-@pytest.mark.parametrize("data", incomplete_resources_with_required_fields)
-def test_create_resource_should_raise_exception_when_incomplete_resource_fill_required_field_mode_is_on(
+@pytest.mark.parametrize("data", complete_resources)
+def test_create_resource_should_succeed_when_fill_required_fields_mode_is_off(
+    fhir_service: FhirService, data: Dict[str, Any]
+) -> None:
+    _do_create_test(fhir_service, data)
+
+
+@pytest.mark.parametrize("data", incomplete_resources)
+def test_create_resources_should_succeed_when_fill_required_fields_mode_is_on(
     fhir_service_with_fill_required_fields: FhirService, data: Dict[str, Any]
 ) -> None:
+    _do_create_test(fhir_service_with_fill_required_fields, data)
+
+
+@pytest.mark.parametrize("data", incomplete_resources_with_required_fields)
+def test_create_resource_should_raise_exception_when_incomplete_resource_fill_required_field_mode_is_on(
+    fhir_service: FhirService, data: Dict[str, Any]
+) -> None:
     with pytest.raises(ValidationError):
-        fhir_service_with_fill_required_fields.create_resource(data)
+        fhir_service.create_resource(data)
 
 
 def test_create_resource_should_raise_exception_with_non_mcsd_resource(
@@ -83,39 +94,6 @@ def test_create_resource_should_raise_exception_when_resource_type_property_is_m
     mock_org.pop("resourceType")
     with pytest.raises(KeyError):
         fhir_service.create_resource(mock_org)
-
-
-@pytest.mark.parametrize("data", complete_resources)
-def test_create_resource_should_succeed_when_fill_required_fields_mode_is_on(
-    fhir_service_with_fill_required_fields: FhirService, data: Dict[str, Any]
-) -> None:
-    actual = fhir_service_with_fill_required_fields.create_resource(data)
-    assert isinstance(actual, DomainResource)
-    resource_type = data["resourceType"]
-    match resource_type:
-        case "Organization":
-            assert isinstance(actual, Organization)
-
-        case "Endpoint":
-            assert isinstance(actual, Endpoint)
-
-        case "Practitioner":
-            assert isinstance(actual, Practitioner)
-
-        case "PractitionerRole":
-            assert isinstance(actual, PractitionerRole)
-
-        case "Location":
-            assert isinstance(actual, Location)
-
-        case "HealthcareService":
-            assert isinstance(actual, HealthcareService)
-
-        case "OrganizationAffiliation":
-            assert isinstance(actual, OrganizationAffiliation)
-
-        case _:
-            pytest.fail()
 
 
 @pytest.mark.parametrize(

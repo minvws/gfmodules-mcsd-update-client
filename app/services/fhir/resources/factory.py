@@ -60,9 +60,9 @@ def create_resource(
     if not valid_mcsd_resource_type:
         raise ValueError(f"{resource_type} is not a valid mCSD Resource")
 
-    has_required_fields = check_for_required_fields(resource_type)
     mcsd_resource_type = McsdResources(resource_type)
-    if fill_required_fields or has_required_fields is False:
+    has_required_fields = check_for_required_fields(resource_type)
+    if fill_required_fields is False or has_required_fields is False:
         return _create_resource(mcsd_resource_type, data)
 
     mcsd_resource_type_with_required_fileds = McsdResourcesWithRequiredFields(
