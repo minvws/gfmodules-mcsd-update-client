@@ -1,90 +1,298 @@
-from typing import Sequence
-from unittest.mock import ANY, MagicMock
+from datetime import datetime, timedelta
+from typing import Any, Dict
+from unittest.mock import ANY, MagicMock, patch
 from app.config import ConfigExternalCache
+from app.db.entities.resource_map import ResourceMap
+from app.models.directory.dto import DirectoryDto
 from app.models.fhir.types import McsdResources
+from app.models.resource_map.dto import ResourceMapDeleteDto
+from app.services.api.authenticators.null_authenticator import NullAuthenticator
+from app.services.entity.resource_map_service import ResourceMapService
+from app.services.fhir.fhir_service import FhirService
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.update_client_service import (
+    CacheServiceUnavailableException,
     UpdateClientService,
 )
-from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
+from fhir.resources.R4B.bundle import Bundle
+import pytest
 
+@pytest.fixture
+def resource_map_service() -> MagicMock:
+    return MagicMock(spec=ResourceMapService)
 
-def test_cleanup() -> None:
-    # Mock dependencies
-    mock_resource_map_service = MagicMock()
-    mock_update_client_fhir_api = MagicMock()
+@pytest.fixture
+def directory_dto() -> DirectoryDto:
+    return DirectoryDto(
+                id="1",
+                name="Test Directory",
+                endpoint="https://example-directory.com",
+            )
 
-    mock_update_client_fhir_api.post_bundle = MagicMock(return_value=[Bundle, []])
-
-
-    directory_id = "directory_1"
-
-    def mock_resource_map_service_find(
-        directory_id: str | None = None,
-        resource_type: str | None = None,
-        directory_resource_id: str | None = None,
-        update_client_resource_id: str | None = None,
-    ) -> Sequence[MagicMock]:
-        assert directory_id == "directory_1"
-        return [
-            MagicMock(
-                directory_id=directory_id,
-                update_client_resource_id="resource_1",
-                resource_type=resource_type,
-                directory_resource_id="directory_resource_1",
-            ),
-            MagicMock(
-                directory_id=directory_id,
-                update_client_resource_id="resource_2",
-                resource_type=resource_type,
-                directory_resource_id="directory_resource_2",
-            ),
-        ]
-
-    mock_resource_map_service.find.side_effect = mock_resource_map_service_find
-
-    # Instantiate the service
-    service = UpdateClientService(
-        update_client_url="https://mock-update_client-url",
-        fill_required_fields=True,
+@pytest.fixture
+def update_client_service(resource_map_service: MagicMock) -> UpdateClientService:
+    return UpdateClientService(
+        update_client_url="https://example.com",
+        fill_required_fields=False,
         timeout=30,
         backoff=0.1,
-        request_count=3,
-        resource_map_service=mock_resource_map_service,
-        auth=MagicMock(),
-        cache_provider=CacheProvider(config=ConfigExternalCache()),
         retries=5,
+        request_count=3,
+        resource_map_service=resource_map_service,
+        auth=NullAuthenticator(),
+        cache_provider=CacheProvider(config=ConfigExternalCache()),
     )
 
-    # Replace the FHIR API with the mock, this is a private and protected attribute, but we can set it for testing
-    service._UpdateClientService__update_client_fhir_api = (  # type: ignore
-        mock_update_client_fhir_api
-    )
+@patch.object(UpdateClientService, '_UpdateClientService__cleanup_resource_type', autospec=True)
+def test_clean_up_calls_cleanup_resource_type(mock_cleanup_resource_type: MagicMock, update_client_service: UpdateClientService) -> None:
+    directory_id = "directory_1"
+    update_client_service.cleanup(directory_id)
+    assert mock_cleanup_resource_type.call_count == len(McsdResources)
+    mock_cleanup_resource_type.assert_any_call(update_client_service, directory_id, ANY)
 
-    service.cleanup(directory_id)
 
-    mock_resource_map_service.find.assert_called_with(
-        directory_id=directory_id, resource_type=ANY
-    )
-    assert mock_update_client_fhir_api.post_bundle.call_count == len(McsdResources)
 
-    # Verify the bundle structure of the calls
-    for idx, resource in enumerate(McsdResources):
-        called_bundle = mock_update_client_fhir_api.post_bundle.call_args_list[idx][0][
-            0
-        ]
-
-        assert isinstance(called_bundle, Bundle)
-        assert called_bundle.type == "transaction"
-        assert called_bundle.entry is not None
-        assert len(called_bundle.entry) == 2
-        assert isinstance(called_bundle.entry[0], BundleEntry)
-        assert isinstance(called_bundle.entry[0].request, BundleEntryRequest)  # type: ignore[attr-defined]
-        assert called_bundle.entry[0].request.method == "DELETE"  # type: ignore[attr-defined]
-        assert called_bundle.entry[0].request.url is not None  # type: ignore[attr-defined]
-        split = called_bundle.entry[0].request.url.split("/")  # type: ignore[attr-defined]
-        assert split[0] == resource.value
-        assert (
-            split[1] == "resource_1?_cascade=delete"
-            or split[1] == "resource_2?_cascade=delete"
+@patch(
+    "app.services.api.api_service.HttpService.do_request",
+    autospec=True
+)
+@patch(
+    "app.services.update.update_client_service.uuid4",
+    autospec=True
+)
+def test_cleanup_per_resource_type_finds_and_deletes_resource_map_items(
+    mock_uuid4: MagicMock,
+    mock_do_request: MagicMock,
+    update_client_service: UpdateClientService,
+    resource_map_service: MagicMock,
+) -> None:
+    mock_uuid4.return_value = "638bdbfa-8658-4f29-b0e7-5abdada97067"
+    resource_map_service.find.return_value = [
+        ResourceMap(
+            id="resource_1",
+            directory_id="directory_1",
+            resource_type=McsdResources.ENDPOINT.value,
+            directory_resource_id="dir_res_1",
+            update_client_resource_id="update_res_1"
+        ),
+        ResourceMap(
+            id="resource_2",
+            directory_id="directory_1",
+            resource_type=McsdResources.ENDPOINT.value,
+            directory_resource_id="dir_res_2",
+            update_client_resource_id="update_res_2"
         )
+    ]
+    mock_do_request.return_value = MagicMock(status_code=200, json=MagicMock(return_value=Bundle(
+            id="abc132", type="transaction", entry=[], total=0
+        ).model_dump()))
+    update_client_service._UpdateClientService__cleanup_resource_type("directory_1", McsdResources.ENDPOINT) # type: ignore[attr-defined]
+    resource_map_service.find.assert_called_once_with(directory_id="directory_1", resource_type=McsdResources.ENDPOINT.value)
+    resource_map_service.delete_one.assert_any_call(ResourceMapDeleteDto(
+                directory_id="directory_1",
+                resource_type=McsdResources.ENDPOINT.value,
+                directory_resource_id="dir_res_1",
+            ))
+    resource_map_service.delete_one.assert_any_call(ResourceMapDeleteDto(
+                directory_id="directory_1",
+                resource_type=McsdResources.ENDPOINT.value,
+                directory_resource_id="dir_res_2",
+            ))
+    mock_do_request.assert_called_once_with(
+        ANY,
+        "POST",
+        json={'resourceType': 'Bundle', 'id': '638bdbfa-8658-4f29-b0e7-5abdada97067', 'type': 'transaction', 'total': 2, 'entry': [{'request': {'method': 'DELETE', 'url': 'Endpoint/update_res_1?_cascade=delete'}}, {'request': {'method': 'DELETE', 'url': 'Endpoint/update_res_2?_cascade=delete'}}]},
+    )
+
+@patch(
+    "app.services.api.api_service.HttpService.do_request",
+    autospec=True
+)
+@patch(
+    "app.services.update.update_client_service.uuid4",
+    autospec=True
+)
+def test_cleanup_with_more_than_hundred_items_creates_max_size_bundles(
+    mock_uuid4: MagicMock,
+    mock_do_request: MagicMock,
+    update_client_service: UpdateClientService,
+    resource_map_service: MagicMock,
+) -> None:
+    mock_uuid4.return_value = "638bdbfa-8658-4f29-b0e7-5abdada97067"
+    resource_map_service.find.return_value = [
+        ResourceMap(
+            id=f"resource_{x}",
+            directory_id="directory_1",
+            resource_type=McsdResources.ENDPOINT.value,
+            directory_resource_id=f"dir_res_{x}",
+            update_client_resource_id=f"update_res_{x}"
+        ) for x in range(150)
+    ]
+    mock_do_request.return_value = MagicMock(status_code=200, json=MagicMock(return_value=Bundle(
+            id="abc132", type="transaction", entry=[], total=0
+        ).model_dump()))
+    update_client_service._UpdateClientService__cleanup_resource_type("directory_1", McsdResources.ENDPOINT) # type: ignore[attr-defined]
+    resource_map_service.find.assert_called_once_with(directory_id="directory_1", resource_type=McsdResources.ENDPOINT.value)
+    for x in range(150):
+        resource_map_service.delete_one.assert_any_call(ResourceMapDeleteDto(
+            directory_id="directory_1",
+            resource_type=McsdResources.ENDPOINT.value,
+            directory_resource_id=f"dir_res_{x}",
+        ))
+    mock_do_request.assert_any_call(
+        ANY,
+        "POST",
+        json={'resourceType': 'Bundle', 'id': '638bdbfa-8658-4f29-b0e7-5abdada97067', 'type': 'transaction', 'total': 100, 'entry': [{'request': {'method': 'DELETE', 'url': f'Endpoint/update_res_{x}?_cascade=delete'}} for x in range(100)]},
+    )
+    mock_do_request.assert_any_call(
+        ANY,
+        "POST",
+        json={'resourceType': 'Bundle', 'id': '638bdbfa-8658-4f29-b0e7-5abdada97067', 'type': 'transaction', 'total': 50, 'entry': [{'request': {'method': 'DELETE', 'url': f'Endpoint/update_res_{x}?_cascade=delete'}} for x in range(100, 150)]},
+    )
+
+@patch(
+    "app.services.update.update_client_service.UpdateClientService.update_resource"
+)
+def test_update_creates_and_clears_cache(
+    mock_update_resource: MagicMock,
+    update_client_service: UpdateClientService,
+    directory_dto: DirectoryDto
+) -> None:
+    memory_cache_service = MagicMock()
+    cache_provider = MagicMock()
+    mock_update_resource.return_value = None
+    update_client_service._UpdateClientService__cache_provider = cache_provider # type: ignore[attr-defined]
+    cache_provider.create.return_value = memory_cache_service
+
+    update_client_service.update(directory_dto)
+
+    cache_provider.create.assert_called()
+    assert cache_provider.create.call_count == 1
+    assert memory_cache_service.clear.call_count == 2
+
+
+@patch.object(
+    UpdateClientService,
+    "_UpdateClientService__create_cache_run",
+    autospec=True
+)
+def test_update_raises_cache_service_unavailable_exception_when_cache_service_is_none(
+    mock_create_cache_run: MagicMock,
+    update_client_service: UpdateClientService,
+    directory_dto: DirectoryDto
+) -> None:
+    mock_create_cache_run.return_value = None
+    with pytest.raises(CacheServiceUnavailableException):
+        update_client_service.update(directory_dto)
+
+def test_update_resource_raises_cache_service_unavailable_exception_when_cache_service_is_none(
+    update_client_service: UpdateClientService,
+    directory_dto: DirectoryDto
+) -> None:
+    with pytest.raises(CacheServiceUnavailableException):
+        update_client_service.update_resource(directory_dto, McsdResources.ENDPOINT.value, None)
+
+@patch("app.services.update.update_client_service.FhirApi")
+def test_update_resource_calls_build_history_params(
+    mock_fhir_api: MagicMock,
+    update_client_service: UpdateClientService,
+    directory_dto: DirectoryDto
+) -> None:
+    mock_cache = MagicMock()
+    update_client_service._UpdateClientService__cache = mock_cache # type: ignore[attr-defined]
+    mock_cache.key_exists.return_value = False
+    
+    mock_directory_fhir_api = MagicMock()
+    mock_fhir_api.return_value = mock_directory_fhir_api
+    mock_directory_fhir_api.build_history_params.return_value = None
+    since = datetime.now() - timedelta(days=30)
+    update_client_service.update_resource(directory_dto, McsdResources.ENDPOINT.value, since)
+    
+    mock_directory_fhir_api.build_history_params.assert_called_once_with(since=since)
+
+@patch(
+    "app.services.api.api_service.HttpService.do_request",
+    autospec=True
+)
+def test_update_resource_requests_history_batch(
+    mock_do_request: MagicMock,
+    update_client_service: UpdateClientService,
+    directory_dto: DirectoryDto
+) -> None:
+    mock_cache = MagicMock()
+    update_client_service._UpdateClientService__cache = mock_cache # type: ignore[attr-defined]
+    mock_cache.key_exists.return_value = False
+    
+    since = datetime.now() - timedelta(days=30)
+
+    mock_do_request.return_value = MagicMock(status_code=200, json=MagicMock(return_value=Bundle(
+            id="abc132", type="transaction", entry=[], total=0
+        ).model_dump()))
+    update_client_service.update_resource(directory_dto, McsdResources.ENDPOINT.value, since)
+    mock_do_request.assert_any_call(
+        ANY,
+        "GET",
+        sub_route=f"{McsdResources.ENDPOINT.value}/_history",
+        params={"_count": str(update_client_service.request_count), "_since": since.isoformat()}
+    )
+
+@patch(
+    "app.services.api.api_service.request",
+    autospec=True
+)
+def test_update_requests_resources(
+    mock_request: MagicMock,
+    update_client_service: UpdateClientService,
+    directory_dto: DirectoryDto,
+    mock_org_history_bundle: Dict[str, Any],
+    mock_ep: Dict[str, Any]
+) -> None:
+    fhir_service = FhirService(fill_required_fields=True)
+    since = datetime.now() - timedelta(days=30)
+
+    def mock_request_side_effect(*args: Any, **kwargs: Any) -> MagicMock:
+        if f"{McsdResources.ORGANIZATION.value}/_history" in kwargs.get("url", ""):
+            return MagicMock(status_code=200, json=MagicMock(return_value=fhir_service.create_bundle(mock_org_history_bundle).model_dump()))
+        if kwargs.get("method") == "GET":
+            return MagicMock(status_code=200, json=MagicMock(return_value={'resourceType': 'Bundle', 'type': 'batch', 'entry': []}))
+        if kwargs.get("method") == "POST" and kwargs.get("url") == "https://example.com":
+            return MagicMock(status_code=200, json=MagicMock(return_value={'resourceType': 'Bundle', 'type': 'batch', 'entry': []}))
+        if kwargs.get("method") == "POST" and kwargs.get("url") == "https://example-directory.com" and kwargs.get("json", {}).get("entry", [{}])[0].get("request", {}).get("url") == '/Endpoint/ep-id/_history':
+            return MagicMock(status_code=200, json=MagicMock(return_value={'resourceType': 'Bundle', 'type': 'batch', 'entry': [{"resource": {'resourceType': 'Bundle', 'type': 'batch', 'entry': [{"resource": mock_ep, "request": {"method": "PUT", "url": "Endpoint/ep-id/_history/1"}}]}}]}))
+        assert False, f"Should not reach here: {args}, {kwargs}"
+
+    mock_request.side_effect = mock_request_side_effect
+    update_client_service.update(directory_dto, since)
+    
+    for res_type in McsdResources:
+        mock_request.assert_any_call(
+            method='GET', 
+            url=f'https://example-directory.com/{res_type.value}/_history?_count={update_client_service.request_count}&_since={since.isoformat()}',
+            headers=ANY,
+            timeout=ANY,
+            json=ANY,
+            cert=ANY,
+            verify=ANY,
+            auth=ANY
+        )
+    
+    mock_request.assert_any_call(
+        method='POST',
+        url='https://example.com',
+        headers=ANY,
+        timeout=ANY,
+        json={'resourceType': 'Bundle', 'type': 'batch', 'entry': [{'request': {'method': 'GET', 'url': '/Organization/1-org-id/_history'}}, {'request': {'method': 'GET', 'url': '/Endpoint/1-ep-id/_history'}}]},
+        cert=ANY,
+        verify=ANY,
+        auth=ANY
+    )
+    mock_request.assert_any_call(
+        method='POST',
+        url='https://example-directory.com',
+        headers=ANY,
+        timeout=ANY,
+        json={'resourceType': 'Bundle', 'type': 'batch', 'entry': [{'request': {'method': 'GET', 'url': '/Endpoint/ep-id/_history'}}]},
+        cert=ANY,
+        verify=ANY,
+        auth=ANY
+    )

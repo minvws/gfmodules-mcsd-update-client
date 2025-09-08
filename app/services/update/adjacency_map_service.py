@@ -117,15 +117,16 @@ class AdjacencyMapService:
         # All references are now resolved.
 
         update_client_targets = self.__get_update_client_missing_targets(adj_map)
-        update_client_entries = self.get_update_client_data(update_client_targets)
+        if len(update_client_targets) > 0:
+            update_client_entries = self.get_update_client_data(update_client_targets)
 
-        for entry in update_client_entries:
-            _, _id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
-            res_id = _id.replace(f"{self.directory_id}-", "")
-            node = adj_map.data[res_id]
-            node.update_client_hash = (
-                self.__computation_service.hash_update_client_entry(entry)
-            )
+            for entry in update_client_entries:
+                _, _id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
+                res_id = _id.replace(f"{self.directory_id}-", "")
+                node = adj_map.data[res_id]
+                node.update_client_hash = (
+                    self.__computation_service.hash_update_client_entry(entry)
+                )
 
         for node in adj_map.data.values():
             if node.updated:
