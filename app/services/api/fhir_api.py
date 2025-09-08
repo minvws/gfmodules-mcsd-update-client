@@ -6,12 +6,16 @@ import logging
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.domainresource import DomainResource
 from yarl import URL
+
+from app.models.fhir.types import BundleError
 from app.services.fhir.bundle.bundle_utils import filter_history_entries
 from app.services.api.api_service import HttpService
 from app.services.api.authenticators.authenticator import Authenticator
 from app.services.fhir.fhir_service import FhirService
 
 from fhir.resources.R4B.bundle import Bundle
+
+from app.services.fhir.utils import collect_errors
 
 logger = logging.getLogger(__name__)
 
@@ -43,21 +47,44 @@ class FhirApi(HttpService):
         self.request_count = request_count
         self.__fhir_service = FhirService(fill_required_fields)
 
-    def post_bundle(self, bundle: Bundle) -> Bundle:
+    def post_bundle(self, bundle: Bundle) -> tuple[Bundle, list[BundleError]]:
+        """
+        Post a FHIR bundle to the server and return the response as a Bundle object.
+        Will return a tuple containing a parsed Bundle and BundleErrors if present
+        """
         try:
             response = self.do_request(
                 "POST", json=jsonable_encoder(bundle.model_dump())
             )
-
-            if response.status_code > 300:
-                logger.error(response.text)
-                raise HTTPException(status_code=500, detail=response.json())
-
-            data = response.json()
-            return self.__fhir_service.create_bundle(data)
         except Exception as e:
-            logging.error(e)
-            raise e
+            logging.error("PostBundle error: %s", e)
+            raise HTTPException(status_code=500, detail=str(e))
+
+        # Make sure we have a valid HTTP response status
+        if response.status_code >= 400:
+            # See if we can get an Operation Outcome from the error response
+            try:
+                data = response.json()
+            except Exception:
+                # No json data found, just return generic error
+                logging.error("PostBundle error: %s", response.text)
+                raise HTTPException(status_code=500, detail="HTTP error")
+
+            # Return a global error
+            logging.error("PostBundle error: %s", data)
+            raise HTTPException(status_code=response .status_code, detail="HTTP error")
+
+        # Sucecssful HTTP status. Check if we have a JSON body
+        try:
+            data = response.json()
+        except Exception:
+            logger.error("PostBundle error: %s", response.text)
+            raise HTTPException(status_code=response.status_code, detail="HTTP error")
+
+        bundle = self.__fhir_service.create_bundle(data)
+        bundle_errors = collect_errors(bundle)
+
+        return bundle, bundle_errors
 
     def search_resource(
         self, resource_type: str, params: dict[str, Any]
@@ -116,7 +143,8 @@ class FhirApi(HttpService):
 
         return params
 
-    def get_next_params(self, url: URL) -> Dict[str, Any]:
+    @staticmethod
+    def get_next_params(url: URL) -> Dict[str, Any]:
         """
         Helper function to extract query parameter from URL.
         """

@@ -194,7 +194,7 @@ def test_get_directory_data_should_succeed(
 ) -> None:
     bundle = fhir_service.create_bundle(mock_bundle_of_bundles)
     assert bundle.entry is not None
-    mock_response.return_value = bundle
+    mock_response.return_value = bundle, []
     org_entry = create_bundle_entry(mock_org_bundle_entry)
     ep_entry = create_bundle_entry(mock_ep_bundle_entry)
     node_refs = [

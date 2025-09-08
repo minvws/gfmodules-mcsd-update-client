@@ -7,25 +7,28 @@ from app.db.entities.ignored_directory import IgnoredDirectory
 from app.models.directory.dto import DirectoryDto
 from app.services.entity.ignored_directory_service import IgnoredDirectoryService
 from app.services.api.fhir_api import FhirApi
-from app.services.fhir.fhir_service import FhirService
 from app.services.directory_provider.directory_provider import DirectoryProvider
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.endpoint import Endpoint
+from app.services.fhir.references.reference_misc import build_node_reference
 
 logger = logging.getLogger(__name__)
 
 
 class DirectoryApiProvider(DirectoryProvider):
     def __init__(
-        self, fhir_api: FhirApi, ignored_directory_service: IgnoredDirectoryService
+        self,
+        fhir_api: FhirApi,
+        ignored_directory_service: IgnoredDirectoryService,
+        provider_url: str
     ) -> None:
         """
         Service to manage directories from a FHIR-based API.
         """
         self.__fhir_api = fhir_api
-        self.__fhir_service = FhirService(fill_required_fields=False)
         self.__ignored_directory_service = ignored_directory_service
+        self.__provider_url = provider_url
 
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
         return self.__fetch_directories(
@@ -181,6 +184,10 @@ class DirectoryApiProvider(DirectoryProvider):
         _id = directory_id or org.id
         endpoint_address = self.__get_endpoint_address(org, endpoint_map)
 
+        if endpoint_address is None:
+            logger.warning(f"Organization {org.id} has no valid endpoint address.")
+            return None
+
         if not all(
             isinstance(val, str) and val for val in [name, _id, endpoint_address]
         ):
@@ -190,23 +197,27 @@ class DirectoryApiProvider(DirectoryProvider):
         return DirectoryDto(
             id=_id or "",
             name=name or "",
-            endpoint=endpoint_address,  # type:ignore
+            endpoint=endpoint_address,
             is_deleted=False,
         )
 
-    def __get_endpoint_address(
-        self, org: Organization, endpoint_map: Dict[str, Endpoint]
-    ) -> str | None:
+    def __get_endpoint_address(self, org: Organization, endpoint_map: Dict[str, Endpoint]) -> str | None:
         if org.endpoint is None:
             return None
-        ref = self.__fhir_service.get_references(org) if org.endpoint else None
-        if ref:
-            first_ref = ref[0]
-            if first_ref.reference is None:
-                return None
-            if not first_ref.reference.startswith("Endpoint/"):
-                logger.warning(f"Unexpected reference format: {first_ref.reference}")
-                return None
-            endpoint = endpoint_map.get(first_ref.reference.split("/")[-1])
-            return str(endpoint.address) if endpoint else None
-        return None
+
+        if len(org.endpoint) > 1:
+            logger.warning(f"Organization {org.id} has multiple endpoints, using the first one.")
+
+        ref = org.endpoint[0]
+
+        node_ref = build_node_reference(ref, self.__provider_url)
+        if node_ref is None:
+            logger.warning(f"Unexpected reference format: {ref.reference}")
+            return None
+
+        if node_ref.resource_type != "Endpoint":
+            logger.warning(f"Unexpected reference format: {node_ref.resource_type}")
+            return None
+
+        endpoint = endpoint_map.get(node_ref.id)
+        return str(endpoint.address) if endpoint else None

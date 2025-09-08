@@ -1,19 +1,28 @@
+
 from fhir.resources.R4B.reference import Reference
+import logging
 
+from app.models.adjacency.node import NodeReference
 
-def split_reference(data: Reference) -> tuple[str, str]:
+logger = logging.getLogger(__name__)
+
+def build_node_reference(data: Reference, base_url: str) -> NodeReference:
     """
-    Returns a split resource from a reference (e.g. "Patient/123" -> ("Patient", "123"))
+    Converts a FHIR Reference to a NodeReference, making it relative to the given base URL if necessary.
     """
     ref = data.reference
     if ref is None:
-        raise ValueError("Cannot parse an None Value")
+        raise ValueError("Invalid reference (None)")
+
+    if ref.startswith(base_url):
+        ref = ref[len(base_url):].lstrip("/")
+
+    if ref.startswith("https://") or ref.startswith("http://"): # NOSONAR
+        raise ValueError("Invalid absolute URL found")
 
     parts = ref.split("/")
-    if len(parts) < 2:
-        raise ValueError(
-            "Invalid Reference type, this should be a valid relative or absolute URL"
-        )
+    if len(parts) != 2:
+        logger.error("Failed to parse reference: %s", ref)
+        raise ValueError("Invalid reference: %s" % ref)
 
-    return parts[-2], parts[-1]
-
+    return NodeReference(resource_type=parts[0], id=parts[1])

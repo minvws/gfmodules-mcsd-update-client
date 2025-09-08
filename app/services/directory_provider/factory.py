@@ -1,5 +1,6 @@
 import json
 from typing import List
+
 from app.models.directory.dto import DirectoryDto
 from app.services.api.authenticators.authenticator import Authenticator
 from app.services.api.fhir_api import FhirApi
@@ -52,6 +53,7 @@ class DirectoryProviderFactory:
                     mtls_ca=self.__mcsd_config.mtls_server_ca_path,
                 ),
                 ignored_directory_service=IgnoredDirectoryService(self.__db),
+                provider_url=self.__directory_config.directories_provider_url,
             )
             directory_cache_service = DirectoryCacheService(self.__db)
             return CachingDirectoryProvider(
