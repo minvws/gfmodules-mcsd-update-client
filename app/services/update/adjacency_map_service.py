@@ -4,7 +4,7 @@ from typing import List
 from app.db.entities.resource_map import ResourceMap
 from app.models.fhir.types import BundleRequestParams
 from app.services.update.cache.caching_service import CachingService
-from fhir.resources.R4B.bundle import BundleEntry, BundleEntryRequest
+from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 
 from app.models.adjacency.adjacency_map import AdjacencyMap
 from app.models.adjacency.node import (
@@ -99,11 +99,12 @@ class AdjacencyMapService:
                 missing_entries = self.get_directory_data(
                     [BundleRequestParams(**ref.model_dump()) for ref in missing_refs]
                 )
+                # Create nodes for the entries we found
                 missing_nodes = [self.create_node(entry) for entry in missing_entries]
                 if missing_nodes:
                     adj_map.add_nodes(missing_nodes)
 
-                # Update our list with elements we have feched
+                # Update our list with elements we have fetched
                 attempted_keys.update(ref_key(r) for r in to_fetch)
 
 
@@ -147,25 +148,28 @@ class AdjacencyMapService:
 
         return adj_map
 
-    def __get_entries(self, refs: List[BundleRequestParams], fhir_api: FhirApi) -> List[BundleEntry]:
+    def __filter_entries(self, entries: Bundle) -> List[BundleEntry]:
+        return self.__fhir_service.filter_history_entries(
+            self.__fhir_service.get_entries_from_bundle_of_bundles(entries)
+        )
+
+    def get_directory_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
         bundle_request = self.__fhir_service.create_bundle_request(refs)
-        entries, errors = fhir_api.post_bundle(bundle_request)
+        entries, errors = self.__directory_api.post_bundle(bundle_request)
         if errors:
             logger.error("Errors occurred when fetching entries: %s", errors)
             raise AdjacencyMapException("Errors occurred when fetching entries")
-
-        res = self.__fhir_service.filter_history_entries(
-            self.__fhir_service.get_entries_from_bundle_of_bundles(entries)
-        )
-        return res
-
-    def get_directory_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
-        return self.__get_entries(refs, self.__directory_api)
+        return self.__filter_entries(entries)
 
     def get_update_client_data(
         self, refs: List[BundleRequestParams]
     ) -> List[BundleEntry]:
-        return self.__get_entries(refs, self.__update_client_api)
+        bundle_request = self.__fhir_service.create_bundle_request(refs)
+        entries, errors = self.__update_client_api.post_bundle(bundle_request)
+        if errors and any(err.status != 404 for err in errors):  # Requested resource not found is OK but other errors are not
+            logger.error("Non-404 error occurred: %s", [err for err in errors if err.status != 404])
+            raise AdjacencyMapException("Errors occurred when fetching entries")
+        return self.__filter_entries(entries)
 
     def create_node(self, entry: BundleEntry) -> Node:
         res_type, _id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
@@ -311,4 +315,5 @@ class AdjacencyMapService:
                         id=f"{self.directory_id}-{node_id}", resource_type=node.resource_type
                     )
                 )
+
         return update_client_targets

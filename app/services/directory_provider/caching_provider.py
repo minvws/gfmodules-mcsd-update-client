@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from fastapi import HTTPException
@@ -6,6 +7,7 @@ from app.services.entity.directory_cache_service import DirectoryCacheService
 from app.services.directory_provider.api_provider import DirectoryApiProvider
 from app.services.directory_provider.directory_provider import DirectoryProvider
 
+logger = logging.getLogger(__name__)
 
 class CachingDirectoryProvider(DirectoryProvider):
     """
@@ -67,7 +69,8 @@ class CachingDirectoryProvider(DirectoryProvider):
     def __common_directory_cache_logic(self, include_ignored: bool, original_directories: list[DirectoryDto]) -> list[DirectoryDto]:
         try:
             directories = self.__directoryProvider.get_all_directories(include_ignored=include_ignored)
-        except Exception:  # Retrieving directories failed
+        except Exception as e:  # Retrieving directories failed
+            logger.warning(f"Failed to retrieve directories from the directory provider: {e}")
             return original_directories
 
         for directory in directories:

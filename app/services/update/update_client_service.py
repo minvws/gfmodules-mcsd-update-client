@@ -231,6 +231,9 @@ class UpdateClientService:
                         continue
                     targets.append(e)
 
+            if not targets:  # if no targets are found then there is no need to carry on with the flow
+                continue
+
             nodes = self.update_page(targets, adjacency_map_service)
             self.__clear_and_add_nodes(nodes)
 
