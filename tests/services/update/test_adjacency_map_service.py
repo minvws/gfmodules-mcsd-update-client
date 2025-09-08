@@ -29,11 +29,13 @@ def update_client_org_bundle_entry(
 
 
 @pytest.fixture()
-def update_client_ep_entry(mock_directory_id: str, mock_ep: Dict[str, Any]) -> Dict[str, Any]:
+def update_client_ep_entry(
+    mock_directory_id: str, mock_ep: Dict[str, Any]
+) -> Dict[str, Any]:
     resource_id = f"{mock_directory_id}-{mock_ep['id']}"
     return {
         "fullUrl": f"http://example-update_client-url/Endpoint/{resource_id}",
-        "resource": {"resourceType": "Endpoint", "id": resource_id},
+        "resource": mock_ep,
         "request": {"method": "POST", "url": f"Endpoint/{resource_id}"},
     }
 
@@ -129,7 +131,9 @@ def test_build_adjacency_map_should_succeed_when_data_from_update_client_exists(
             update_client_resource_id=f"{mock_directory_id}-{org_node.resource_id}",
         )
     )
-    org_node.update_client_hash = computation_service.hash_update_client_entry(cons_org_entry)
+    org_node.update_client_hash = computation_service.hash_update_client_entry(
+        cons_org_entry
+    )
     org_node.status = computation_service.get_update_status(
         method=org_node.method,
         directory_hash=org_node.directory_hash,
@@ -147,7 +151,9 @@ def test_build_adjacency_map_should_succeed_when_data_from_update_client_exists(
             update_client_resource_id=f"{mock_directory_id}-{ep_node.resource_id}",
         )
     )
-    ep_node.update_client_hash = computation_service.hash_update_client_entry(cons_ep_entry)
+    ep_node.update_client_hash = computation_service.hash_update_client_entry(
+        cons_ep_entry
+    )
     ep_node.status = computation_service.get_update_status(
         method=ep_node.method,
         directory_hash=ep_node.directory_hash,
@@ -267,7 +273,9 @@ def test_create_update_data_should_succeed_and_mark_item_as_new(
     expected_data = create_bundle_entry(mock_org_bundle_entry)
     assert expected_data.resource is not None
     assert expected_data.request is not None
-    fhir_service.namespace_resource_references(expected_data.resource, mock_directory_id)
+    fhir_service.namespace_resource_references(
+        expected_data.resource, mock_directory_id
+    )
     expected_data.resource.id = f"{mock_directory_id}-{expected_data.resource.id}"
     expected_data.request.url = f"Organization/{mock_directory_id}-{node.resource_id}"
     expected_data.request.method = "PUT"
@@ -301,7 +309,9 @@ def test_create_node_data_should_succeed_with_status_update(
         )
     )
     node.directory_hash = computation_service.hash_directory_entry(directory_entry)
-    node.update_client_hash = computation_service.hash_update_client_entry(update_client_entry)
+    node.update_client_hash = computation_service.hash_update_client_entry(
+        update_client_entry
+    )
     node.status = computation_service.get_update_status(
         method=node.method,
         directory_hash=node.directory_hash,

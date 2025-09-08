@@ -95,7 +95,7 @@ endpoint: Final[Dict[str, Any]] = {
     "resourceType": "Endpoint",
     "id": "ep-id",
     "status": "example",
-    "connectionType": {"system": "example", "code": "example", "display": "example"},
+    "connectionType": {"system": "example", "display": "example"},
     "name": "example",
     "managingOrganization": {"reference": "Organization/org-id"},
     "payloadType": [
