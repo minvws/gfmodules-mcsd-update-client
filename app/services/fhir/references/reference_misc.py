@@ -17,7 +17,7 @@ def build_node_reference(data: Reference, base_url: str) -> NodeReference:
     if ref.startswith(base_url):
         ref = ref[len(base_url):].lstrip("/")
 
-    if ref.startswith("https://") or ref.startswith("http://"):
+    if ref.startswith("https://") or ref.startswith("http://"): # NOSONAR
         raise ValueError("Invalid absolute URL found")
 
     parts = ref.split("/")

@@ -28,7 +28,6 @@ class DirectoryApiProvider(DirectoryProvider):
         Service to manage directories from a FHIR-based API.
         """
         self.__fhir_api = fhir_api
-        self.__fhir_service = FhirService(fill_required_fields=False)
         self.__ignored_directory_service = ignored_directory_service
         self.__provider_url = provider_url
 
