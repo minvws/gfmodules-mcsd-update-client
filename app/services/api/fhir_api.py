@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import datetime
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -7,6 +6,8 @@ import logging
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.domainresource import DomainResource
 from yarl import URL
+
+from app.models.fhir.types import BundleError
 from app.services.fhir.bundle.bundle_utils import filter_history_entries
 from app.services.api.api_service import HttpService
 from app.services.api.authenticators.authenticator import Authenticator
@@ -14,59 +15,9 @@ from app.services.fhir.fhir_service import FhirService
 
 from fhir.resources.R4B.bundle import Bundle
 
+from app.services.fhir.utils import collect_errors
+
 logger = logging.getLogger(__name__)
-
-ERROR_SEVERITIES = {"error", "fatal"}
-
-@dataclass
-class BundleError:
-    # Index in the bundle for this error
-    entry: int
-    # Status code of the error (http status code)
-    status: int
-    # Severity of the error
-    severity: str
-    # Error code
-    code: str
-    # Any diagnostics
-    diagnostics: str|None
-
-
-def _collect_errors(bundle: Bundle) -> list[BundleError]:
-    """
-    Collect errors from bundle
-    """
-    errs: list[BundleError] = []
-    for idx, e in enumerate(bundle.entry or []):
-        if e is None or e.response is None:
-            continue
-        resp = e.response
-        status_str = str(resp.status).strip()
-        status_code = None
-        if status_str:
-            try:
-                status_code = int(status_str.split()[0])
-            except ValueError:
-                pass
-
-        if status_code and status_code < 400:
-            continue
-
-        resp = e.response or {}
-        if not resp.outcome:
-            continue
-        for issue in resp.outcome.get("issue", []):
-            if issue.get("severity") not in ERROR_SEVERITIES:
-                continue
-
-            errs.append(BundleError(
-                entry=idx,
-                status=status_code,
-                code=issue.get("code"),
-                severity=issue.get("severity"),
-                diagnostics=issue.get("diagnostics") or ""
-            ))
-    return errs
 
 
 class FhirApi(HttpService):
@@ -131,7 +82,7 @@ class FhirApi(HttpService):
             raise HTTPException(status_code=response.status_code, detail="HTTP error")
 
         bundle = self.__fhir_service.create_bundle(data)
-        bundle_errors = _collect_errors(bundle)
+        bundle_errors = collect_errors(bundle)
 
         return bundle, bundle_errors
 
@@ -192,7 +143,8 @@ class FhirApi(HttpService):
 
         return params
 
-    def get_next_params(self, url: URL) -> Dict[str, Any]:
+    @staticmethod
+    def get_next_params(url: URL) -> Dict[str, Any]:
         """
         Helper function to extract query parameter from URL.
         """

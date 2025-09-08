@@ -7,7 +7,6 @@ from app.db.entities.ignored_directory import IgnoredDirectory
 from app.models.directory.dto import DirectoryDto
 from app.services.entity.ignored_directory_service import IgnoredDirectoryService
 from app.services.api.fhir_api import FhirApi
-from app.services.fhir.fhir_service import FhirService
 from app.services.directory_provider.directory_provider import DirectoryProvider
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.organization import Organization
