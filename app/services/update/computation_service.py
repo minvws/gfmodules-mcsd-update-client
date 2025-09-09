@@ -11,10 +11,8 @@ class ComputationService:
     def __init__(
         self,
         directory_id: str,
-        fhir_service: FhirService,
     ) -> None:
         self.__directory_id = directory_id
-        self.__fhir_service = fhir_service
 
     def get_update_status(
         self,
@@ -63,7 +61,7 @@ class ComputationService:
             return None
 
         resource = copy.deepcopy(entry.resource)
-        self.__fhir_service.namespace_resource_references(resource, self.__directory_id)
+        FhirService.namespace_resource_references(resource, self.__directory_id)
 
         return self.hash_resource(resource)
 

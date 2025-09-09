@@ -80,7 +80,6 @@ class UpdateClientService:
             request_count=request_count,
             fill_required_fields=fill_required_fields,
         )
-        self.__fhir_service = FhirService(fill_required_fields)
         self.__cache_provider = cache_provider
         self.__cache: CachingService | None = None
 
@@ -112,11 +111,11 @@ class UpdateClientService:
         return Bundle(id=str(uuid4()), type="transaction", entry=[], total=0)
 
     def __process_resource_for_deletion(
-        self, 
-        delete_bundle: Bundle, 
-        res_map_item: ResourceMap, 
-        res_type: McsdResources, 
-        directory_id: str
+        self,
+        delete_bundle: Bundle,
+        res_map_item: ResourceMap,
+        res_type: McsdResources,
+        directory_id: str,
     ) -> Bundle:
         if delete_bundle.total is not None and delete_bundle.total >= 100:
             self.__flush_delete_bundle(delete_bundle, directory_id)
@@ -206,7 +205,6 @@ class UpdateClientService:
 
         adjacency_map_service = AdjacencyMapService(
             directory_id=directory.id,
-            fhir_service=self.__fhir_service,
             directory_api=directory_fhir_api,
             update_client_api=self.__update_client_fhir_api,
             resource_map_service=self.__resource_map_service,
@@ -222,7 +220,7 @@ class UpdateClientService:
             )
             targets = []
             for e in history:
-                _, _id = self.__fhir_service.get_resource_type_and_id_from_entry(e)
+                _, _id = FhirService.get_resource_type_and_id_from_entry(e)
                 if _id is not None:
                     if self.__cache.key_exists(_id):
                         logger.info(
@@ -231,12 +229,13 @@ class UpdateClientService:
                         continue
                     targets.append(e)
 
-            if not targets:  # if no targets are found then there is no need to carry on with the flow
+            if (
+                not targets
+            ):  # if no targets are found then there is no need to carry on with the flow
                 continue
 
             nodes = self.update_page(targets, adjacency_map_service)
             self.__clear_and_add_nodes(nodes)
-
 
     def __clear_and_add_nodes(self, updated_nodes: List[Node]) -> None:
         if self.__cache is None:
@@ -245,7 +244,6 @@ class UpdateClientService:
             if not self.__cache.key_exists(node.resource_id):
                 node.clear_for_cash()
                 self.__cache.add_node(node)
-
 
     def update_page(
         self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
@@ -291,7 +289,9 @@ class UpdateClientService:
         _entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
         if len(errors) > 0:
             logger.error(f"Errors occurred when updating bundle: {errors}")
-            raise UpdateClientException(f"Errors occurred when updating bundle: {errors}")
+            raise UpdateClientException(
+                f"Errors occurred when updating bundle: {errors}"
+            )
 
         self.__handle_dtos(dtos)
 

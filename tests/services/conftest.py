@@ -72,6 +72,7 @@ def mock_bundle_request(
         }
     )
 
+
 @pytest.fixture()
 def mock_bundle_with_errors_request(
     mock_org: Dict[str, Any], mock_ep: Dict[str, Any], fhir_service: FhirService
@@ -90,7 +91,6 @@ def mock_bundle_with_errors_request(
     )
 
 
-
 @pytest.fixture()
 def mock_bundle_response(
     mock_org: Dict[str, Any], mock_ep: Dict[str, Any], fhir_service: FhirService
@@ -105,6 +105,7 @@ def mock_bundle_response(
         }
     )
 
+
 @pytest.fixture()
 def mock_bundle_with_errors_response(
     mock_org: Dict[str, Any], mock_ep: Dict[str, Any], fhir_service: FhirService
@@ -114,13 +115,47 @@ def mock_bundle_with_errors_response(
             "type": "batch-response",
             "entry": [
                 {"resource": mock_org, "response": {"status": "200 OK"}},
-                {"resource": mock_org, "response": {"status": "404 Not Found", "outcome": {"issue": [
-                    {"severity": "error", "code": "not-found", "diagnostics": "Resource not found"},
-                    {"severity": "warning", "code": "le-warn", "diagnostics": "Just a warning"},
-                    {"severity": "fatal", "code": "le-fatal", "diagnostics": "Fatal stuff happened"},
-                ]}}},
+                {
+                    "resource": mock_org,
+                    "response": {
+                        "status": "404 Not Found",
+                        "outcome": {
+                            "issue": [
+                                {
+                                    "severity": "error",
+                                    "code": "not-found",
+                                    "diagnostics": "Resource not found",
+                                },
+                                {
+                                    "severity": "warning",
+                                    "code": "le-warn",
+                                    "diagnostics": "Just a warning",
+                                },
+                                {
+                                    "severity": "fatal",
+                                    "code": "le-fatal",
+                                    "diagnostics": "Fatal stuff happened",
+                                },
+                            ]
+                        },
+                    },
+                },
                 {"resource": mock_org, "response": {"status": "200 OK"}},
-                {"resource": mock_org, "response": {"status": "404 Not Found", "outcome": {"issue": [{"severity": "error", "code": "not-found", "diagnostics": "Resource not found"}]}}},
+                {
+                    "resource": mock_org,
+                    "response": {
+                        "status": "404 Not Found",
+                        "outcome": {
+                            "issue": [
+                                {
+                                    "severity": "error",
+                                    "code": "not-found",
+                                    "diagnostics": "Resource not found",
+                                }
+                            ]
+                        },
+                    },
+                },
                 {"resource": mock_org, "response": {"status": "200 OK"}},
             ],
         }
@@ -259,14 +294,12 @@ def cache_provider(mock_config_external_cache: ConfigExternalCache) -> CacheProv
 @pytest.fixture()
 def adjacency_map_service(
     mock_directory_id: str,
-    fhir_service: FhirService,
     fhir_api: FhirApi,
     resource_map_service: ResourceMapService,
     in_memory_cache_service: InMemoryCachingService,
 ) -> AdjacencyMapService:
     return AdjacencyMapService(
         directory_id=mock_directory_id,
-        fhir_service=fhir_service,
         directory_api=fhir_api,
         update_client_api=fhir_api,
         resource_map_service=resource_map_service,
