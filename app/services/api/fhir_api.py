@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 import logging
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.domainresource import DomainResource
+from requests import JSONDecodeError
 from yarl import URL
 
 from app.models.fhir.types import BundleError
@@ -17,8 +18,9 @@ from fhir.resources.R4B.bundle import Bundle
 
 from app.services.fhir.utils import collect_errors
 
+ERR_MSG_FORMAT = "FHIR API error: %s"
+HTTP_ERR_MSG = "An error occurred while processing a FHIR request."
 logger = logging.getLogger(__name__)
-
 
 class FhirApi(HttpService):
     def __init__(
@@ -57,7 +59,7 @@ class FhirApi(HttpService):
                 "POST", json=jsonable_encoder(bundle.model_dump())
             )
         except Exception as e:
-            logging.error("PostBundle error: %s", e)
+            logger.error(ERR_MSG_FORMAT.format(e))
             raise HTTPException(status_code=500, detail=str(e))
 
         # Make sure we have a valid HTTP response status
@@ -65,21 +67,21 @@ class FhirApi(HttpService):
             # See if we can get an Operation Outcome from the error response
             try:
                 data = response.json()
-            except Exception:
+            except JSONDecodeError:
                 # No json data found, just return generic error
-                logging.error("PostBundle error: %s", response.text)
-                raise HTTPException(status_code=500, detail="HTTP error")
+                logger.error(ERR_MSG_FORMAT.format(response.text))
+                raise HTTPException(status_code=500, detail=HTTP_ERR_MSG)
 
             # Return a global error
-            logging.error("PostBundle error: %s", data)
-            raise HTTPException(status_code=response .status_code, detail="HTTP error")
+            logger.error(ERR_MSG_FORMAT.format(data))
+            raise HTTPException(status_code=response.status_code, detail=HTTP_ERR_MSG)
 
-        # Sucecssful HTTP status. Check if we have a JSON body
+        # Successful HTTP status. Check if we have a JSON body
         try:
             data = response.json()
-        except Exception:
-            logger.error("PostBundle error: %s", response.text)
-            raise HTTPException(status_code=response.status_code, detail="HTTP error")
+        except JSONDecodeError:
+            logger.error("Failed to decode JSON response: %s", response.text)
+            raise HTTPException(status_code=response.status_code, detail=HTTP_ERR_MSG)
 
         bundle = self.__fhir_service.create_bundle(data)
         bundle_errors = collect_errors(bundle)

@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from fhir.resources.R4B.bundle import Bundle
+from fhir.resources.R4B.bundle import Bundle, BundleEntryResponse
 
 from app.models.fhir.types import McsdResources, McsdResourcesWithRequiredFields, BundleError, ERROR_SEVERITIES
 
@@ -25,33 +25,45 @@ def collect_errors(bundle: Bundle) -> list[BundleError]:
     Collect errors from bundle
     """
     errs: list[BundleError] = []
-    for idx, e in enumerate(bundle.entry or []):
-        if e is None or e.response is None:
-            continue
-        resp = e.response
-        status_str = str(resp.status).strip()
-        status_code = None
-        if status_str:
-            try:
-                status_code = int(status_str.split()[0])
-            except ValueError:
-                pass
+    if not bundle.entry:
+        return errs
 
+    for idx, entry in enumerate(bundle.entry):
+        resp = entry.response # type: ignore[attr-defined]
+        if not resp:
+            continue
+
+        status_code = _parse_status_code(resp)
         if status_code and status_code < 400:
             continue
 
-        resp = e.response or {}
-        if not resp.outcome:
-            continue
-        for issue in resp.outcome.get("issue", []):
-            if issue.get("severity") not in ERROR_SEVERITIES:
-                continue
+        errs.extend(_build_errors_from_response(idx, status_code, resp))
 
-            errs.append(BundleError(
-                entry=idx,
-                status=status_code,
-                code=issue.get("code"),
-                severity=issue.get("severity"),
-                diagnostics=issue.get("diagnostics") or ""
-            ))
     return errs
+
+
+def _parse_status_code(resp: BundleEntryResponse) -> int | None:
+    """Extract status code if possible, else None."""
+    try:
+        return int(str(resp.status).strip().split()[0])
+    except (ValueError, AttributeError, IndexError):
+        return None
+
+
+def _build_errors_from_response(idx: int, status_code: int | None, resp: BundleEntryResponse) -> list[BundleError]:
+    """Extract BundleErrors from a response."""
+    outcome = resp.outcome
+    if not outcome:
+        return []
+
+    return [
+        BundleError(
+            entry=idx,
+            status=status_code,
+            code=issue.get("code"),
+            severity=issue.get("severity"),
+            diagnostics=issue.get("diagnostics") or "",
+        )
+        for issue in outcome.get("issue", [])
+        if issue.get("severity") in ERROR_SEVERITIES
+    ]
