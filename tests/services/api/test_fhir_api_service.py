@@ -214,7 +214,7 @@ def test_get_resource_by_id_should_raise_exception_when_resource_is_deleted(
             resource_id=mock_org["id"], resource_type=mock_org["resourceType"]
         )
 
-        assert e.value.status_code == 401
+    assert e.value.status_code == 410
 
 
 @patch(PATCHED_MODULE)
@@ -230,7 +230,7 @@ def test_get_resource_by_id_should_raise_exception_when_error_code_from_server_o
             resource_id=mock_org["id"], resource_type=mock_org["resourceType"]
         )
 
-        assert e.value.status_code == 500
+    assert e.value.status_code == 500
 
 
 @patch(PATCHED_MODULE)
@@ -290,7 +290,7 @@ def test_search_resource_should_succeed_with_no_next_url(
 
 
 @patch(PATCHED_MODULE)
-def test_search_should_raise_exepction_when_error_status_code_recieved_from_server(
+def test_search_should_raise_exception_when_error_status_code_recieved_from_server(
     mock_response: MagicMock,
     mock_params: Dict[str, Any],
     fhir_api: FhirApi,
@@ -301,4 +301,40 @@ def test_search_should_raise_exepction_when_error_status_code_recieved_from_serv
 
     with pytest.raises(HTTPException) as e:
         fhir_api.search_resource(resource_type="Organization", params=mock_params)
-        assert e.value.status_code == 500
+    assert e.value.status_code == 500
+
+
+
+@patch(PATCHED_MODULE)
+def test_post_bundle_should_raise_exception_when_json_invalid_and_http_exception(
+    mock_response: MagicMock,
+    mock_bundle_request: Bundle,
+    fhir_api: FhirApi,
+) -> None:
+    from requests import Response
+    
+    resp = Response()
+    resp.status_code = 500
+    resp._content = b"Invalid JSON"
+    mock_response.return_value = resp
+
+    with pytest.raises(HTTPException) as e:
+        fhir_api.post_bundle(mock_bundle_request)
+    assert e.value.status_code == 500
+
+@patch(PATCHED_MODULE)
+def test_post_bundle_should_raise_exception_when_json_invalid_and_http_success(
+    mock_response: MagicMock,
+    mock_bundle_request: Bundle,
+    fhir_api: FhirApi,
+) -> None:
+    from requests import Response
+    
+    resp = Response()
+    resp.status_code = 200
+    resp._content = b"Invalid JSON"
+    mock_response.return_value = resp
+
+    with pytest.raises(HTTPException) as e:
+        fhir_api.post_bundle(mock_bundle_request)
+    assert e.value.status_code == 200

@@ -60,12 +60,19 @@ class AdjacencyMapService:
         nodes = [self.create_node(entry) for entry in entries]
         adj_map = AdjacencyMap(nodes)
 
-        # Keeps track of the references we resolved from remote directory
         attempted_keys: set[tuple[str, str]] = set()
+        self._resolve_all_references(adj_map, attempted_keys)
+        self._update_client_hashes(adj_map)
+        self._finalize_nodes(adj_map)
+        return adj_map
 
+    def _resolve_all_references(
+        self,
+        adj_map: AdjacencyMap,
+        attempted_keys: set[tuple[str, str]]
+    ) -> None:
         MAX_PASSES = 50
         passes = 0
-
         while True:
             passes += 1
             if passes > MAX_PASSES:
@@ -80,33 +87,16 @@ class AdjacencyMapService:
                 break
 
             nodes_before = adj_map.node_count()
-
             # Step 1: Check if we find references in the cache
-            for ref in missing_refs:
-                # Find regular reference in cache
-                node = self.__cache_service.get_node(ref.id)
-                if node:
-                    adj_map.add_node(node)
+            self._resolve_from_cache(adj_map, missing_refs)
 
             # Find references that are not resolved from the cache
             still_missing = adj_map.get_missing_refs()
             if not still_missing:
                 # All resolved this pass
                 continue
-
             # Step 2: Find all the references we are still missing AND we haven't tried before yet
-            to_fetch = [r for r in still_missing if ref_key(r) not in attempted_keys]
-            if to_fetch:
-                missing_entries = self.get_directory_data(
-                    [BundleRequestParams(**ref.model_dump()) for ref in missing_refs]
-                )
-                # Create nodes for the entries we found
-                missing_nodes = [self.create_node(entry) for entry in missing_entries]
-                if missing_nodes:
-                    adj_map.add_nodes(missing_nodes)
-
-                # Update our list with elements we have fetched
-                attempted_keys.update(ref_key(r) for r in to_fetch)
+            self._fetch_and_add_missing(adj_map, still_missing, attempted_keys, missing_refs)
 
             # Check if we resolved anything this pass
             nodes_after = adj_map.node_count()
@@ -114,13 +104,42 @@ class AdjacencyMapService:
                 unresolved = adj_map.get_missing_refs()
                 logger.error("Cannot resolve all references: %s", unresolved)
                 raise AdjacencyMapException("Unresolved references found")
-
         # All references are now resolved.
+        
 
+    def _resolve_from_cache(
+        self,
+        adj_map: AdjacencyMap,
+        missing_refs: list[NodeReference],
+    ) -> None:
+        for ref in missing_refs:
+            node = self.__cache_service.get_node(ref.id)  # Find regular reference in cache
+            if node:
+                adj_map.add_node(node)
+
+    def _fetch_and_add_missing(
+        self,
+        adj_map: AdjacencyMap,
+        still_missing: list[NodeReference],
+        attempted_keys: set[tuple[str, str]],
+        missing_refs: list[NodeReference],
+    ) -> None:
+        to_fetch = [r for r in still_missing if ref_key(r) not in attempted_keys]
+        if to_fetch:
+            missing_entries = self.get_directory_data(
+                [BundleRequestParams(**ref.model_dump()) for ref in missing_refs]
+            )  
+            # Create nodes for the entries we found
+            missing_nodes = [self.create_node(entry) for entry in missing_entries]
+            if missing_nodes:
+                adj_map.add_nodes(missing_nodes)
+            attempted_keys.update(ref_key(r) for r in to_fetch)  # Update our list with elements we have fetched
+
+
+    def _update_client_hashes(self, adj_map: AdjacencyMap) -> None:
         update_client_targets = self.__get_update_client_missing_targets(adj_map)
         if len(update_client_targets) > 0:
             update_client_entries = self.get_update_client_data(update_client_targets)
-
             for entry in update_client_entries:
                 _, _id = FhirService.get_resource_type_and_id_from_entry(entry)
                 res_id = _id.replace(f"{self.directory_id}-", "")
@@ -129,10 +148,10 @@ class AdjacencyMapService:
                     self.__computation_service.hash_update_client_entry(entry)
                 )
 
+    def _finalize_nodes(self, adj_map: AdjacencyMap) -> None:
         for node in adj_map.data.values():
             if node.updated:
                 continue
-
             resource_map = self.__resource_map_service.get(
                 directory_id=self.directory_id,
                 resource_type=node.resource_type,
@@ -145,8 +164,6 @@ class AdjacencyMapService:
                 resource_map=resource_map,
             )
             node.update_data = self.create_update_data(node, resource_map)
-
-        return adj_map
 
     def __filter_entries(self, entries: Bundle) -> List[BundleEntry]:
         return FhirService.filter_history_entries(
