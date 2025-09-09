@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class AdjacencyMapException(Exception):
     """Base exception for adjacency map operations"""
+
     pass
 
 
@@ -36,24 +37,23 @@ def ref_key(ref: NodeReference) -> tuple[str, str]:
     """
     return (ref.resource_type, ref.id)
 
+
 class AdjacencyMapService:
     def __init__(
         self,
         directory_id: str,
-        fhir_service: FhirService,
         directory_api: FhirApi,
         update_client_api: FhirApi,
         resource_map_service: ResourceMapService,
         cache_service: CachingService,
     ) -> None:
         self.directory_id = directory_id
-        self.__fhir_service = fhir_service
         self.__directory_api = directory_api
         self.__update_client_api = update_client_api
         self.__resource_map_service = resource_map_service
         self.__cache_service = cache_service
         self.__computation_service = ComputationService(
-            directory_id=directory_id, fhir_service=fhir_service
+            directory_id=directory_id,
         )
 
     def build_adjacency_map(self, entries: List[BundleEntry]) -> AdjacencyMap:
@@ -61,7 +61,7 @@ class AdjacencyMapService:
         adj_map = AdjacencyMap(nodes)
 
         # Keeps track of the references we resolved from remote directory
-        attempted_keys: set[tuple[str,str]] = set()
+        attempted_keys: set[tuple[str, str]] = set()
 
         MAX_PASSES = 50
         passes = 0
@@ -69,7 +69,9 @@ class AdjacencyMapService:
         while True:
             passes += 1
             if passes > MAX_PASSES:
-                logger.error("Aborting after %d passes to avoid infinitive loop", passes)
+                logger.error(
+                    "Aborting after %d passes to avoid infinitive loop", passes
+                )
                 raise AdjacencyMapException("Too many passes")
 
             # Check if we have resolved all references
@@ -92,7 +94,6 @@ class AdjacencyMapService:
                 # All resolved this pass
                 continue
 
-
             # Step 2: Find all the references we are still missing AND we haven't tried before yet
             to_fetch = [r for r in still_missing if ref_key(r) not in attempted_keys]
             if to_fetch:
@@ -106,7 +107,6 @@ class AdjacencyMapService:
 
                 # Update our list with elements we have fetched
                 attempted_keys.update(ref_key(r) for r in to_fetch)
-
 
             # Check if we resolved anything this pass
             nodes_after = adj_map.node_count()
@@ -122,7 +122,7 @@ class AdjacencyMapService:
             update_client_entries = self.get_update_client_data(update_client_targets)
 
             for entry in update_client_entries:
-                _, _id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
+                _, _id = FhirService.get_resource_type_and_id_from_entry(entry)
                 res_id = _id.replace(f"{self.directory_id}-", "")
                 node = adj_map.data[res_id]
                 node.update_client_hash = (
@@ -149,12 +149,12 @@ class AdjacencyMapService:
         return adj_map
 
     def __filter_entries(self, entries: Bundle) -> List[BundleEntry]:
-        return self.__fhir_service.filter_history_entries(
-            self.__fhir_service.get_entries_from_bundle_of_bundles(entries)
+        return FhirService.filter_history_entries(
+            FhirService.get_entries_from_bundle_of_bundles(entries)
         )
 
     def get_directory_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
-        bundle_request = self.__fhir_service.create_bundle_request(refs)
+        bundle_request = FhirService.create_bundle_request(refs)
         entries, errors = self.__directory_api.post_bundle(bundle_request)
         if errors:
             logger.error("Errors occurred when fetching entries: %s", errors)
@@ -164,16 +164,21 @@ class AdjacencyMapService:
     def get_update_client_data(
         self, refs: List[BundleRequestParams]
     ) -> List[BundleEntry]:
-        bundle_request = self.__fhir_service.create_bundle_request(refs)
+        bundle_request = FhirService.create_bundle_request(refs)
         entries, errors = self.__update_client_api.post_bundle(bundle_request)
-        if errors and any(err.status != 404 for err in errors):  # Requested resource not found is OK but other errors are not
-            logger.error("Non-404 error occurred: %s", [err for err in errors if err.status != 404])
+        if errors and any(
+            err.status != 404 for err in errors
+        ):  # Requested resource not found is OK but other errors are not
+            logger.error(
+                "Non-404 error occurred: %s",
+                [err for err in errors if err.status != 404],
+            )
             raise AdjacencyMapException("Errors occurred when fetching entries")
         return self.__filter_entries(entries)
 
     def create_node(self, entry: BundleEntry) -> Node:
-        res_type, _id = self.__fhir_service.get_resource_type_and_id_from_entry(entry)
-        method = self.__fhir_service.get_request_method_from_entry(entry)
+        res_type, _id = FhirService.get_resource_type_and_id_from_entry(entry)
+        method = FhirService.get_request_method_from_entry(entry)
         directory_hash = self.__computation_service.hash_directory_entry(entry)
         references = self.create_node_references(entry)
 
@@ -196,8 +201,10 @@ class AdjacencyMapService:
 
         ret = []
 
-        for ref in self.__fhir_service.get_references(entry.resource):
-            reference_node = self.__fhir_service.make_reference_node(ref, self.__directory_api.base_url)
+        for ref in FhirService.get_references(entry.resource):
+            reference_node = FhirService.make_reference_node(
+                ref, self.__directory_api.base_url
+            )
             ret.append(reference_node)
 
         return ret
@@ -249,9 +256,7 @@ class AdjacencyMapService:
                     raise InvalidNodeStateException(
                         f"Resource {node.resource_id} {node.resource_type} cannot be None when a node is marked `new`"
                     )
-                self.__fhir_service.namespace_resource_references(
-                    resource, self.directory_id
-                )
+                FhirService.namespace_resource_references(resource, self.directory_id)
                 resource.id = update_client_resource_id
                 entry.resource = resource
                 entry.request = entry_request
@@ -281,9 +286,7 @@ class AdjacencyMapService:
                         f"Resource {node.resource_id} {node.resource_type} cannot be None and node marked as `update`"
                     )
 
-                self.__fhir_service.namespace_resource_references(
-                    resource, self.directory_id
-                )
+                FhirService.namespace_resource_references(resource, self.directory_id)
                 resource.id = update_client_resource_id
                 entry.request = entry_request
                 entry.resource = resource
@@ -306,13 +309,16 @@ class AdjacencyMapService:
                     f"node {node.resource_id} {node.resource_type} cannot be unknown at this stage"
                 )
 
-    def __get_update_client_missing_targets(self, adj_map: AdjacencyMap) -> List[BundleRequestParams]:
+    def __get_update_client_missing_targets(
+        self, adj_map: AdjacencyMap
+    ) -> List[BundleRequestParams]:
         update_client_targets = []
         for node_id, node in adj_map.data.items():
             if not self.__cache_service.key_exists(node_id):
                 update_client_targets.append(
                     BundleRequestParams(
-                        id=f"{self.directory_id}-{node_id}", resource_type=node.resource_type
+                        id=f"{self.directory_id}-{node_id}",
+                        resource_type=node.resource_type,
                     )
                 )
 

@@ -70,11 +70,9 @@ def fhir_service() -> FhirService:
 @pytest.fixture()
 def computation_service(
     mock_directory_id: str,
-    fhir_service: FhirService,
 ) -> ComputationService:
     return ComputationService(
         directory_id=mock_directory_id,
-        fhir_service=fhir_service,
     )
 
 
