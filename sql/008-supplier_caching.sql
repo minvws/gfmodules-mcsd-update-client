@@ -8,7 +8,7 @@ CREATE TABLE supplier_cache
 (
   supplier_id VARCHAR     NOT NULL UNIQUE,
   endpoint    VARCHAR     NOT NULL,
-  is_deleted  BOOLEAN     NOT NULL DEFAULT FALSE,  
+  is_deleted  BOOLEAN     NOT NULL DEFAULT FALSE,
 
   created_at  TIMESTAMP   DEFAULT NOW(),
   modified_at TIMESTAMP   DEFAULT NOW(),
