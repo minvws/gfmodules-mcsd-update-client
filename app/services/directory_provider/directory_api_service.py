@@ -1,13 +1,10 @@
 import logging
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List
 from fastapi import HTTPException
 from yarl import URL
 
-from app.db.entities.ignored_directory import IgnoredDirectory
 from app.models.directory.dto import DirectoryDto
-from app.services.entity.ignored_directory_service import IgnoredDirectoryService
 from app.services.api.fhir_api import FhirApi
-from app.services.directory_provider.directory_provider import DirectoryProvider
 from fhir.resources.R4B.bundle import BundleEntry
 from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.endpoint import Endpoint
@@ -16,42 +13,20 @@ from app.services.fhir.references.reference_misc import build_node_reference
 logger = logging.getLogger(__name__)
 
 
-class DirectoryApiProvider(DirectoryProvider):
+class DirectoryApiService:
     def __init__(
         self,
         fhir_api: FhirApi,
-        ignored_directory_service: IgnoredDirectoryService,
         provider_url: str
     ) -> None:
         """
         Service to manage directories from a FHIR-based API.
         """
         self.__fhir_api = fhir_api
-        self.__ignored_directory_service = ignored_directory_service
         self.__provider_url = provider_url
 
-    def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
-        return self.__fetch_directories(
-            include_ignored=include_ignored, include_ignored_ids=None
-        )
-
-    def get_all_directories_include_ignored(
-        self, include_ignored_ids: List[str]
-    ) -> List[DirectoryDto]:
-        return self.__fetch_directories(
-            include_ignored=False, include_ignored_ids=include_ignored_ids
-        )
-
-    def __fetch_directories(
-        self, include_ignored: bool, include_ignored_ids: List[str] | None = None
-    ) -> List[DirectoryDto]:
+    def fetch_directories(self) -> List[DirectoryDto]:
         directories: List[DirectoryDto] = []
-        ignored_directories = (
-            self.__ignored_directory_service.get_all_ignored_directories()
-            if not include_ignored or include_ignored_ids
-            else []
-        )
-
         next_url: URL | None = URL("")
         while next_url is not None:
             params = {"_include": "Organization:endpoint"}
@@ -60,7 +35,7 @@ class DirectoryApiProvider(DirectoryProvider):
                 params=params,
             )
             page_directories = self.__process_organizations_page(
-                entries, ignored_directories, include_ignored, include_ignored_ids
+                entries
             )
             directories.extend(page_directories)
 
@@ -69,9 +44,6 @@ class DirectoryApiProvider(DirectoryProvider):
     def __process_organizations_page(
         self,
         entries: List[BundleEntry],
-        ignored_directories: Sequence[IgnoredDirectory],
-        include_ignored: bool,
-        include_ignored_ids: List[str] | None,
     ) -> List[DirectoryDto]:
         directories: List[DirectoryDto] = []
         try:
@@ -80,39 +52,14 @@ class DirectoryApiProvider(DirectoryProvider):
                 directory = self.__create_directory_dto(org, endpoint_map)
                 if not directory:
                     continue
-
-                if self.__should_include_directory(
-                    directory, ignored_directories, include_ignored, include_ignored_ids
-                ):
-                    directories.append(directory)
+                directories.append(directory)
             return directories
         except Exception as e:
             logger.exception(f"Failed to retrieve directories: {e}")
             raise e
 
-    def __should_include_directory(
-        self,
-        directory: DirectoryDto,
-        ignored_directories: Sequence[IgnoredDirectory],
-        include_ignored: bool,
-        include_ignored_ids: List[str] | None,
-    ) -> bool:
-        is_ignored = any(
-            dir.directory_id == directory.id for dir in ignored_directories
-        )
 
-        if not is_ignored:
-            return True
-
-        if include_ignored:
-            return True
-
-        if include_ignored_ids and directory.id in include_ignored_ids:
-            return True
-
-        return False
-
-    def get_one_directory(self, directory_id: str) -> DirectoryDto:
+    def fetch_one_directory(self, directory_id: str) -> DirectoryDto:
         params = {
             "_id": directory_id,
             "_include": "Organization:endpoint",
@@ -151,7 +98,7 @@ class DirectoryApiProvider(DirectoryProvider):
             )
             return False  # Organization resource exists, so directory is not deleted
         except HTTPException as e:
-            if e.status_code == 410:
+            if e.status_code == 410:  # 410 Gone indicates the resource has been deleted
                 return True
             logger.warning(f"Check for deleted directory {directory_id} failed: {e}")
             return False
@@ -180,44 +127,44 @@ class DirectoryApiProvider(DirectoryProvider):
         endpoint_map: Dict[str, Endpoint],
         directory_id: str | None = None,
     ) -> DirectoryDto | None:
-        name = org.name
         _id = directory_id or org.id
+        if _id is None:
+            logger.error("Organization resource missing id")
+            raise ValueError("Organization resource missing id")
         endpoint_address = self.__get_endpoint_address(org, endpoint_map)
 
-        if endpoint_address is None:
-            logger.warning(f"Organization {org.id} has no valid endpoint address.")
-            return None
-
-        if not all(
-            isinstance(val, str) and val for val in [name, _id, endpoint_address]
-        ):
-            logger.warning(f"Invalid directory data for ID {_id}. Skipping.")
-            return None
-
         return DirectoryDto(
-            id=_id or "",
-            name=name or "",
-            endpoint=endpoint_address,
-            is_deleted=False,
+            id=_id,
+            endpoint_address=endpoint_address,
         )
 
-    def __get_endpoint_address(self, org: Organization, endpoint_map: Dict[str, Endpoint]) -> str | None:
+    def __get_endpoint_address(self, org: Organization, endpoint_map: Dict[str, Endpoint]) -> str:
         if org.endpoint is None:
-            return None
+            logger.error(f"Organization {org.id} has no endpoints.")
+            raise ValueError(f"Organization {org.id} has no endpoints.")
 
         if len(org.endpoint) > 1:
-            logger.warning(f"Organization {org.id} has multiple endpoints, using the first one.")
+            logger.error(f"Organization {org.id} has multiple endpoints")
+            raise ValueError(f"Organization {org.id} has multiple endpoints: {org.endpoint}")
 
         ref = org.endpoint[0]
 
         node_ref = build_node_reference(ref, self.__provider_url)
         if node_ref is None:
             logger.warning(f"Unexpected reference format: {ref.reference}")
-            return None
+            raise ValueError(f"Unexpected reference format: {ref.reference}")
 
         if node_ref.resource_type != "Endpoint":
             logger.warning(f"Unexpected reference format: {node_ref.resource_type}")
-            return None
+            raise ValueError(f"Unexpected reference format: {node_ref.resource_type}")
 
         endpoint = endpoint_map.get(node_ref.id)
-        return str(endpoint.address) if endpoint else None
+
+        if endpoint is None:
+            logger.error(f"Endpoint {node_ref.id} not found in included resources")
+            raise ValueError(f"Endpoint {node_ref.id} not found in included resources")
+        
+        if endpoint.address is None:
+            logger.error(f"No endpoint address for Endpoint {node_ref.id}")
+            raise ValueError(f"No endpoint address for Endpoint {node_ref.id}")
+        return str(endpoint.address)

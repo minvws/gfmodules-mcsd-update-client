@@ -8,7 +8,7 @@ from yarl import URL
 from app.models.directory.dto import DirectoryDto
 from app.services.entity.ignored_directory_service import IgnoredDirectoryService
 from app.services.api.fhir_api import FhirApi
-from app.services.directory_provider.api_provider import DirectoryApiProvider
+from app.services.directory_provider.directory_api_service import DirectoryApiProvider
 
 
 @pytest.fixture
