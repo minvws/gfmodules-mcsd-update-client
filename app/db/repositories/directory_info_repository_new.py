@@ -1,5 +1,5 @@
 import logging
-from sqlalchemy.exc import DatabaseError
+from typing import List, Sequence
 from app.db.entities.directory_info_new import DirectoryInfoNew
 from app.db.repositories.repository_base import RepositoryBase
 from datetime import datetime, timezone
@@ -23,6 +23,19 @@ class DirectoryInfoNewRepository(RepositoryBase):
             query = query.filter_by(is_ignored=False)
         return query.all()
 
+    def get_all_including_ignored_ids(
+        self, include_deleted: bool = False, include_ignored_ids: List[str] | None = None
+    ) -> Sequence[DirectoryInfoNew]:
+        from sqlalchemy import select, or_
+        stmt = select(DirectoryInfoNew)
+        if not include_deleted:
+            stmt = stmt.where(DirectoryInfoNew.deleted_at.is_(None))
+        if include_ignored_ids is not None:
+            stmt = stmt.where(
+                or_(~DirectoryInfoNew.is_ignored, DirectoryInfoNew.id.in_(include_ignored_ids))
+            )
+        return self.db_session.session.scalars(stmt).all()
+
     def is_ignored_by_id(self, id_: str) -> bool:
         return (
             self.db_session.session.query(DirectoryInfoNew)
@@ -31,7 +44,7 @@ class DirectoryInfoNewRepository(RepositoryBase):
             is not None
         )
 
-    def get_all_ignored(self) -> list[DirectoryInfoNew]:
+    def get_all_ignored(self) -> Sequence[DirectoryInfoNew]:
         return (
             self.db_session.session.query(DirectoryInfoNew)
             .filter_by(is_ignored=True, deleted_at=None)

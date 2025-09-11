@@ -3,9 +3,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from app.db.entities.directory_info import DirectoryInfo
-from app.services.entity.directory_cache_service import DirectoryCacheService
-from app.services.entity.ignored_directory_service import IgnoredDirectoryService
-from app.services.entity.directory_info_service import DirectoryInfoService
+from app.services.entity.directory_info_new_service import DirectoryInfoNewService
 from app.services.directory_provider.directory_provider import DirectoryProvider
 from app.services.update.update_client_service import UpdateClientService
 from app.stats import Stats
@@ -18,11 +16,9 @@ class MassUpdateClientService:
         self,
         update_client_service: UpdateClientService,
         directory_provider: DirectoryProvider,
-        directory_info_service: DirectoryInfoService,
-        ignored_directory_service: IgnoredDirectoryService,
+        directory_info_service: DirectoryInfoNewService,
         cleanup_client_directory_after_success_timeout_seconds: int,
         stats: Stats,
-        directory_cache_service: DirectoryCacheService,
         cleanup_client_directory_after_directory_delete: bool,
         ignore_directory_after_success_timeout_seconds: int,
         ignore_directory_after_failed_attempts_threshold: int,
@@ -30,10 +26,8 @@ class MassUpdateClientService:
         self.__directory_provider = directory_provider
         self.__update_client_service = update_client_service
         self.__directory_info_service = directory_info_service
-        self.__ignored_directory_service = ignored_directory_service
         self.__cleanup_client_directory_after_success_timeout_seconds = cleanup_client_directory_after_success_timeout_seconds
         self.__stats = stats
-        self.__directory_cache_service = directory_cache_service
         self.__cleanup_client_directory_after_directory_delete = cleanup_client_directory_after_directory_delete 
         self.__ignore_directory_after_success_timeout_seconds = ignore_directory_after_success_timeout_seconds
         self.__ignore_directory_after_failed_attempts_threshold = ignore_directory_after_failed_attempts_threshold

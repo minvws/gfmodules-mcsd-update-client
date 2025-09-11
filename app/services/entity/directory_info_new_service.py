@@ -53,7 +53,10 @@ class DirectoryInfoNewService:
         """
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoNewRepository)
-            return repository.get_by_id(directory_id)
+            directory = repository.get_by_id(directory_id)
+        if directory is None:
+            raise ValueError(f"DirectoryInfoNew with ID {directory_id} not found")
+        return directory
 
     def get_all(
         self, include_ignored: bool = False, include_deleted: bool = False
@@ -64,6 +67,17 @@ class DirectoryInfoNewService:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoNewRepository)
             return repository.get_all(include_deleted=include_deleted, include_ignored=include_ignored)
+    
+    def get_all_including_ignored_ids(
+        self, include_ignored_ids: List[str] | None = None, include_deleted: bool = False
+    ) -> Sequence[DirectoryInfoNew]:
+        """
+        Retrieves all directory information entries, including those with IDs in the ignored list.
+        """
+        with self.__database.get_db_session() as session:
+            repository = session.get_repository(DirectoryInfoNewRepository)
+            return repository.get_all_including_ignored_ids(include_deleted=include_deleted, include_ignored_ids=include_ignored_ids)
+        
 
     def get_all_deleted(self) -> Sequence[DirectoryInfoNew]:
         """
@@ -154,7 +168,7 @@ class DirectoryInfoNewService:
         lines.append("# TYPE directory_is_deleted gauge")
 
         for s in self.get_all(include_ignored=False, include_deleted=False):
-            labels = f'directory_id="{s.directory_id}"'
+            labels = f'directory_id="{s.id}"'
 
             lines.append(
                 f"directory_failed_sync_total{{{labels}}} {s.failed_sync_count}"

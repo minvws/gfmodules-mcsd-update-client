@@ -1,7 +1,4 @@
-from app.services.entity.ignored_directory_service import IgnoredDirectoryService
-from app.services.entity.directory_cache_service import DirectoryCacheService
-
-from app.services.entity.directory_info_service import DirectoryInfoService
+from app.services.entity.directory_info_new_service import DirectoryInfoNewService
 from app.services.directory_provider.factory import DirectoryProviderFactory
 from app.services.directory_provider.directory_provider import DirectoryProvider
 from app.services.update.cache.provider import CacheProvider
@@ -30,8 +27,11 @@ def container_config(binder: inject.Binder) -> None:
     auth_factory = AuthenticatorFactory(config=config)
     auth = auth_factory.create_authenticator()
 
+    directory_info_service = DirectoryInfoNewService(db, config.scheduler.directory_stale_timeout_in_sec)
+    binder.bind(DirectoryInfoNewService, directory_info_service)
+
     directory_provider_factory = DirectoryProviderFactory(
-        config=config, database=db, auth=auth
+        config=config, auth=auth, directory_info_service=directory_info_service
     )
     directory_provider = directory_provider_factory.create()
     binder.bind(DirectoryProvider, directory_provider)
@@ -53,25 +53,14 @@ def container_config(binder: inject.Binder) -> None:
     )
     binder.bind(UpdateClientService, update_service)
 
-    ignored_directory_service = IgnoredDirectoryService(db)
-    binder.bind(IgnoredDirectoryService, ignored_directory_service)
 
-    directory_info_service = DirectoryInfoService(
-        db,
-        directory_stale_timeout_seconds=config.scheduler.directory_stale_timeout_in_sec,  # type: ignore
-    )
-    binder.bind(DirectoryInfoService, directory_info_service)
-
-    directory_cache_service = DirectoryCacheService(db)
 
     update_all_service = MassUpdateClientService(
         update_client_service=update_service,
         directory_provider=directory_provider,
         directory_info_service=directory_info_service,
-        ignored_directory_service=ignored_directory_service,
         cleanup_client_directory_after_success_timeout_seconds=config.scheduler.cleanup_client_directory_after_success_timeout_in_sec,  # type: ignore
         stats=get_stats(),
-        directory_cache_service=directory_cache_service,
         cleanup_client_directory_after_directory_delete=config.scheduler.cleanup_client_directory_after_directory_delete,
         ignore_directory_after_success_timeout_seconds=config.scheduler.ignore_directory_after_success_timeout_in_sec,  # type: ignore
         ignore_directory_after_failed_attempts_threshold=config.scheduler.ignore_directory_after_failed_attempts_threshold,
@@ -107,11 +96,6 @@ def get_database() -> Database:
 def get_directory_provider() -> DirectoryProvider:
     return inject.instance(DirectoryProvider)  # type: ignore
 
-
-def get_ignored_directory_service() -> IgnoredDirectoryService:
-    return inject.instance(IgnoredDirectoryService)
-
-
 def get_resource_map_service() -> ResourceMapService:
     return inject.instance(ResourceMapService)
 
@@ -120,8 +104,8 @@ def get_update_client_service() -> UpdateClientService:
     return inject.instance(UpdateClientService)
 
 
-def get_directory_info_service() -> DirectoryInfoService:
-    return inject.instance(DirectoryInfoService)
+def get_directory_info_service() -> DirectoryInfoNewService:
+    return inject.instance(DirectoryInfoNewService)
 
 
 def setup_container() -> None:

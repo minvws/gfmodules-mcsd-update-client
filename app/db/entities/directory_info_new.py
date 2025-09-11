@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import String, TIMESTAMP, PrimaryKeyConstraint, Integer, BOOLEAN
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,15 +20,16 @@ class DirectoryInfoNew(Base):
         nullable=False,
     )
     failed_sync_count: Mapped[int] = mapped_column(
-        "failed_sync_count", Integer, nullable=False
+        "failed_sync_count", Integer, nullable=False, default=0
     )
     failed_attempts: Mapped[int] = mapped_column(
-        "failed_attempts", Integer, nullable=False
+        "failed_attempts", Integer, nullable=False, default=0
     )
     last_success_sync: Mapped[datetime] = mapped_column(
         "last_success_sync",
         TIMESTAMP(timezone=True),
         nullable=True,
+        default=None,
     )
     is_ignored: Mapped[bool] = mapped_column(
         "is_ignored",
@@ -40,14 +41,18 @@ class DirectoryInfoNew(Base):
         "created_at",
         TIMESTAMP(timezone=True),
         nullable=False,
+        default=datetime.now(timezone.utc)
     )
     modified_at: Mapped[datetime] = mapped_column(
         "modified_at",
         TIMESTAMP(timezone=True),
         nullable=False,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
     )
     deleted_at: Mapped[datetime] = mapped_column(
         "deleted_at",
         TIMESTAMP(timezone=True),
         nullable=True,
+        default=None,
     )
