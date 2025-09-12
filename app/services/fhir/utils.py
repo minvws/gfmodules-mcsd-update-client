@@ -1,8 +1,14 @@
 from typing import Any, Dict
 
 from fhir.resources.R4B.bundle import Bundle, BundleEntryResponse
+from fhir.resources.R4B.operationoutcome import OperationOutcome
 
-from app.models.fhir.types import McsdResources, McsdResourcesWithRequiredFields, BundleError, ERROR_SEVERITIES
+from app.models.fhir.types import (
+    McsdResources,
+    McsdResourcesWithRequiredFields,
+    BundleError,
+    ERROR_SEVERITIES,
+)
 
 
 def validate_resource_type(resource_type: str) -> bool:
@@ -29,7 +35,7 @@ def collect_errors(bundle: Bundle) -> list[BundleError]:
         return errs
 
     for idx, entry in enumerate(bundle.entry):
-        resp = entry.response # type: ignore[attr-defined]
+        resp = entry.response  # type: ignore[attr-defined]
         if not resp:
             continue
 
@@ -50,20 +56,27 @@ def _parse_status_code(resp: BundleEntryResponse) -> int | None:
         return None
 
 
-def _build_errors_from_response(idx: int, status_code: int | None, resp: BundleEntryResponse) -> list[BundleError]:
+def _build_errors_from_response(
+    idx: int, status_code: int | None, resp: BundleEntryResponse
+) -> list[BundleError]:
     """Extract BundleErrors from a response."""
     outcome = resp.outcome
     if not outcome:
         return []
 
+    if not isinstance(outcome, OperationOutcome):
+        raise ValueError("Outcome is not of type blba lba")
+
+    issues = outcome.issue
+
     return [
         BundleError(
             entry=idx,
-            status=status_code,
-            code=issue.get("code"),
-            severity=issue.get("severity"),
-            diagnostics=issue.get("diagnostics") or "",
+            status=status_code or 0,
+            code=str(issue.code) or "",
+            severity=issue.severity,
+            diagnostics=issue.diagnostics or "",
         )
-        for issue in outcome.get("issue", [])
-        if issue.get("severity") in ERROR_SEVERITIES
+        for issue in issues
+        if issue.severity in ERROR_SEVERITIES
     ]

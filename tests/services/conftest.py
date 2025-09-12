@@ -75,7 +75,7 @@ def mock_bundle_request(
 
 @pytest.fixture()
 def mock_bundle_with_errors_request(
-    mock_org: Dict[str, Any], mock_ep: Dict[str, Any], fhir_service: FhirService
+    mock_org: Dict[str, Any], fhir_service: FhirService
 ) -> Bundle:
     return fhir_service.create_bundle(
         {
@@ -108,7 +108,7 @@ def mock_bundle_response(
 
 @pytest.fixture()
 def mock_bundle_with_errors_response(
-    mock_org: Dict[str, Any], mock_ep: Dict[str, Any], fhir_service: FhirService
+    mock_org: Dict[str, Any], fhir_service: FhirService
 ) -> Bundle:
     return fhir_service.create_bundle(
         {
@@ -120,6 +120,7 @@ def mock_bundle_with_errors_response(
                     "response": {
                         "status": "404 Not Found",
                         "outcome": {
+                            "resourceType": "OperationOutcome",
                             "issue": [
                                 {
                                     "severity": "error",
@@ -136,7 +137,7 @@ def mock_bundle_with_errors_response(
                                     "code": "le-fatal",
                                     "diagnostics": "Fatal stuff happened",
                                 },
-                            ]
+                            ],
                         },
                     },
                 },
@@ -146,13 +147,14 @@ def mock_bundle_with_errors_response(
                     "response": {
                         "status": "404 Not Found",
                         "outcome": {
+                            "resourceType": "OperationOutcome",
                             "issue": [
                                 {
                                     "severity": "error",
                                     "code": "not-found",
                                     "diagnostics": "Resource not found",
                                 }
-                            ]
+                            ],
                         },
                     },
                 },
