@@ -65,7 +65,7 @@ def _build_errors_from_response(
         return []
 
     if not isinstance(outcome, OperationOutcome):
-        raise ValueError("Outcome is not of type blba lba")
+        raise ValueError("Outcome is not of type OperationOutcome")
 
     issues = outcome.issue
 
