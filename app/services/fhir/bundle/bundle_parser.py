@@ -23,7 +23,7 @@ def create_entry_request(data: Dict[str, Any]) -> BundleEntryRequest:
 
 
 def create_entry_response(data: Dict[str, Any]) -> BundleEntryResponse:
-    entry_response = BundleEntryResponse.model_construct(**data)
+    entry_response = BundleEntryResponse.model_validate(data)
     return entry_response
 
 
