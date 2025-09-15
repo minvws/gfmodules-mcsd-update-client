@@ -5,15 +5,16 @@ from fhir.resources.R4B.reference import Reference
 
 from app.models.adjacency.node import NodeReference
 from app.models.fhir.types import BundleRequestParams, HttpValidVerbs
-from app.services.fhir.bundle.bundle_utils import (
+from app.services.fhir.bundle.utils import (
     filter_history_entries,
+    get_entries_from_bundle_of_bundles,
     get_request_method_from_entry,
     get_resource_type_and_id_from_entry,
 )
-from app.services.fhir.bundle.bundle_parser import (
+
+from app.services.fhir.bundle.parser import (
     create_bundle,
-    create_bundle_request,
-    get_entries_from_bundle_of_bundles,
+    create_request_bundle,
 )
 from app.services.fhir.resources.factory import create_resource
 from app.services.fhir.references.reference_extractor import (
@@ -94,7 +95,7 @@ class FhirService:
         """
         Takes a list of AdjacencyReference and creates a Bundle with GET as an HTTP request method
         """
-        return create_bundle_request(data)
+        return create_request_bundle(data)
 
     @staticmethod
     def get_entries_from_bundle_of_bundles(data: Bundle) -> List[BundleEntry]:

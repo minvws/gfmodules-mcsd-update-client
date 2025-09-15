@@ -9,7 +9,7 @@ from requests import JSONDecodeError
 from yarl import URL
 
 from app.models.fhir.types import BundleError
-from app.services.fhir.bundle.bundle_utils import filter_history_entries
+from app.services.fhir.bundle.utils import filter_history_entries
 from app.services.api.api_service import HttpService
 from app.services.api.authenticators.authenticator import Authenticator
 from app.services.fhir.fhir_service import FhirService
@@ -21,6 +21,7 @@ from app.services.fhir.utils import collect_errors
 ERR_MSG_FORMAT = "FHIR API error: %s"
 HTTP_ERR_MSG = "An error occurred while processing a FHIR request."
 logger = logging.getLogger(__name__)
+
 
 class FhirApi(HttpService):
     def __init__(

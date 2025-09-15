@@ -10,7 +10,7 @@ import pytest
 from yarl import URL
 
 from app.services.api.fhir_api import FhirApi
-from app.services.fhir.bundle.bundle_parser import create_bundle_entry
+from app.services.fhir.bundle.parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 
 PATCHED_MODULE = "app.services.api.api_service.HttpService.do_request"
@@ -32,6 +32,7 @@ def test_post_bundle_should_succeed(
 
     assert actual == mock_bundle_response
     assert errs == []
+
 
 @patch(PATCHED_MODULE)
 def test_post_bundle_should_fail_on_status_code(
@@ -143,7 +144,7 @@ def test_get_history_batch_should_succeed_and_return_next_params(
     expected_entries = [
         create_bundle_entry(org_history_entry_1),
     ]
-    mock_org_history_bundle["link"] = [{"relation": "next", "url": next_url}]
+    mock_org_history_bundle["link"] = [{"relation": "next", "url": str(next_url)}]
 
     mock_request = MagicMock()
     mock_request.status_code = 200
@@ -304,7 +305,6 @@ def test_search_should_raise_exception_when_error_status_code_recieved_from_serv
     assert e.value.status_code == 500
 
 
-
 @patch(PATCHED_MODULE)
 def test_post_bundle_should_raise_exception_when_json_invalid_and_http_exception(
     mock_response: MagicMock,
@@ -312,7 +312,7 @@ def test_post_bundle_should_raise_exception_when_json_invalid_and_http_exception
     fhir_api: FhirApi,
 ) -> None:
     from requests import Response
-    
+
     resp = Response()
     resp.status_code = 500
     resp._content = b"Invalid JSON"
@@ -322,6 +322,7 @@ def test_post_bundle_should_raise_exception_when_json_invalid_and_http_exception
         fhir_api.post_bundle(mock_bundle_request)
     assert e.value.status_code == 500
 
+
 @patch(PATCHED_MODULE)
 def test_post_bundle_should_raise_exception_when_json_invalid_and_http_success(
     mock_response: MagicMock,
@@ -329,7 +330,7 @@ def test_post_bundle_should_raise_exception_when_json_invalid_and_http_success(
     fhir_api: FhirApi,
 ) -> None:
     from requests import Response
-    
+
     resp = Response()
     resp.status_code = 200
     resp._content = b"Invalid JSON"
