@@ -13,7 +13,7 @@ from fhir.resources.R4B.reference import Reference
 from pydantic import ValidationError
 import pytest
 from app.models.fhir.types import BundleRequestParams, McsdResources
-from app.services.fhir.bundle.bundle_parser import create_bundle_entry
+from app.services.fhir.bundle.parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from tests.services.fhir.conftest import (
     incomplete_resources,
@@ -156,12 +156,14 @@ def test_namespace_references_should_not_change_anything_in_resource_when_refs_a
     )
 
 
-
 def test_create_bundle_should_succeed_when_fill_required_fields_mode_is_off(
-    fhir_service: FhirService, mock_org_history_bundle: Dict[str, Any]
+    fhir_service_with_fill_required_fields: FhirService,
+    mock_org_history_bundle: Dict[str, Any],
 ) -> None:
     mock_org_history_bundle.pop("type")
-    bundle = fhir_service.create_bundle(mock_org_history_bundle)
+    bundle = fhir_service_with_fill_required_fields.create_bundle(
+        mock_org_history_bundle
+    )
     assert isinstance(bundle, Bundle)
 
 
@@ -176,12 +178,12 @@ def test_create_bundle_should_succeed_when_fill_required_fields_mode_is_on(
 
 
 def test_create_bundle_should_fail_when_fill_required_mode_is_on(
-    fhir_service_with_fill_required_fields: FhirService,
+    fhir_service: FhirService,
     mock_org_history_bundle: Dict[str, Any],
 ) -> None:
     mock_org_history_bundle.pop("type")
     with pytest.raises(ValidationError):
-        fhir_service_with_fill_required_fields.create_bundle(mock_org_history_bundle)
+        fhir_service.create_bundle(mock_org_history_bundle)
 
 
 def test_get_resource_type_and_id_from_entry_should_succeed(

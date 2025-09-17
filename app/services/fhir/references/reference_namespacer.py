@@ -2,7 +2,7 @@ from typing import Any
 from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.reference import Reference
 
-from app.services.fhir.bundle.bundle_utils import get_resource_from_reference
+from app.services.fhir.bundle.utils import get_resource_from_reference
 from app.services.fhir.references.reference_extractor import (
     validate_reference,
 )

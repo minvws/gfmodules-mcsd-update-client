@@ -1,5 +1,5 @@
 from typing import List
-from fhir.resources.R4B.bundle import BundleEntry
+from fhir.resources.R4B.bundle import Bundle, BundleEntry
 
 from app.models.fhir.types import HttpValidVerbs
 
@@ -77,4 +77,19 @@ def filter_history_entries(entries: List[BundleEntry]) -> List[BundleEntry]:
         ids.append(res_id)
         results.append(entry)
 
+    return results
+
+
+def get_entries_from_bundle_of_bundles(data: Bundle) -> List[BundleEntry]:
+    """
+    Retrieves and flattens all entries from a FHIR Bundle of Bundles
+    """
+    entries = data.entry if data.entry else []
+    results: List[BundleEntry] = []
+
+    for entry in entries:
+        if isinstance(entry, BundleEntry) and isinstance(entry.resource, Bundle):  # type: ignore[attr-defined]
+            nested_bundle = entry.resource  # type: ignore[attr-defined]
+            nested_entries = nested_bundle.entry if nested_bundle.entry else []
+            results.extend(nested_entries)
     return results

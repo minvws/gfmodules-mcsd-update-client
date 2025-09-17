@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 import pytest
 
 from app.models.adjacency.node import Node, NodeReference
-from app.services.fhir.bundle.bundle_parser import create_bundle_entry
+from app.services.fhir.bundle.parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from app.services.update.computation_service import ComputationService
 from tests.utils.utils import create_mock_node
