@@ -28,7 +28,7 @@ class Scheduler:
         if self.__thread is not None:
             return
 
-        if self.__stop_event.is_set() is True:
+        if self.__stop_event.is_set():
             self.__stop_event.clear()
 
         self.__thread = Thread(target=self.__run)

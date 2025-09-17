@@ -242,7 +242,7 @@ class UpdateClientService:
             raise CacheServiceUnavailableException()
         for node in updated_nodes:
             if not self.__cache.key_exists(node.resource_id):
-                node.clear_for_cash()
+                node.clear_for_cache()
                 self.__cache.add_node(node)
 
     def update_page(
@@ -251,7 +251,7 @@ class UpdateClientService:
         updated = []
         adj_map = adjacency_map_service.build_adjacency_map(entries)
         for node in adj_map.data.values():
-            if node.updated is True:
+            if node.updated:
                 logger.info(
                     f"Item {node.resource_id} {node.resource_type} has been processed earlier, skipping..."
                 )

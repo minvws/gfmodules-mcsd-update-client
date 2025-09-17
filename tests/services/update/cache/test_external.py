@@ -14,7 +14,7 @@ def test_get_one_should_succeed_and_return_node(
     external_caching_service: ExternalCachingService,
     expected_node_org: Node,
 ) -> None:
-    expected_node_org.clear_for_cash()
+    expected_node_org.clear_for_cache()
     target_key = external_caching_service.make_target_id(expected_node_org.resource_id)
     mock_get.return_value = expected_node_org.model_dump_json()
     mock_exists.return_value = True
@@ -51,7 +51,7 @@ def test_add_node_should_succeed(
     expected_node_org: Node,
 ) -> None:
     target_id = external_caching_service.make_target_id(expected_node_org.resource_id)
-    expected_node_org.clear_for_cash()
+    expected_node_org.clear_for_cache()
     data = expected_node_org.model_dump_json()
     # even though the function beign tested does not return, redis set does. So
     # will set a return value for consisntecy

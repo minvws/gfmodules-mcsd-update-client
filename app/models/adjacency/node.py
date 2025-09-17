@@ -29,7 +29,7 @@ class Node(BaseModel):
     update_data: NodeUpdateData | None = None
     directory_entry: BundleEntry | None = None
 
-    def clear_for_cash(self) -> None:
+    def clear_for_cache(self) -> None:
         self.references = []
         self.visited = False
         self.update_data = None
