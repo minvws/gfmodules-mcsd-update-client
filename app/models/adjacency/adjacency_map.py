@@ -38,7 +38,7 @@ class AdjacencyMap:
             current = queue.popleft()
             for ref in current.references:
                 sibling = self.data[ref.id]
-                if sibling.visited is False:
+                if not sibling.visited:
                     sibling.visited = True
                     queue.append(sibling)
                     group.append(sibling)
