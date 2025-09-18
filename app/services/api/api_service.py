@@ -58,11 +58,9 @@ class HttpService(ABC):
                     headers=headers,
                     timeout=self.__timeout,
                     json=json,
-                    cert=(
-                        (self.__mtls_cert, self.__mtls_key)
+                    cert=(self.__mtls_cert, self.__mtls_key)
                         if self.__mtls_cert and self.__mtls_key
-                        else None
-                    ),
+                        else None,
                     verify=self.__mtls_ca or True,
                     auth=self.authenticator.get_auth() if self.authenticator else None,
                 )
