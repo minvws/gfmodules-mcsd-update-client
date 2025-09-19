@@ -9,12 +9,12 @@ from app.container import get_cleanup_scheduler, get_update_scheduler, setup_con
 from app.routers.default import router as default_router
 from app.routers.health import router as health_router
 from app.routers.directory_router import router as directory_router
+from app.routers.ignore_list_router import router as ignore_list_router
+
 from app.routers.resource_map_router import router as resource_map_router
 from app.routers.update_router import router as update_router
 from app.routers.update_client import router as update_client_router
 from app.routers.scheduler_router import router as scheduler_router
-from app.routers.directory_health import router as directory_health_router
-from app.routers.ignore_list_router import router as ignore_list_router
 from app.config import get_config
 from app.stats import StatsdMiddleware, setup_stats
 from app.telemetry import setup_telemetry
@@ -102,7 +102,6 @@ def setup_fastapi() -> FastAPI:
         update_router,
         update_client_router,
         scheduler_router,
-        directory_health_router,
         ignore_list_router,
     ]
     for router in routers:
