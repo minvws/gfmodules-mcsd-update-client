@@ -173,23 +173,19 @@ def mock_get_history_batch(
     side_effect=mock_requests_request,
 )
 @patch(
-    "app.services.directory_provider.api_provider.DirectoryApiProvider.get_all_directories",
+    "app.services.api.directory_api_service.DirectoryApiService.fetch_directories",
     return_value=[
         DirectoryDto(
             id="test-directory",
-            name="Test Directory",
-            endpoint="https://testserver/test",
-            is_deleted=False,
+            endpoint_address="https://testserver/test",
         )
     ],
 )
 @patch(
-    "app.services.directory_provider.api_provider.DirectoryApiProvider.get_one_directory",
+    "app.services.api.directory_api_service.DirectoryApiService.fetch_one_directory",
     return_value=DirectoryDto(
         id="test-directory",
-        name="Test Directory",
-        endpoint="https://testserver/test",
-        is_deleted=False,
+        endpoint_address="https://testserver/test",
     ),
 )
 def test_stress_test_update(
