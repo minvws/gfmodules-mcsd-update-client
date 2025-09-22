@@ -21,7 +21,7 @@ class DirectoryApiProvider(DirectoryProvider):
         self,
         fhir_api: FhirApi,
         ignored_directory_service: IgnoredDirectoryService,
-        provider_url: str
+        provider_url: str,
     ) -> None:
         """
         Service to manage directories from a FHIR-based API.
@@ -201,12 +201,16 @@ class DirectoryApiProvider(DirectoryProvider):
             is_deleted=False,
         )
 
-    def __get_endpoint_address(self, org: Organization, endpoint_map: Dict[str, Endpoint]) -> str | None:
+    def __get_endpoint_address(
+        self, org: Organization, endpoint_map: Dict[str, Endpoint]
+    ) -> str | None:
         if org.endpoint is None:
             return None
 
         if len(org.endpoint) > 1:
-            logger.warning(f"Organization {org.id} has multiple endpoints, using the first one.")
+            logger.warning(
+                f"Organization {org.id} has multiple endpoints, using the first one."
+            )
 
         ref = org.endpoint[0]
 
