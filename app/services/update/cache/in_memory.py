@@ -25,7 +25,8 @@ class InMemoryCachingService(CachingService):
         self.__data[target_id] = node
 
     def key_exists(self, id: str) -> bool:
-        return id in self.__data.keys()
+        target_id = self.make_target_id(id)
+        return target_id in self.__data.keys()
 
     def is_healthy(self) -> bool:
         return True
