@@ -17,10 +17,12 @@ from app.container import get_database
 from app.db.db import Database
 from app.models.adjacency.adjacency_map import AdjacencyMap
 from app.models.adjacency.node import Node, NodeReference
+from app.services.fhir.bundle.parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from app.services.update.computation_service import ComputationService
 from tests.test_config import get_test_config
 from tests.mock_data import organization, endpoint, location
+from tests.utils.utils import create_mock_node
 
 
 # Don't search for tests in the mock_data directory
@@ -144,6 +146,38 @@ def mock_loc_bundle_entry(mock_location: Dict[str, Any]) -> Dict[str, Any]:
         "resource": mock_location,
         "request": {"method": "PUT", "url": f"Location/{mock_location['id']}"},
     }
+
+
+@pytest.fixture()
+def mock_node_org(
+    mock_org_bundle_entry: Dict[str, Any],
+    org_node_references: List[NodeReference],
+    fhir_service: FhirService,
+    computation_service: ComputationService,
+) -> Node:
+    entry = create_bundle_entry(mock_org_bundle_entry)
+    return create_mock_node(
+        bundle_entry=entry,
+        node_refs=org_node_references,
+        fhir_service=fhir_service,
+        directory_hash=computation_service.hash_directory_entry(entry),
+    )
+
+
+@pytest.fixture()
+def mock_node_ep(
+    mock_ep_bundle_entry: Dict[str, Any],
+    ep_node_references: List[NodeReference],
+    fhir_service: FhirService,
+    computation_service: ComputationService,
+) -> Node:
+    entry = create_bundle_entry(mock_ep_bundle_entry)
+    return create_mock_node(
+        bundle_entry=entry,
+        node_refs=ep_node_references,
+        fhir_service=fhir_service,
+        directory_hash=computation_service.hash_directory_entry(entry),
+    )
 
 
 @pytest.fixture()

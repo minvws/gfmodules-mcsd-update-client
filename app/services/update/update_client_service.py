@@ -1,4 +1,5 @@
 from datetime import datetime
+import threading
 import time
 import logging
 from typing import Dict, List, Any
@@ -81,7 +82,8 @@ class UpdateClientService:
             fill_required_fields=fill_required_fields,
         )
         self.__cache_provider = cache_provider
-        self.__cache: CachingService | None = None
+        self.mutex: Dict[str, threading.Lock] = {}
+        self.directory_lock = threading.Lock()
 
     def cleanup(self, directory_id: str) -> None:
         for res_type in McsdResources:
@@ -158,10 +160,10 @@ class UpdateClientService:
 
     def __flush_delete_bundle(self, bundle: Bundle, directory_id: str) -> None:
         if bundle.total is not None and bundle.total > 0:
-            logging.info(
+            logger.info(
                 f"Removing {bundle.total} items from update client originating from stale directory {directory_id}"
             )
-            _entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
+            _, errors = self.__update_client_fhir_api.post_bundle(bundle)
             if len(errors) > 0:
                 logging.error(
                     f"Errors occurred when flushing delete bundle for stale directory {directory_id}: {errors}"
@@ -171,25 +173,43 @@ class UpdateClientService:
                 )
 
     def update(self, directory: DirectoryDto, since: datetime | None = None) -> Any:
-        self.__create_cache_run()
-        if self.__cache is None:
-            raise CacheServiceUnavailableException()
-        start_time = time.time()
+        current_thread = threading.current_thread()
+        logger.debug(f"starting update for {directory.id} from {current_thread.name}")
 
-        for res in McsdResources:
-            self.update_resource(directory, res.value, since)
-        results = self.__cache.keys()
-        end_time = time.time()
-        self.__end_cache_run()
+        ## make sure no thread can mutate directory locks
+        with self.directory_lock:
+            if directory.id not in self.mutex:
+                self.mutex[directory.id] = threading.Lock()
+
+        lock = self.mutex[directory.id]
+
+        if lock.acquire(blocking=False):
+            try:
+                cache_service = self.__create_cache_run()
+                start_time = time.time()
+
+                for res in McsdResources:
+                    self.update_resource(directory, res.value, cache_service, since)
+                    time.sleep(0.5)
+                results = cache_service.keys()
+                end_time = time.time()
+                cache_service.clear()
+            finally:
+                lock.release()
+        else:
+            return {
+                "message": f"cannot perform uptate, {directory.id} currently in the background"
+            }
 
         return {"log": f"updated {len(results)}", "time": end_time - start_time}
 
     def update_resource(
-        self, directory: DirectoryDto, resource_type: str, since: datetime | None = None
+        self,
+        directory: DirectoryDto,
+        resource_type: str,
+        cache_service: CachingService,
+        since: datetime | None = None,
     ) -> None:
-        if self.__cache is None:
-            raise CacheServiceUnavailableException()
-
         directory_fhir_api = FhirApi(
             timeout=self.timeout,
             backoff=self.backoff,
@@ -208,7 +228,7 @@ class UpdateClientService:
             directory_api=directory_fhir_api,
             update_client_api=self.__update_client_fhir_api,
             resource_map_service=self.__resource_map_service,
-            cache_service=self.__cache,
+            cache_service=cache_service,
         )
 
         next_params: Dict[str, Any] | None = directory_fhir_api.build_history_params(
@@ -222,7 +242,7 @@ class UpdateClientService:
             for e in history:
                 _, _id = FhirService.get_resource_type_and_id_from_entry(e)
                 if _id is not None:
-                    if self.__cache.key_exists(_id):
+                    if cache_service.key_exists(_id):
                         logger.info(
                             f"{_id} {resource_type} already processed.. skipping.. "
                         )
@@ -235,15 +255,15 @@ class UpdateClientService:
                 continue
 
             nodes = self.update_page(targets, adjacency_map_service)
-            self.__clear_and_add_nodes(nodes)
+            self.__clear_and_add_nodes(nodes, cache_service)
 
-    def __clear_and_add_nodes(self, updated_nodes: List[Node]) -> None:
-        if self.__cache is None:
-            raise CacheServiceUnavailableException()
+    def __clear_and_add_nodes(
+        self, updated_nodes: List[Node], cache_service: CachingService
+    ) -> None:
         for node in updated_nodes:
-            if not self.__cache.key_exists(node.resource_id):
+            if not cache_service.key_exists(node.resource_id):
                 node.clear_for_cache()
-                self.__cache.add_node(node)
+                cache_service.add_node(node)
 
     def update_page(
         self, entries: List[BundleEntry], adjacency_map_service: AdjacencyMapService
@@ -286,7 +306,7 @@ class UpdateClientService:
                 if node.update_data.resource_map_dto is not None:
                     dtos.append(node.update_data.resource_map_dto)
 
-        _entries, errors = self.__update_client_fhir_api.post_bundle(bundle)
+        _, errors = self.__update_client_fhir_api.post_bundle(bundle)
         if len(errors) > 0:
             logger.error(f"Errors occurred when updating bundle: {errors}")
             raise UpdateClientException(
@@ -308,13 +328,8 @@ class UpdateClientService:
             if isinstance(dto, ResourceMapUpdateDto):
                 self.__resource_map_service.update_one(dto)
 
-    def __create_cache_run(self) -> None:
+    def __create_cache_run(self) -> CachingService:
         cache_service = self.__cache_provider.create()
         cache_service.clear()
 
-        self.__cache = cache_service
-
-    def __end_cache_run(self) -> None:
-        if self.__cache:
-            self.__cache.clear()
-        self.__cache = None
+        return cache_service
