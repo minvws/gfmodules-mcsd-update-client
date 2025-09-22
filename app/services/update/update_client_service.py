@@ -201,7 +201,11 @@ class UpdateClientService:
                 "message": f"cannot perform uptate, {directory.id} currently in the background"
             }
 
-        return {"log": f"updated {len(results)}", "time": end_time - start_time}
+        return {
+            "directory_id": directory.id,
+            "log": f"updated {len(results)}",
+            "time": end_time - start_time,
+        }
 
     def update_resource(
         self,
