@@ -14,10 +14,10 @@ class InMemoryCachingService(CachingService):
         self.run_id = run_id
 
     def get_node(self, id: str) -> Node | None:
-        target_id = self.make_target_id(id)
-        if not self.key_exists(target_id):
+        if not self.key_exists(id):
             return None
 
+        target_id = self.make_target_id(id)
         return self.__data[target_id]
 
     def add_node(self, node: Node) -> None:

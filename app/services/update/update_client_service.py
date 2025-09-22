@@ -257,7 +257,6 @@ class UpdateClientService:
             nodes = self.update_page(targets, adjacency_map_service)
             self.__clear_and_add_nodes(nodes, cache_service)
 
-    # TODO: simplify this function
     def __clear_and_add_nodes(
         self, updated_nodes: List[Node], cache_service: CachingService
     ) -> None:

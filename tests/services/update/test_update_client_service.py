@@ -21,7 +21,6 @@ from app.services.fhir.fhir_service import FhirService
 from app.services.update.cache.in_memory import InMemoryCachingService
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.update_client_service import (
-    CacheServiceUnavailableException,
     UpdateClientService,
     UpdateClientException,
 )
@@ -586,50 +585,21 @@ def test_update_with_bundle_raises_when_api_returns_errors(
 
 def test_clear_and_add_nodes_skips_existing_adds_new(
     update_client_service: UpdateClientService,
-    # monkeypatch: Any,
     mock_node_org: Node,
     mock_node_ep: Node,
     in_memory_cache_service: InMemoryCachingService,
 ) -> None:
-    # cache = FakeCache()
-    # monkeypatch.setattr(update_client_service, "_UpdateClientService__cache", cache)
 
     clear_add = getattr(
         update_client_service, "_UpdateClientService__clear_and_add_nodes"
     )
 
-    # class N:
-    #     def __init__(self, rid: str) -> None:
-    #         self.resource_id = rid
-    #         self.cleared = False
-    #
-    #     def clear_for_cache(self) -> None:
-    #         self.cleared = True
-    #
-    # cache.keys_.add("existing")
-    # n1, n2 = N("existing"), N("new_entry")
-    # in_memory_cache_service.add_node(n1)
-
     in_memory_cache_service.add_node(mock_node_org)
-    print("Hello word\n\n")
-    print(in_memory_cache_service.keys())
-    print(in_memory_cache_service.key_exists(mock_node_org.resource_id))
     assert in_memory_cache_service.key_exists(mock_node_org.resource_id)
-    # assert not in_memory_cache_service.key_exists(mock_node_ep.resource_id)
+    assert not in_memory_cache_service.key_exists(mock_node_ep.resource_id)
     clear_add([mock_node_org, mock_node_ep], in_memory_cache_service)
 
     assert len(mock_node_ep.references) == 0
-
-    # assert n1.cleared is False
-    # assert n2.cleared is True
-    # assert cache.added == ["new_entry"]
-
-
-def test_clear_and_add_nodes_requires_cache(
-    update_client_service: UpdateClientService,
-) -> None:
-    with pytest.raises(CacheServiceUnavailableException):
-        getattr(update_client_service, "_UpdateClientService__clear_and_add_nodes")([])
 
 
 def test_update_page_builds_groups_and_skips_updated(
@@ -691,5 +661,9 @@ def test_update_invokes_update_resource_for_all_resource_types(
     assert mock_update_resource.call_count == len(McsdResources)
     for res in McsdResources:
         mock_update_resource.assert_any_call(
-            update_client_service, directory_dto, res.value, None
+            update_client_service,
+            directory_dto,
+            res.value,
+            fake_cache,
+            None,
         )
