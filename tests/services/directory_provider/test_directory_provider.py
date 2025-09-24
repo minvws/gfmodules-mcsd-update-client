@@ -11,7 +11,7 @@ class MockDirectoryProvider(DirectoryProvider):
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
         return self.directories
     
-    def get_all_directories_include_ignored(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
+    def get_all_directories_include_ignored_ids(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
         return self.directories
 
     def get_one_directory(self, directory_id: str) -> DirectoryDto:
@@ -25,10 +25,10 @@ class MockDirectoryProvider(DirectoryProvider):
 def mock_directories() -> list[DirectoryDto]:
     return [
         DirectoryDto(
-            id="1", name="Directory 1", endpoint="http://directory1.com", is_deleted=False
+            id="1", endpoint_address="http://example.com/directory1"
         ),
         DirectoryDto(
-            id="2", name="Directory 2", endpoint="http://directory2.com", is_deleted=False
+            id="2", endpoint_address="http://example.com/directory2"
         ),
     ]
 
@@ -45,7 +45,6 @@ def test_get_all_directories_should_return_directories(
     assert result == mock_directories
     assert len(result) == 2
     assert result[0].id == "1"
-    assert result[1].name == "Directory 2"
 
 
 def test_get_all_directories_should_return_none_when_no_directories() -> None:
@@ -60,7 +59,6 @@ def test_get_one_directory_should_return_directory_when_exists(
     result = directory_provider.get_one_directory("1")
     assert result is not None
     assert result.id == "1"
-    assert result.name == "Directory 1"
 
 
 def test_get_one_directory_should_return_none_when_not_exists(
@@ -76,4 +74,3 @@ def test_get_one_directory_should_return_correct_directory(
     result = directory_provider.get_one_directory("2")
     assert result is not None
     assert result.id == "2"
-    assert result.name == "Directory 2"

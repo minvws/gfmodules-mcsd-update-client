@@ -25,8 +25,8 @@ services:
     configs:
       - source: mcsd_update_client_conf
         target: /src/app.conf
-      - source: directory_urls_json
-        target: /src/directory_urls.json
+      - source: lrza_output_json
+        target: /src/lrza_output.json
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8509/health"]
       start_period: 30s
@@ -141,8 +141,8 @@ configs:
     file: directory.application.yaml
   mcsd_update_client_conf:
     file: app.conf
-  directory_urls_json:
-    file: directory_urls.json
+  lrza_output_json:
+    file: lrza_output.json
   hapi_update_client_config:
     file: client.application.yaml
 
