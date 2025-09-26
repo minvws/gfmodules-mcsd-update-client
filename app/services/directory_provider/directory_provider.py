@@ -14,7 +14,7 @@ class DirectoryProvider(ABC):
     Methods:
         get_all_directories(include_ignored: bool = False) -> List[DirectoryDto]:
             Retrieve a list of all directories. If `include_ignored` is True, ignored directories are included; otherwise, they are filtered out.
-        get_all_directories_include_ignored(include_ignored_ids: List[str]) -> List[DirectoryDto]:
+        get_all_directories_include_ignored_ids(include_ignored_ids: List[str]) -> List[DirectoryDto]:
             Retrieve a list of all directories, including those specified in the ignore list.
         get_one_directory(directory_id: str) -> DirectoryDto:
             Retrieve a specific directory by their unique identifier.
@@ -29,7 +29,7 @@ class DirectoryProvider(ABC):
         pass
 
     @abc.abstractmethod
-    def get_all_directories_include_ignored(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
+    def get_all_directories_include_ignored_ids(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
         """
         Returns a list of all directories including, if specified, the directories which id is in the ignore list, otherwise these are filtered out.
         Raises Exception if the directory provider could not be reached.

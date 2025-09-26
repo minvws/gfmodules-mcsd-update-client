@@ -1,8 +1,7 @@
 {
     "directories": [
         {
-            "id": "hapi-directory", 
-            "name": "HAPI directory", 
+            "id": "hapi-directory",
             "endpoint": "http://hapi-directory:8080/fhir"
         }
     ]
