@@ -105,7 +105,7 @@ class ConfigDatabase(BaseModel):
 class ConfigClientDirectory(BaseModel):
     # either provider_url or urls_path should be set from config
     directories_provider_url: str | None = Field(default=None)
-    lrza_output_path: str | None = Field(default=None)
+    directories_file_path: str | None = Field(default=None)
     timeout: int = Field(default=1)
     backoff: float = Field(default=0.1)
     retries: int = Field(default=5)

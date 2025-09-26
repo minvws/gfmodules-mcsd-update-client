@@ -1,4 +1,3 @@
-from typing import Any, Dict
 from fastapi import HTTPException
 import pytest
 from app.models.directory.dto import DirectoryDto
@@ -7,129 +6,38 @@ from app.services.directory_provider.json_provider import DirectoryJsonProvider
 
 
 @pytest.fixture
-def lrza_output() -> Dict[str, Any]:
-    return {
-    "resourceType": "Bundle",
-    "id": "f70b6234-1a3b-43a2-a1f9-8bdc567a3fbe",
-    "type": "searchset",
-    "entry": [
+def json_data() -> list[dict[str, str]]:
+    return [
         {
-            "resource": {
-                "resourceType": "Organization",
-                "id": "example-org-1",
-                "identifier": [
-                    {
-                        "system": "http://www.vzvz.nl/fhir/NamingSystem/kvk",
-                        "value": "12345678"
-                    },
-                    {
-                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                        "value": "12345678"
-                    }
-                ],
-                "active": True,
-                "name": "Example Organization",
-                "endpoint": [
-                    {
-                        "reference": "Endpoint/example-endpoint-1",
-                        "display": "FHIR Endpoint"
-                    }
-                ]
-            }
+            "id": "1", 
+            "endpoint": "http://example.com/fhir/1"
         },
         {
-            "resource": {
-                "resourceType": "Endpoint",
-                "id": "example-endpoint-1",
-                "status": "active",
-                "connectionType": {
-                    "system": "http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
-                    "code": "hl7-fhir-rest",
-                    "display": "HL7 FHIR"
-                },
-                "payloadType": [
-                    {
-                        "text": "mCSD resource"
-                    }
-                ],
-                "managingOrganization": {
-                    "reference": "Organization/example-org-1",
-                    "display": "Example Organization"
-                },
-                "address": "https://example.com/fhir"
-            }
+            "id": "2", 
+            "endpoint": "http://example.org/fhir/2"
         },
-        {
-            "resource": {
-                "resourceType": "Organization",
-                "id": "example-org-2",
-                "identifier": [
-                    {
-                        "system": "http://www.vzvz.nl/fhir/NamingSystem/kvk",
-                        "value": "87564321"
-                    },
-                    {
-                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                        "value": "87564321"
-                    }
-                ],
-                "active": True,
-                "name": "Example Organization",
-                "endpoint": [
-                    {
-                        "reference": "Endpoint/example-endpoint-2",
-                        "display": "FHIR Endpoint"
-                    }
-                ]
-            }
-        },
-        {
-            "resource": {
-                "resourceType": "Endpoint",
-                "id": "example-endpoint-2",
-                "status": "active",
-                "connectionType": {
-                    "system": "http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
-                    "code": "hl7-fhir-rest",
-                    "display": "HL7 FHIR"
-                },
-                "payloadType": [
-                    {
-                        "text": "mCSD resource"
-                    }
-                ],
-                "managingOrganization": {
-                    "reference": "Organization/example-org-2",
-                    "display": "Example Organization"
-                },
-                "address": "https://example.com/fhir"
-            }
-        }
     ]
-}
-
 
 @pytest.fixture
-def json_provider(lrza_output: Dict[str, Any], directory_info_service: DirectoryInfoService
+def json_provider(json_data: list[dict[str, str]], directory_info_service: DirectoryInfoService
 ) -> DirectoryJsonProvider:
-    return DirectoryJsonProvider(lrza_output, directory_info_service=directory_info_service)
+    return DirectoryJsonProvider([
+        DirectoryDto(id=data["id"], endpoint_address=data["endpoint"])
+        for data in json_data
+    ], directory_info_service=directory_info_service)
 
 def test_get_all_directories_should_ignore_ignored_if_specified(
     json_provider: DirectoryJsonProvider,
     directory_info_service: DirectoryInfoService,
 ) -> None:
-    directory_info_service.update(
-        directory_id="example-org-1",
-        endpoint_address="http://example.com/directory1",
-        is_ignored=True,
-    )
-    directory_info_service.set_ignored_status("example-org-1", True)
+    json_provider.get_all_directories()  # Initialize to ensure updated
+    directory_info_service.set_ignored_status("1", True)
     
     # Test without ignored directories
     result = json_provider.get_all_directories(include_ignored=False)
     assert result is not None
     assert len(result) == 1
-    assert result[0].id == "example-org-2"
+    assert result[0].id == "2"
     
     # Test with ignored directories
     result = json_provider.get_all_directories(include_ignored=True)
@@ -139,8 +47,7 @@ def test_get_all_directories_should_ignore_ignored_if_specified(
     result = json_provider.get_all_directories_include_ignored_ids(include_ignored_ids=[])
     assert result is not None
     assert len(result) == 1
-
-    result = json_provider.get_all_directories_include_ignored_ids(include_ignored_ids=["example-org-1"])
+    result = json_provider.get_all_directories_include_ignored_ids(include_ignored_ids=["1"])
     assert result is not None
     assert len(result) == 2
 
@@ -152,21 +59,21 @@ def test_get_all_directories_should_return_all_directories(
     assert isinstance(result, list)
     assert isinstance(result[0], DirectoryDto)
     assert isinstance(result[1], DirectoryDto)
-    assert result[0].id == "example-org-1"
-    assert result[1].id == "example-org-2"
+    assert result[0].id == "1"
+    assert result[1].id == "2"
 
 
 def test_get_one_directory_should_return_correct_directory(
     json_provider: DirectoryJsonProvider,
 ) -> None:
-    result = json_provider.get_one_directory("example-org-1")
+    result = json_provider.get_one_directory("1")
     assert result is not None
     assert isinstance(result, DirectoryDto)
-    assert result.id == "example-org-1"
-
+    assert result.id == "1"
+    assert result.endpoint_address == "http://example.com/fhir/1"
 
 def test_get_one_directory_should_return_none_if_not_found(
     json_provider: DirectoryJsonProvider,
 ) -> None:
     with pytest.raises(HTTPException):
-        json_provider.get_one_directory("example-org-3")
+        json_provider.get_one_directory("3")

@@ -113,7 +113,7 @@ region = eu-west-2
 # Directories provider url to fetch directory endpoints from
 directories_provider_url=
 # OR use a relative path that points to file that specifies which directories to use. See example file lrza_output.example.json
-lrza_output_path = lrza_output.json
+directories_file_path = lrza_output.json
 # Timeout for the directory api
 timeout = 10
 # Backoff time for the directory api

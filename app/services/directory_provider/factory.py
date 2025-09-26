@@ -1,6 +1,7 @@
 import json
-from typing import Any
+from typing import Any, List
 
+from app.models.directory.dto import DirectoryDto
 from app.services.api.authenticators.authenticator import Authenticator
 from app.services.api.fhir_api import FhirApi
 from app.services.entity.directory_info_service import DirectoryInfoService
@@ -23,14 +24,14 @@ class DirectoryProviderFactory:
         self.__directory_info_service = directory_info_service
 
     def create(self) -> DirectoryProvider:
-        # Use JSON file-based provider if lrza_output_path is provided
+        # Use JSON file-based provider if directories_file_path is provided
         if (
-            self.__directory_config.lrza_output_path is not None
-            and len(self.__directory_config.lrza_output_path) > 1
+            self.__directory_config.directories_file_path is not None
+            and len(self.__directory_config.directories_file_path) > 1
         ):
             return DirectoryJsonProvider(
-                lrza_output=DirectoryProviderFactory._read_lrza_output_file(
-                    self.__directory_config.lrza_output_path
+                directories=DirectoryProviderFactory._read_directories_file(
+                    self.__directory_config.directories_file_path
                 ),
                 directory_info_service=self.__directory_info_service,
             )
@@ -58,15 +59,16 @@ class DirectoryProviderFactory:
             )
         else:
             raise ValueError(
-                "Configuration error: Either 'lrza_output_path' or 'directories_provider_url' must be provided. "
-                f"Provided values - lrza_output_path: {self.__directory_config.lrza_output_path}, "
+                "Configuration error: Either 'directories_file_path' or 'directories_provider_url' must be provided. "
+                f"Provided values - directories_file_path: {self.__directory_config.directories_file_path}, "
                 f"directories_provider_url: {self.__directory_config.directories_provider_url}."
             )
 
     @staticmethod
-    def _read_lrza_output_file(lrza_output_path: str) -> Any:
+    def _read_directories_file(directory_urls_path: str) -> List[DirectoryDto]:
         try:
-            with open(lrza_output_path) as f:
-                return json.load(f)
+            with open(directory_urls_path) as f:
+                data = json.load(f)
+                return [DirectoryDto(**item) for item in data]
         except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-            raise ValueError(f"Error processing lrza output file: {e}")
+            raise ValueError(f"Error processing directory URLs file: {e}")

@@ -1,0 +1,20 @@
+{
+    "directories": [
+        {
+            "id": "cloud-directory", 
+            "endpoint": "http://cloud-directory:1234/fhir"
+        },
+        {
+            "id": "data-directory", 
+            "endpoint": "http://data-directory:8080/fhir"
+        },
+        {
+            "id": "R5-hapi", 
+            "endpoint": "http://r5-hapi:9876/fhir"
+        },
+        {
+            "id": "R4-hapi", 
+            "endpoint": "http://r4-directory:80/fhir"
+        }
+    ]
+}

@@ -65,7 +65,7 @@ def get_test_config() -> Config:
         aws=None,
         client_directory=ConfigClientDirectory(
             directories_provider_url="https://testserver/test",
-            lrza_output_path=None,
+            directories_file_path=None,
             timeout=1,
             backoff=0.1,
             directory_marked_as_unhealthy_after_success_timeout="120s",
