@@ -21,16 +21,6 @@ max_logs_entries = 1000
 automatic_background_update = True
 # background cleanup automatically start on bootstrap
 automatic_background_cleanup = True
-# Time it takes after the last successful update before a directory is marked as unhealthy
-directory_stale_timeout = 5m
-# Ignore directories that have not been updated successfully for a certain time
-ignore_directory_after_success_timeout = 10m
-# Clean up (delete data from directory) when directory has not been updated successfully for a certain time
-cleanup_client_directory_after_success_timeout = 30d
-# Clean up (delete data from directory) when directory is deleted
-cleanup_client_directory_after_directory_delete = True
-# Number of consecutive failed update attempts before a directory is ignored
-ignore_directory_after_failed_attempts_threshold = 20
 
 [telemetry]
 # Telemetry is enabled or not
@@ -119,13 +109,33 @@ profile =
 # Region of the healthlake
 region = eu-west-2
 
-[directory_api]
-# Directories provider url url to fetch directory endpoints
-directories_provider_url = http://directory_api:8080/fhir
+[client_directory]
+# Directories provider url to fetch directory endpoints from
+directories_provider_url=
 # OR use a relative path that points to file that specifies which directories to use. See example file directory_urls.example.json
-directory_urls_path = directory_urls.json
+directories_file_path = directory_urls.example.json
 # Timeout for the directory api
 timeout = 10
 # Backoff time for the directory api
 backoff = 0.4
+
+# Time since last successful update before marking directory as unhealthy
+directory_marked_as_unhealthy_after_success_timeout=5m
+
+# Time since last successful update before ignoring directory
+ignore_client_directory_after_success_timeout=30m
+
+# Consecutive failed attempts before ignoring directory
+ignore_client_directory_after_failed_attempts_threshold=20
+
+# Time since last successful update before marking directory as to be deleted
+mark_client_directory_as_deleted_after_success_timeout=10d
+
+# Mark directory as to be deleted when removed from LRZA
+mark_client_directory_as_deleted_after_lrza_delete=True
+
+# Delay after directory marked as to be deleted before permanent cleanup
+cleanup_delay_after_client_directory_marked_deleted=30d
+
+# Whether to validate the capability statement when retrieving them from the directory provider
 check_capability_statement = False

@@ -83,10 +83,8 @@ def resource_map_service() -> MagicMock:
 def directory_dto() -> DirectoryDto:
     return DirectoryDto(
         id="1",
-        name="Test Directory",
-        endpoint="https://example-directory.com",
+        endpoint_address="https://example-directory.com",
     )
-
 
 @pytest.fixture
 def update_client_service(resource_map_service: MagicMock) -> UpdateClientService:
