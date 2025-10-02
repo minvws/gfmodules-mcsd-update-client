@@ -22,7 +22,7 @@ def mock_cache_service() -> MagicMock:
 def caching_service(
     mock_api_provider: MagicMock, mock_cache_service: MagicMock
 ) -> CachingDirectoryProvider:
-    return CachingDirectoryProvider(mock_api_provider, mock_cache_service)
+    return CachingDirectoryProvider(mock_api_provider, mock_cache_service, validate_capability_statement=False)
 
 def test_get_all_directories_should_ignore_ignored_if_specified(
     mock_api_provider: MagicMock,
@@ -193,3 +193,19 @@ def test_get_one_should_raise_exception_when_not_found(
     mock_cache_service.get_directory_cache.return_value = None
     with pytest.raises(HTTPException):
         caching_service.get_one_directory("nonexistent_id")
+
+def test_get_should_fail_if_capability_statement_check_enabled_and_invalid(
+    caching_service: CachingDirectoryProvider,
+    mock_api_provider: MagicMock,
+    mock_cache_service: MagicMock,
+) -> None:
+    # Simulate the capability statement check failing
+    setattr(caching_service, '_CachingDirectoryProvider__validate_capability_statement', True)
+    setattr(caching_service, 'check_capability_statement', MagicMock(return_value=False))
+    mock_api_provider.get_one_directory.return_value = DirectoryDto(
+        id="2", name="API Directory", endpoint="http://api.com", is_deleted=False
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        caching_service.get_one_directory("2")
+    assert exc_info.value.status_code == 400
+    assert "does not support mCSD requirements" in exc_info.value.detail

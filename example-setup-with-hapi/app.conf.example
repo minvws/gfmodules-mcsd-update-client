@@ -128,3 +128,4 @@ directory_urls_path = directory_urls.json
 timeout = 10
 # Backoff time for the directory api
 backoff = 0.4
+check_capability_statement = False

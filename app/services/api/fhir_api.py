@@ -12,6 +12,7 @@ from app.models.fhir.types import BundleError
 from app.services.fhir.bundle.utils import filter_history_entries
 from app.services.api.api_service import HttpService
 from app.services.api.authenticators.authenticator import Authenticator
+from app.services.fhir.capability_statement_validator import is_capability_statement_valid
 from app.services.fhir.fhir_service import FhirService
 
 from fhir.resources.R4B.bundle import Bundle
@@ -145,6 +146,24 @@ class FhirApi(HttpService):
             params["_since"] = since.isoformat()
 
         return params
+
+    def validate_capability_statement(self) -> bool:
+        """
+        Fetch the FHIR CapabilityStatement from the server.
+        """
+        response = self.do_request("GET", sub_route="metadata")
+        if response.status_code > 300:
+            logger.error(
+                f"An error with status code {response.status_code} has occurred from server. See response:\n{response.json()}"
+            )
+            raise HTTPException(status_code=500, detail=response.json())
+
+        try:
+            data = response.json()
+        except JSONDecodeError:
+            logger.error("Failed to decode JSON response: %s", response.text)
+            raise HTTPException(status_code=response.status_code, detail=HTTP_ERR_MSG)
+        return is_capability_statement_valid(data)
 
     @staticmethod
     def get_next_params(url: URL) -> Dict[str, Any]:

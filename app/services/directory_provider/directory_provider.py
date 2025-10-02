@@ -1,9 +1,12 @@
 from abc import ABC
 import abc
 from typing import List
-
+import logging
 from app.models.directory.dto import DirectoryDto
+from app.services.api.authenticators.null_authenticator import NullAuthenticator
+from app.services.api.fhir_api import FhirApi
 
+logger = logging.getLogger(__name__)
 
 class DirectoryProvider(ABC):
     """
@@ -42,3 +45,30 @@ class DirectoryProvider(ABC):
         Returns a specific directory by their unique identifier or raises Exception if the directory provider could not be reached.
         """
         pass
+
+    @staticmethod
+    def check_capability_statement(dir_dto: DirectoryDto) -> bool:
+        """
+        Validates the capability statement of a directory to ensure it meets mCSD requirements.
+        Logs the process and returns True if valid, False otherwise.
+        """
+        logger.info(f"Checking capability statement for {dir_dto.id}")
+        try:
+            fhir_api=FhirApi(
+                    timeout=5,
+                    backoff=5,
+                    auth=NullAuthenticator(),
+                    base_url=dir_dto.endpoint,
+                    request_count=5,
+                    fill_required_fields=False,
+                    retries=5,
+                )
+            if not fhir_api.validate_capability_statement():
+                logger.warning(
+                    f"Directory {dir_dto.id} at {dir_dto.endpoint} does not support mCSD requirements"
+                )
+                return False
+        except Exception as e:
+            logger.error(f"Error checking capability statement for {dir_dto.id}: {e}")
+            return False
+        return True

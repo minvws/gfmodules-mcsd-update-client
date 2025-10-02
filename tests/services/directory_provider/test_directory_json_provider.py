@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock
 from fastapi import HTTPException
 import pytest
 from app.models.directory.dto import DirectoryDto
@@ -74,3 +75,14 @@ def test_get_one_directory_should_return_none_if_not_found(
 ) -> None:
     with pytest.raises(HTTPException):
         json_provider.get_one_directory("3")
+
+def test_get_should_fail_if_capability_statement_check_enabled_and_invalid(
+    json_provider: DirectoryJsonProvider,
+) -> None:
+    # Simulate the capability statement check failing
+    setattr(json_provider, '_DirectoryJsonProvider__validate_capability_statement', True)
+    setattr(json_provider, 'check_capability_statement', MagicMock(return_value=False))
+    with pytest.raises(HTTPException) as exc_info:
+        json_provider.get_one_directory("2")
+    assert exc_info.value.status_code == 400
+    assert "does not support mCSD requirements" in exc_info.value.detail

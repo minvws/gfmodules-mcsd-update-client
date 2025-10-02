@@ -339,3 +339,38 @@ def test_post_bundle_should_raise_exception_when_json_invalid_and_http_success(
     with pytest.raises(HTTPException) as e:
         fhir_api.post_bundle(mock_bundle_request)
     assert e.value.status_code == 200
+
+@patch(PATCHED_MODULE)
+# @patch("app.services.fhir.capability_statement_validator.is_capability_statement_valid")
+@patch("app.services.api.fhir_api.is_capability_statement_valid")
+def test_update_client_service_check_capability_statement_succeeds(
+    mock_is_valid: MagicMock,
+    mock_response: MagicMock,
+    fhir_api: FhirApi,
+) -> None:
+    mock_request = MagicMock()
+    mock_request.status_code = 200
+    mock_request.json.return_value = {}
+    mock_response.return_value = mock_request
+    mock_is_valid.return_value = True
+
+    assert fhir_api.validate_capability_statement() is True
+    mock_is_valid.assert_called_once()
+
+@patch(PATCHED_MODULE)
+@patch("app.services.api.fhir_api.is_capability_statement_valid")
+def test_update_client_service_check_capability_statement_fails(
+    mock_is_valid: MagicMock,
+    mock_response: MagicMock,
+    fhir_api: FhirApi,
+) -> None:
+    mock_request = MagicMock()
+    mock_request.status_code = 500
+    mock_request.json.return_value = {}
+    mock_response.return_value = mock_request
+    mock_is_valid.return_value = False
+
+    with pytest.raises(HTTPException) as e:
+        fhir_api.validate_capability_statement()
+    mock_is_valid.assert_not_called()
+    assert e.value.status_code == 500
