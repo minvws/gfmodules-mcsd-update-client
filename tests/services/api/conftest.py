@@ -1,7 +1,7 @@
 from typing import Any, Dict, Final
 import pytest
 
-from app.config import Config
+from app.config import Config, get_config
 from app.services.api.api_service import (
     HttpService,
 )
@@ -11,9 +11,8 @@ from app.services.api.authenticators.azure_oauth2_authenticator import (
     AzureOAuth2Authenticator,
 )
 from app.services.api.fhir_api import FhirApi
-from tests.test_config import get_test_config
 
-config: Final[Config] = get_test_config()
+config: Final[Config] = get_config()
 
 MOCK_AUTH_TOKEN = "some-token"
 MOCK_AUTH = "some-auth"

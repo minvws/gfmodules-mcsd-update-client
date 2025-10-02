@@ -72,7 +72,6 @@ jobs:
               uses: minvws/action-python-poetry-install@v1
               with:
                 python_version: "3.11"
-
             - name: Scan packages for vulnerabilities
               run: poetry run $(make safety-check --just-print --silent)
 
@@ -122,6 +121,8 @@ jobs:
                 python_version: "3.11"
 
             - name: Run the tests
+              env:
+                APP_ENV: ci
               run: poetry run $(make test --just-print --silent)
 
             - name: Upload coverage report

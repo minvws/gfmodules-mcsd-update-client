@@ -120,7 +120,7 @@ def setup_stats() -> None:
 
     if config.stats.enabled is False:
         return
-    in_memory = (config.stats.host is None and config.stats.port is None) or False
+    in_memory = (config.stats.host is None or config.stats.host == "")
     client = (
         MemoryClient()
         if in_memory

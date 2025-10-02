@@ -12,7 +12,6 @@ import inject
 import pytest
 
 from app.application import create_fastapi_app
-from app.config import set_config
 from app.container import get_database
 from app.db.db import Database
 from app.models.adjacency.adjacency_map import AdjacencyMap
@@ -20,7 +19,6 @@ from app.models.adjacency.node import Node, NodeReference
 from app.services.fhir.bundle.parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from app.services.update.computation_service import ComputationService
-from tests.test_config import get_test_config
 from tests.mock_data import organization, endpoint, location
 from tests.utils.utils import create_mock_node
 
@@ -51,7 +49,6 @@ def database() -> Generator[Database, Any, None]:
 
 @pytest.fixture
 def fastapi_app() -> Generator[FastAPI, None, None]:
-    set_config(get_test_config())
     app = create_fastapi_app()
     db = get_database()
     db.generate_tables()
