@@ -351,7 +351,7 @@ def get_config(path: str | None = None) -> Config:
         if suffix:
             suffix = f".{suffix}"
         path = _PATH.replace("{suffix}", suffix)
-        print(f"Reading configuration using file: {path}")
+        logger.info(f"Reading configuration using file: {path}")
 
     # check if path exists
     if not exists(path):
