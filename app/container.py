@@ -1,6 +1,3 @@
-from app.services.entity.ignored_directory_service import IgnoredDirectoryService
-from app.services.entity.directory_cache_service import DirectoryCacheService
-
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.directory_provider.factory import DirectoryProviderFactory
 from app.services.directory_provider.directory_provider import DirectoryProvider
@@ -30,8 +27,15 @@ def container_config(binder: inject.Binder) -> None:
     auth_factory = AuthenticatorFactory(config=config)
     auth = auth_factory.create_authenticator()
 
+    directory_info_service = DirectoryInfoService(
+        db, 
+        config.client_directory.directory_marked_as_unhealthy_after_success_timeout_in_sec, # type: ignore
+        config.client_directory.cleanup_delay_after_client_directory_marked_deleted_in_sec # type: ignore
+    )
+    binder.bind(DirectoryInfoService, directory_info_service)
+
     directory_provider_factory = DirectoryProviderFactory(
-        config=config, database=db, auth=auth
+        config=config, auth=auth, directory_info_service=directory_info_service
     )
     directory_provider = directory_provider_factory.create()
     binder.bind(DirectoryProvider, directory_provider)
@@ -40,41 +44,30 @@ def container_config(binder: inject.Binder) -> None:
     update_service = UpdateClientService(
         update_client_url=config.mcsd.update_client_url,
         fill_required_fields=config.mcsd.fill_required_fields,
-        timeout=config.directory_api.timeout,
-        backoff=config.directory_api.backoff,
+        timeout=config.client_directory.timeout,
+        backoff=config.client_directory.backoff,
         request_count=config.mcsd.request_count,
         resource_map_service=resource_map_service,
         auth=auth,
         cache_provider=cache_provider,
-        retries=config.directory_api.retries,
+        retries=config.client_directory.retries,
         mtls_cert=config.mcsd.mtls_client_cert_path,
         mtls_key=config.mcsd.mtls_client_key_path,
         mtls_ca=config.mcsd.mtls_server_ca_path,
     )
     binder.bind(UpdateClientService, update_service)
 
-    ignored_directory_service = IgnoredDirectoryService(db)
-    binder.bind(IgnoredDirectoryService, ignored_directory_service)
 
-    directory_info_service = DirectoryInfoService(
-        db,
-        directory_stale_timeout_seconds=config.scheduler.directory_stale_timeout_in_sec,  # type: ignore
-    )
-    binder.bind(DirectoryInfoService, directory_info_service)
-
-    directory_cache_service = DirectoryCacheService(db)
 
     update_all_service = MassUpdateClientService(
         update_client_service=update_service,
         directory_provider=directory_provider,
         directory_info_service=directory_info_service,
-        ignored_directory_service=ignored_directory_service,
-        cleanup_client_directory_after_success_timeout_seconds=config.scheduler.cleanup_client_directory_after_success_timeout_in_sec,  # type: ignore
+        mark_client_directory_as_deleted_after_success_timeout_seconds=config.client_directory.mark_client_directory_as_deleted_after_success_timeout_in_sec,  # type: ignore
         stats=get_stats(),
-        directory_cache_service=directory_cache_service,
-        cleanup_client_directory_after_directory_delete=config.scheduler.cleanup_client_directory_after_directory_delete,
-        ignore_directory_after_success_timeout_seconds=config.scheduler.ignore_directory_after_success_timeout_in_sec,  # type: ignore
-        ignore_directory_after_failed_attempts_threshold=config.scheduler.ignore_directory_after_failed_attempts_threshold,
+        mark_client_directory_as_deleted_after_lrza_delete=config.client_directory.mark_client_directory_as_deleted_after_lrza_delete,
+        ignore_client_directory_after_success_timeout_seconds=config.client_directory.ignore_client_directory_after_success_timeout_in_sec,  # type: ignore
+        ignore_client_directory_after_failed_attempts_threshold=config.client_directory.ignore_client_directory_after_failed_attempts_threshold,
     )
 
     update_scheduler = Scheduler(
@@ -85,7 +78,7 @@ def container_config(binder: inject.Binder) -> None:
 
     cleanup_scheduler = Scheduler(
         function=update_all_service.cleanup_old_directories,
-        delay=config.scheduler.cleanup_client_directory_after_success_timeout_in_sec,  # type: ignore
+        delay=config.client_directory.mark_client_directory_as_deleted_after_success_timeout_in_sec,  # type: ignore
         max_logs_entries=config.scheduler.max_logs_entries,
     )
     binder.bind("update_scheduler", update_scheduler)
@@ -106,11 +99,6 @@ def get_database() -> Database:
 
 def get_directory_provider() -> DirectoryProvider:
     return inject.instance(DirectoryProvider)  # type: ignore
-
-
-def get_ignored_directory_service() -> IgnoredDirectoryService:
-    return inject.instance(IgnoredDirectoryService)
-
 
 def get_resource_map_service() -> ResourceMapService:
     return inject.instance(ResourceMapService)

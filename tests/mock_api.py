@@ -12,14 +12,12 @@ class MockApi(DirectoryProvider):
         if directory_id == "1":
             return DirectoryDto(
                 id="1",
-                name="Test Directory",
-                endpoint="http://test1.directory.example.org",
+                endpoint_address="http://test1.directory.example.org",
             )
         elif directory_id == "2":
             return DirectoryDto(
                 id="2",
-                name="Test Directory 2",
-                endpoint="http://test2.directory.example.org",
+                endpoint_address="http://test2.directory.example.org",
             )
         else:
             raise ValueError(f"DirectoryDto with ID {directory_id} not found")
@@ -28,12 +26,10 @@ class MockApi(DirectoryProvider):
         return [
             DirectoryDto(
                 id="1",
-                name="Test Directory",
-                endpoint="http://test1.directory.example.org",
+                endpoint_address="http://test1.directory.example.org",
             ),
             DirectoryDto(
                 id="2",
-                name="Test Directory 2",
-                endpoint="http://test2.directory.example.org",
+                endpoint_address="http://test2.directory.example.org",
             ),
         ]

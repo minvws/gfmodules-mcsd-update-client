@@ -1,66 +1,58 @@
-import logging
-from typing import Sequence
-
-from sqlalchemy.exc import DatabaseError
-from app.db.decorator import repository
-from app.db.entities.ignored_directory import IgnoredDirectory
+from typing import List, Sequence
 from app.db.entities.directory_info import DirectoryInfo
 from app.db.repositories.repository_base import RepositoryBase
-from sqlalchemy import select
-
-logger = logging.getLogger(__name__)
+from sqlalchemy import select, or_
 
 
-@repository(DirectoryInfo)
 class DirectoryInfoRepository(RepositoryBase):
+    """
+    Repository for managing DirectoryInfo entities.
+    """
+    def exists(self, id_: str) -> bool:
+        stmt = select(DirectoryInfo).where(DirectoryInfo.id == id_)
+        return self.db_session.session.scalars(stmt).first() is not None
 
-    def get(self, directory_id: str) -> DirectoryInfo:
-        query = select(DirectoryInfo).filter_by(directory_id=directory_id)
-        info = self.db_session.session.execute(query).scalars().first()
-        if info is None:
-            info = self.create(directory_id)
-        return info
+    def get_by_id(self, id_: str) -> DirectoryInfo | None:
+        stmt = select(DirectoryInfo).where(DirectoryInfo.id == id_)
+        return self.db_session.session.scalars(stmt).first()
 
-    def get_all(self, include_ignored: bool = False) -> Sequence[DirectoryInfo]:
-        query = select(DirectoryInfo).order_by(DirectoryInfo.directory_id)
+    def get_all(
+        self, include_deleted: bool = False, include_ignored: bool = False
+    ) -> Sequence[DirectoryInfo]:
+        stmt = select(DirectoryInfo)
+        if not include_deleted:
+            stmt = stmt.where(DirectoryInfo.deleted_at.is_(None))
         if not include_ignored:
-            query = query.outerjoin(
-                IgnoredDirectory,
-                DirectoryInfo.directory_id == IgnoredDirectory.directory_id
-            ).where(IgnoredDirectory.directory_id.is_(None))
-        return self.db_session.session.execute(query).scalars().all()
-    
-    def get_all_include_ignored_ids(self, include_ignored_ids: list[str]) -> Sequence[DirectoryInfo]:
-        query = select(DirectoryInfo).order_by(DirectoryInfo.directory_id)
+            stmt = stmt.where(DirectoryInfo.is_ignored.is_(False))
+        return self.db_session.session.scalars(stmt).all()
 
-        query = query.outerjoin(
-            IgnoredDirectory,
-            DirectoryInfo.directory_id == IgnoredDirectory.directory_id
-        ).where(
-            (IgnoredDirectory.directory_id.is_(None)) |
-            (DirectoryInfo.directory_id.in_(include_ignored_ids))
+    def get_all_including_ignored_ids(
+        self, include_deleted: bool = False, include_ignored_ids: List[str] | None = None
+    ) -> Sequence[DirectoryInfo]:
+        stmt = select(DirectoryInfo)
+        if not include_deleted:
+            stmt = stmt.where(DirectoryInfo.deleted_at.is_(None))
+        if include_ignored_ids is not None:
+            stmt = stmt.where(
+                or_(~DirectoryInfo.is_ignored, DirectoryInfo.id.in_(include_ignored_ids))
+            )
+        return self.db_session.session.scalars(stmt).all()
+
+    def is_ignored_by_id(self, id_: str) -> bool:
+        stmt = select(DirectoryInfo).where(
+            DirectoryInfo.is_ignored.is_(True),
+            DirectoryInfo.deleted_at.is_(None),
+            DirectoryInfo.id == id_
         )
+        return self.db_session.session.scalars(stmt).first() is not None
 
-        return self.db_session.session.execute(query).scalars().all()
-
-    def update(self, info: DirectoryInfo) -> DirectoryInfo:
-        try:
-            self.db_session.add(info)
-            self.db_session.commit()
-            self.db_session.session.refresh(info)
-            return info
-        except DatabaseError as e:
-            self.db_session.rollback()
-            logging.error(f"Failed to update directory info {info.directory_id}: {e}")
-            raise
-
-    def create(self, directory_id: str) -> DirectoryInfo:
-        try:
-            info = DirectoryInfo(directory_id=directory_id, failed_sync_count=0, failed_attempts=0)
-            self.db_session.add(info)
-            self.db_session.commit()
-            return info
-        except DatabaseError as e:
-            self.db_session.rollback()
-            logging.error(f"Failed to add suppler info {info.directory_id}: {e}")
-            raise
+    def get_all_ignored(self) -> Sequence[DirectoryInfo]:
+        stmt = select(DirectoryInfo).where(
+            DirectoryInfo.is_ignored.is_(True),
+            DirectoryInfo.deleted_at.is_(None)
+        )
+        return self.db_session.session.scalars(stmt).all()
+    
+    def get_all_deleted(self) -> Sequence[DirectoryInfo]:
+        stmt = select(DirectoryInfo).where(DirectoryInfo.deleted_at.is_not(None))
+        return self.db_session.session.scalars(stmt).all()
