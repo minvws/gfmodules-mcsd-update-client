@@ -1,6 +1,8 @@
 from enum import Enum
 import configparser
 import re
+from os import environ
+from os.path import exists
 from typing import Any, Optional
 import logging
 
@@ -8,7 +10,7 @@ from pydantic import BaseModel, Field, ValidationError, computed_field, field_va
 
 logger = logging.getLogger(__name__)
 
-_PATH = "app.conf"
+_PATH = "app{suffix}.conf"
 _CONFIG = None
 
 
@@ -345,7 +347,15 @@ def get_config(path: str | None = None) -> Config:
         return _CONFIG
 
     if path is None:
-        path = _PATH
+        suffix = environ.get("APP_ENV", "")
+        if suffix:
+            suffix = f".{suffix}"
+        path = _PATH.replace("{suffix}", suffix)
+        print(f"Reading configuration using file: {path}")
+
+    # check if path exists
+    if not exists(path):
+        raise FileNotFoundError(f"Config file not found: {path}")
 
     # To be inline with other python code, we use INI-type files for configuration. Since this isn't
     # a standard format for pydantic, we need to do some manual parsing first.
