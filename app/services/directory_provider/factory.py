@@ -36,6 +36,7 @@ class DirectoryProviderFactory:
                     self.__directory_config.directory_urls_path
                 ),
                 ignored_directory_service=IgnoredDirectoryService(self.__db),
+                validate_capability_statement=self.__mcsd_config.check_capability_statement,
             )
         elif self.__directory_config.directories_provider_url is not None:
             # Use API-based provider if directories_provider_url is provided
@@ -59,6 +60,7 @@ class DirectoryProviderFactory:
             return CachingDirectoryProvider(
                 directory_provider=directory_api_provider,
                 directory_cache_service=directory_cache_service,
+                validate_capability_statement=self.__mcsd_config.check_capability_statement,
             )
         else:
             raise ValueError(

@@ -17,9 +17,11 @@ class CachingDirectoryProvider(DirectoryProvider):
         self,
         directory_provider: DirectoryApiProvider,
         directory_cache_service: DirectoryCacheService,
+        validate_capability_statement: bool = False,
     ) -> None:
         self.__directoryProvider = directory_provider
         self.__directory_cache_service = directory_cache_service
+        self.__validate_capability_statement = validate_capability_statement
 
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
         """
@@ -46,6 +48,11 @@ class CachingDirectoryProvider(DirectoryProvider):
         """
         try:
             directory = self.__directoryProvider.get_one_directory(directory_id)
+            if self.__validate_capability_statement and not self.check_capability_statement(directory):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Directory {directory.id} at {directory.endpoint} does not support mCSD requirements",
+                )
         except Exception:  # Retrieving directory failed
             original_directory = self.__directory_cache_service.get_directory_cache(
                 directory_id
@@ -60,6 +67,11 @@ class CachingDirectoryProvider(DirectoryProvider):
                 self.__directory_cache_service.set_directory_cache(
                     original_directory
                 )
+            if self.__validate_capability_statement and not self.check_capability_statement(original_directory):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Directory {original_directory.id} at {original_directory.endpoint} does not support mCSD requirements",
+                )
             return original_directory
         self.__directory_cache_service.set_directory_cache(
             directory
@@ -69,8 +81,12 @@ class CachingDirectoryProvider(DirectoryProvider):
     def __common_directory_cache_logic(self, include_ignored: bool, original_directories: list[DirectoryDto]) -> list[DirectoryDto]:
         try:
             directories = self.__directoryProvider.get_all_directories(include_ignored=include_ignored)
+            if self.__validate_capability_statement:
+                directories = [d for d in directories if self.check_capability_statement(d)]
         except Exception as e:  # Retrieving directories failed
             logger.warning(f"Failed to retrieve directories from the directory provider: {e}")
+            if self.__validate_capability_statement:
+                original_directories = [d for d in original_directories if self.check_capability_statement(d)]
             return original_directories
 
         for directory in directories:
