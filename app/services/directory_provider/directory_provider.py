@@ -46,6 +46,15 @@ class DirectoryProvider(ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def directory_is_deleted(self, directory_id: str) -> bool:
+        """
+        Checks if a directory is marked as deleted.
+        Default implementation always returns False.
+        Override in subclasses if deletion tracking is supported.
+        """
+        return False
+
     @staticmethod
     def check_capability_statement(dir_dto: DirectoryDto) -> bool:
         """

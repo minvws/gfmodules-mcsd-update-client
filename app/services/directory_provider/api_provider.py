@@ -143,7 +143,7 @@ class DirectoryApiProvider(DirectoryProvider):
             logger.warning(f"Failed to retrieve directory {directory_id}: {e}")
             raise e
 
-    def check_if_directory_is_deleted(self, directory_id: str) -> bool:
+    def directory_is_deleted(self, directory_id: str) -> bool:
         try:
             _org = self.__fhir_api.get_resource_by_id(
                 resource_type="Organization",
