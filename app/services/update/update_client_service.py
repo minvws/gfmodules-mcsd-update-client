@@ -220,7 +220,7 @@ class UpdateClientService:
             auth=self.auth,
             request_count=self.request_count,
             fill_required_fields=self.fill_required_fields,
-            base_url=directory.endpoint,
+            base_url=directory.endpoint_address,
             retries=10,
             mtls_cert=self.mtls_cert,
             mtls_key=self.mtls_key,
