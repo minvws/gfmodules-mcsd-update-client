@@ -13,6 +13,18 @@ logger = logging.getLogger(__name__)
 _PATH = "app{suffix}.conf"
 _CONFIG = None
 
+def _convert_conf_to_sec(value: str) -> int:
+    conversion_map = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+    match = re.match(r"^(\d+)([smhd])$", value)
+    if not match:
+        raise ValidationError(
+            f"Incorrect input, must be digits with {conversion_map.keys()}"
+        )
+
+    number = int(match.group(1))
+    unit = match.group(2)
+
+    return number * conversion_map[unit]
 
 class LogLevel(str, Enum):
     debug = "debug"
@@ -30,26 +42,18 @@ class ConfigApp(BaseModel):
 class Scheduler(BaseModel):
     delay_input: str = Field(default="30s")
     max_logs_entries: int = Field(default=1000, ge=0)
+    # Whether the scheduler should automatically run background tasks
     automatic_background_update: bool = Field(default=True)
     automatic_background_cleanup: bool = Field(default=True)
-    directory_stale_timeout: str = Field(default="5m")
-    cleanup_client_directory_after_success_timeout: str = Field(default="30d")
-    cleanup_client_directory_after_directory_delete: bool = Field(
-        default=True,
-    )
-    ignore_directory_after_success_timeout: str = Field(default="10m")
-    ignore_directory_after_failed_attempts_threshold: int = Field(default=20)
 
+    @computed_field
+    def delay_input_in_sec(self) -> int:
+        return _convert_conf_to_sec(self.delay_input)
+    
     @field_validator("max_logs_entries", mode="before")
     def validate_max_log_entries(cls, v: Any) -> int:
         if v in (None, "", " "):
             return 1000
-        return int(v)
-
-    @field_validator("ignore_directory_after_failed_attempts_threshold", mode="before")
-    def validate_ignore_directory_after_failed_attempts_threshold(cls, v: Any) -> Any:
-        if v in (None, "", " "):
-            return 20
         return int(v)
 
     @field_validator(
@@ -61,36 +65,6 @@ class Scheduler(BaseModel):
         if isinstance(v, str):
             return v.lower() in ("yes", "true", "t", "1")
         return bool(v)
-
-    @computed_field
-    def delay_input_in_sec(self) -> int:
-        return self._convert_to_sec(self.delay_input)
-
-    @computed_field
-    def directory_stale_timeout_in_sec(self) -> int:
-        return self._convert_to_sec(self.directory_stale_timeout)
-
-    @computed_field
-    def cleanup_client_directory_after_success_timeout_in_sec(self) -> int:
-        return self._convert_to_sec(self.cleanup_client_directory_after_success_timeout)
-
-    @computed_field
-    def ignore_directory_after_success_timeout_in_sec(self) -> int:
-        return self._convert_to_sec(self.ignore_directory_after_success_timeout)
-
-    def _convert_to_sec(self, value: str) -> int:
-        conversion_map = {"s": 1, "m": 60, "h": 3600, "d": 86400}
-        match = re.match(r"^(\d+)([smhd])$", value)
-        if not match:
-            raise ValidationError(
-                f"Incorrect input, must be digits with {conversion_map.keys()}"
-            )
-
-        number = int(match.group(1))
-        unit = match.group(2)
-
-        return number * conversion_map[unit]
-
 
 class ConfigDatabase(BaseModel):
     dsn: str
@@ -130,14 +104,43 @@ class ConfigDatabase(BaseModel):
         return int(v)
 
 
-class ConfigDirectoryApi(BaseModel):
+class ConfigClientDirectory(BaseModel):
     # either provider_url or urls_path should be set from config
     directories_provider_url: str | None = Field(default=None)
-    directory_urls_path: str | None = Field(default=None)
+    directories_file_path: str | None = Field(default=None)
     timeout: int = Field(default=1)
     backoff: float = Field(default=0.1)
     retries: int = Field(default=5)
+    directory_marked_as_unhealthy_after_success_timeout: str = Field(
+        default="5m",
+        description="Time since last successful update before marking directory as unhealthy",
+    )
 
+    ignore_client_directory_after_success_timeout: str = Field(
+        default="30m",
+        description="Time since last successful update before ignoring directory",
+    )
+
+    ignore_client_directory_after_failed_attempts_threshold: int = Field(
+        default=20,
+        description="Consecutive failed attempts before ignoring directory",
+    )
+
+    mark_client_directory_as_deleted_after_success_timeout: str = Field(
+        default="10d",
+        description="Time since last successful update before marking directory as to be deleted",
+    )
+
+    mark_client_directory_as_deleted_after_lrza_delete: bool = Field(
+        default=True,
+        description="Mark directory as to be deleted when removed from LRZA",
+    )
+
+    cleanup_delay_after_client_directory_marked_deleted: str = Field(
+        default="30d",
+        description="Delay after directory marked as to be deleted before permanent cleanup",
+    )
+    
     @field_validator("timeout", mode="before")
     def validate_timeout(cls, v: Any) -> int:
         if v in (None, "", " "):
@@ -149,6 +152,28 @@ class ConfigDirectoryApi(BaseModel):
         if v in (None, "", " "):
             return 0.5
         return float(v)
+
+    @field_validator("ignore_client_directory_after_failed_attempts_threshold", mode="before")
+    def validate_ignore_client_directory_after_failed_attempts_threshold(cls, v: Any) -> Any:
+        if v in (None, "", " "):
+            return 20
+        return int(v)
+    
+    @computed_field
+    def directory_marked_as_unhealthy_after_success_timeout_in_sec(self) -> int:
+        return _convert_conf_to_sec(self.directory_marked_as_unhealthy_after_success_timeout)
+
+    @computed_field
+    def mark_client_directory_as_deleted_after_success_timeout_in_sec(self) -> int:
+        return _convert_conf_to_sec(self.mark_client_directory_as_deleted_after_success_timeout)
+
+    @computed_field
+    def ignore_client_directory_after_success_timeout_in_sec(self) -> int:
+        return _convert_conf_to_sec(self.ignore_client_directory_after_success_timeout)
+    
+    @computed_field
+    def cleanup_delay_after_client_directory_marked_deleted_in_sec(self) -> int:
+        return _convert_conf_to_sec(self.cleanup_delay_after_client_directory_marked_deleted)
 
 
 class ConfigUvicorn(BaseModel):
@@ -315,7 +340,7 @@ class Config(BaseModel):
     stats: ConfigStats
     azure_oauth2: ConfigAzureOauth2 | None
     aws: ConfigAws | None
-    directory_api: ConfigDirectoryApi
+    client_directory: ConfigClientDirectory
     scheduler: Scheduler
 
 
