@@ -1,15 +1,11 @@
+from datetime import datetime
 from pydantic import BaseModel
 
-
-class DirectoryBase(BaseModel):
-    name: str
-    endpoint: str
-    is_deleted: bool = False
-
-
-class DirectoryDto(DirectoryBase):
+class DirectoryDto(BaseModel):
     id: str
-
-
-class DirectoryUpdateDto(DirectoryBase):
-    pass
+    endpoint_address: str
+    deleted_at: datetime | None = None
+    is_ignored: bool = False
+    failed_sync_count: int = 0
+    failed_attempts: int = 0
+    last_success_sync: datetime | None = None
