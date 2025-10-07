@@ -6,9 +6,9 @@ from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.endpoint import Endpoint
 from yarl import URL
 from app.models.directory.dto import DirectoryDto
-from app.services.entity.ignored_directory_service import IgnoredDirectoryService
 from app.services.api.fhir_api import FhirApi
-from app.services.directory_provider.api_provider import DirectoryApiProvider
+from app.services.api.directory_api_service import DirectoryApiService
+from fastapi import HTTPException
 
 
 @pytest.fixture
@@ -22,12 +22,11 @@ def provider_url() -> str:
 
 
 @pytest.fixture
-def api_provider(
+def api_service(
     mock_fhir_api: MagicMock,
-    ignored_directory_service: IgnoredDirectoryService,
     provider_url: str
-) -> DirectoryApiProvider:
-    return DirectoryApiProvider(mock_fhir_api, ignored_directory_service, provider_url)
+) -> DirectoryApiService:
+    return DirectoryApiService(mock_fhir_api, provider_url)
 
 
 def __mock_bundle_entry() -> List[BundleEntry]:
@@ -162,66 +161,103 @@ def __mock_bundle_entry4() -> List[BundleEntry]:
         ),
     ]
 
-def test_get_all_directories_should_ignore_ignored_if_specified(
-    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock, ignored_directory_service: IgnoredDirectoryService
+def test_check_if_directory_is_deleted_should_return_false_if_not_deleted(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
+) -> None:
+    mock_fhir_api.get_resource_by_id.return_value = Organization(id="test-org-12345")
+    result = api_service.check_if_directory_is_deleted("test-org-12345")
+    assert result is False
+
+def test_check_if_directory_is_deleted_should_return_true_if_deleted(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
+) -> None:
+    mock_fhir_api.get_resource_by_id.side_effect = HTTPException(status_code=410)
+    result = api_service.check_if_directory_is_deleted("test-org-12345")
+    assert result is True
+
+def test_check_if_directory_is_deleted_should_return_false_if_exception(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
+) -> None:
+    mock_fhir_api.get_resource_by_id.side_effect = HTTPException(status_code=500)
+    result = api_service.check_if_directory_is_deleted("test-org-12345")
+    assert result is False
+    mock_fhir_api.get_resource_by_id.side_effect = Exception("Some error")
+    result = api_service.check_if_directory_is_deleted("test-org-12345")
+    assert result is False
+
+
+def test_get_endpoint_address_should_skip_if_no_endpoint(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
+) -> None:
+    mock_fhir_api.search_resource.return_value = (
+        None,
+        __mock_bundle_entry4()
+    )
+    dirs = api_service.fetch_directories()
+    assert dirs == []
+
+
+def test_get_endpoint_address_should_skip_if_multiple_endpoints(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     entries = __mock_bundle_entry()
-    entries.append(
-        BundleEntry(
-            resource=Organization(
-                id="test-org-6789",
-                identifier=[
-                    {
-                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                        "value": "87654321",
-                    }
-                ],
-                name="Example Organization",
-                endpoint=[
-                    {
-                        "reference": "Endpoint/endpoint-test1",
-                    }
-                ],
-            )
-        )
+    entries[0].resource.endpoint.append( # type: ignore[attr-defined]
+        {
+            "reference": "Endpoint/endpoint-test2",
+        }
     )
     mock_fhir_api.search_resource.return_value = (
         None,
         entries
     )
-    ignored_directory_service.add_directory_to_ignore_list("test-org-6789")
-    result = api_provider.get_all_directories()
-    assert result is not None
-    assert len(result) == 1
-    result = api_provider.get_all_directories(include_ignored=True)
-    assert result is not None
-    assert len(result) == 2
-    result = api_provider.get_all_directories_include_ignored(include_ignored_ids=[])
-    assert result is not None
-    assert len(result) == 1
-    result = api_provider.get_all_directories_include_ignored(include_ignored_ids=["test-org-6789"])
-    assert result is not None
-    assert len(result) == 2
+    dirs = api_service.fetch_directories()
+    assert dirs == []
+
+def test_get_endpoint_address_should_skip_if_no_matching_endpoint(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
+) -> None:
+    entries = __mock_bundle_entry()
+    entries[1].resource.id = "some-other-id" # type: ignore[attr-defined]
+    mock_fhir_api.search_resource.return_value = (
+        None,
+        entries
+    )
+    dirs = api_service.fetch_directories()
+    assert dirs == []
+
+def test_get_endpoint_address_should_skip_if_address_missing(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
+) -> None:
+    entries = __mock_bundle_entry()
+    try:
+        entries[1].resource.address = None # type: ignore[attr-defined]
+    except Exception:
+        pass
+    mock_fhir_api.search_resource.return_value = (
+        None,
+        entries
+    )
+    dirs = api_service.fetch_directories()
+    assert dirs == []
 
 def test_get_all_directories_should_return_directories(
-    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     mock_fhir_api.search_resource.return_value = (
         None,
         __mock_bundle_entry(),
     )
-    result = api_provider.get_all_directories()
+    result = api_service.fetch_directories()
     assert result is not None
     assert len(result) == 1
     assert isinstance(result, list)
     assert isinstance(result[0], DirectoryDto)
     assert result[0].id == "test-org-12345"
-    assert result[0].name == "Example Organization"
-    assert result[0].endpoint == "http://example.com/fhir"
+    assert result[0].endpoint_address == "http://example.com/fhir"
 
 
 def test_get_all_directories_should_handle_pagination(
-    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     # Mock both page responses using side_effect
     mock_fhir_api.search_resource.side_effect = [
@@ -229,35 +265,34 @@ def test_get_all_directories_should_handle_pagination(
         (URL("http://example.com/fhir/Organization/?page=3"),[]),
         (None,[]),
     ]
-    api_provider.get_all_directories()
+    api_service.fetch_directories()
     assert mock_fhir_api.search_resource.call_count == 3
 
 
 def test_get_one_directory_should_return_directory(
-    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     mock_fhir_api.search_resource.return_value = (
         None,
         __mock_bundle_entry()
     )
-    result = api_provider.get_one_directory("test-org-12345")
+    result = api_service.fetch_one_directory("test-org-12345")
     assert result is not None
     assert isinstance(result, DirectoryDto)
     assert result.id == "test-org-12345"
-    assert result.name == "Example Organization"
-    assert result.endpoint == "http://example.com/fhir"
-    assert not result.is_deleted
+    assert result.endpoint_address == "http://example.com/fhir"
+    assert result.deleted_at is None
 
 
 def test_get_one_directory_should_return_none_if_not_found(
-    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     mock_fhir_api.search_resource.side_effect = Exception("Not Found")
     with pytest.raises(Exception):
-        api_provider.get_one_directory("non-existing-id")
+        api_service.fetch_one_directory("non-existing-id")
 
-def test_absolute_endpoint_with_different_origin(
-    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock
+def test_absolute_endpoint_with_different_origin_skips(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     """
     mock bundle has an organization with an absolute endpoint, but a different origin than
@@ -267,11 +302,11 @@ def test_absolute_endpoint_with_different_origin(
         None,
         __mock_bundle_entry2()
     )
-    with pytest.raises(ValueError):
-        api_provider.get_all_directories()
+    dirs = api_service.fetch_directories()
+    assert dirs == []
 
 def test_absolute_endpoint_with_same_origin(
-    api_provider: DirectoryApiProvider, mock_fhir_api: MagicMock, provider_url: URL
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock, provider_url: URL
 ) -> None:
     """
     mock bundle has an organization with an absolute endpoint that matches the origin of the provider URL.
@@ -280,8 +315,8 @@ def test_absolute_endpoint_with_same_origin(
         None,
         __mock_bundle_entry3()
     )
-    result = api_provider.get_all_directories()
+    result = api_service.fetch_directories()
     assert result is not None
     assert len(result) == 1
-    assert result[0].endpoint == "http://example.com/foo/bar"
+    assert result[0].endpoint_address == "http://example.com/foo/bar"
 
