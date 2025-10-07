@@ -2,7 +2,7 @@ from uuid import uuid4
 from fhir.resources.R4B.bundle import Bundle
 import pytest
 from typing import Dict, Any, List
-from app.config import Config, ConfigExternalCache, set_config
+from app.config import Config, ConfigExternalCache, set_config, get_config
 from app.db.db import Database
 from app.models.adjacency.node import Node, NodeReference
 from app.services.api.fhir_api import FhirApi
@@ -21,13 +21,12 @@ from app.services.update.cache.external import ExternalCachingService
 from app.services.update.cache.in_memory import InMemoryCachingService
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.computation_service import ComputationService
-from tests.test_config import get_test_config
 from tests.utils.utils import create_mock_node
 
 
 @pytest.fixture()
 def config() -> Config:
-    return get_test_config()
+    return get_config()
 
 
 @pytest.fixture

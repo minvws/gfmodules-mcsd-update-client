@@ -1,9 +1,8 @@
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from app.config import set_config
+from app.config import set_config, get_config
 from app.stats import MemoryClient, Statsd, StatsdMiddleware, setup_stats, get_stats
-from tests.test_config import get_test_config
 
 
 @pytest.fixture
@@ -37,7 +36,7 @@ def test_memory_client_decr(memory_client: MemoryClient) -> None:
     assert memory == {'test.counter': -1}
 
 def test_statsd_middleware() -> None:
-    test_conf = get_test_config()
+    test_conf = get_config()
     test_conf.stats.enabled = True
     test_conf.stats.host = None
     test_conf.stats.port = None
