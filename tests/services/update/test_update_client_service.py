@@ -83,10 +83,8 @@ def resource_map_service() -> MagicMock:
 def directory_dto() -> DirectoryDto:
     return DirectoryDto(
         id="1",
-        name="Test Directory",
-        endpoint="https://example-directory.com",
+        endpoint_address="https://example.com/directory",
     )
-
 
 @pytest.fixture
 def update_client_service(resource_map_service: MagicMock) -> UpdateClientService:
@@ -395,7 +393,7 @@ def test_update_requests_resources(
             )
         if (
             kwargs.get("method") == "POST"
-            and kwargs.get("url") == "https://example-directory.com"
+            and kwargs.get("url") == "https://example.com/directory"
             and kwargs.get("json", {})
             .get("entry", [{}])[0]
             .get("request", {})
@@ -436,7 +434,7 @@ def test_update_requests_resources(
     for res_type in McsdResources:
         mock_request.assert_any_call(
             method="GET",
-            url=f"https://example-directory.com/{res_type.value}/_history?_count={update_client_service.request_count}&_since={since.isoformat()}",
+            url=f"https://example.com/directory/{res_type.value}/_history?_count={update_client_service.request_count}&_since={since.isoformat()}",
             headers=ANY,
             timeout=ANY,
             json=ANY,
@@ -469,7 +467,7 @@ def test_update_requests_resources(
     )
     mock_request.assert_any_call(
         method="POST",
-        url="https://example-directory.com",
+        url="https://example.com/directory",
         headers=ANY,
         timeout=ANY,
         json={

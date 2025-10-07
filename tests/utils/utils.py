@@ -6,6 +6,8 @@ import psutil
 from typing import Any, Dict, List, Set
 from uuid import uuid4
 
+import pytest
+
 from app.models.adjacency.node import (
     Node,
     NodeReference,
@@ -101,14 +103,14 @@ def check_if_in_db(directory_id: str, ids_set: Set[str]) -> int:
     with db.get_db_session() as session:
         repo = session.get_repository(ResourceMapRepository)
         result = repo.find(directory_id=directory_id)
-        for resource_item in result:
-            if (
-                resource_item.directory_resource_id in ids_set
-            ):  # Ids set does not contain deleted resources as latest version
-                ids_set.discard(resource_item.directory_resource_id)
-    if ids_set:
-        print(f"Resource {ids_set} not found in the database")
-        errors += len(ids_set)
+        for item in ids_set:
+            if item not in [resource_item.directory_resource_id for resource_item in result]:
+                print(f"Resource {item} not found in the database")
+                errors += 1
+    if errors == 0:
+        print("All resources found in the database")
+    else:
+        raise pytest.fail(f"{errors} resources not found in the database")
     return errors
 
 

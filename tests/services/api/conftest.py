@@ -65,8 +65,8 @@ def mock_history_params(fhir_api: FhirApi) -> Dict[str, Any]:
 def http_service(base_url: str) -> HttpService:
     return HttpService(
         base_url=base_url,
-        timeout=config.directory_api.timeout,
-        backoff=config.directory_api.backoff,
+        timeout=config.client_directory.timeout,
+        backoff=config.client_directory.backoff,
         retries=1,
         mtls_cert=config.mcsd.mtls_client_cert_path,
         mtls_key=config.mcsd.mtls_client_key_path,
