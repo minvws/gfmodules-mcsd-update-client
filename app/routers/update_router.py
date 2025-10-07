@@ -5,11 +5,11 @@ from pydantic import BaseModel, Field
 from fastapi.exceptions import HTTPException
 
 from app.container import (
-    get_ignored_directory_service,
+    get_directory_info_service,
     get_directory_provider,
     get_update_client_service,
 )
-from app.services.entity.ignored_directory_service import IgnoredDirectoryService
+from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.update.update_client_service import UpdateClientService
 from app.services.directory_provider.directory_provider import DirectoryProvider
 
@@ -28,7 +28,7 @@ def update_all_directories(
 ) -> Any:
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
 
-    directories = directory_provider.get_all_directories_include_ignored(include_ignored_ids=override_ignore if override_ignore else [])
+    directories = directory_provider.get_all_directories_include_ignored_ids(include_ignored_ids=override_ignore if override_ignore else [])
 
     return [service.update(directory, since) for directory in directories]
 
@@ -40,17 +40,17 @@ def update_single_directory(
     query_params: UpdateQueryParams = Depends(),
     service: UpdateClientService = Depends(get_update_client_service),
     directory_provider: DirectoryProvider = Depends(get_directory_provider),
-    ignored_directory_service: IgnoredDirectoryService = Depends(get_ignored_directory_service),
+    directory_service: DirectoryInfoService = Depends(get_directory_info_service),
 ) -> Any:
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
     directory = directory_provider.get_one_directory(directory_id)
     if not override_ignore:
-        is_ignored = ignored_directory_service.get_ignored_directory(directory_id) is not None
+        is_ignored = directory_service.get_one_by_id(directory_id).is_ignored
 
         if is_ignored:
             raise HTTPException(
                 status_code=409,
-                detail=f"Directory {directory_id} is in the ignore list. Use override_ignore to update.",
+                detail=f"Directory {directory_id} is ignored. Use override_ignore to update.",
             )
 
     return service.update(directory, since)
