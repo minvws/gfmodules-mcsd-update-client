@@ -10,6 +10,7 @@ class DirectoryJsonProvider(DirectoryProvider):
     """
     Service to manage directories from a JSON data source.
     """
+
     directory_urls: List[DirectoryDto]
 
     def __init__(self, directories_json_data: List[DirectoryDto], ignored_directory_service: IgnoredDirectoryService, validate_capability_statement: bool = False) -> None:
@@ -52,3 +53,6 @@ class DirectoryJsonProvider(DirectoryProvider):
                 detail=f"Directory {directory.id} at {directory.endpoint} does not support mCSD requirements",
             )
         return directory
+
+    def directory_is_deleted(self, directory_id: str) -> bool:
+        return False

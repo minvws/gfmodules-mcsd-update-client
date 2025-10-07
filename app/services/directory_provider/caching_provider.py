@@ -4,22 +4,22 @@ from typing import List
 from fastapi import HTTPException
 from app.models.directory.dto import DirectoryDto
 from app.services.entity.directory_cache_service import DirectoryCacheService
-from app.services.directory_provider.api_provider import DirectoryApiProvider
 from app.services.directory_provider.directory_provider import DirectoryProvider
 
 logger = logging.getLogger(__name__)
 
 class CachingDirectoryProvider(DirectoryProvider):
     """
-    Service to manage directories with caching mechanism.
+    Decorator for a DirectoryProvider that adds caching functionality.
     """
+
     def __init__(
         self,
-        directory_provider: DirectoryApiProvider,
+        inner_directory_provider: DirectoryProvider,
         directory_cache_service: DirectoryCacheService,
         validate_capability_statement: bool = False,
     ) -> None:
-        self.__directoryProvider = directory_provider
+        self.__inner = inner_directory_provider
         self.__directory_cache_service = directory_cache_service
         self.__validate_capability_statement = validate_capability_statement
 
@@ -34,7 +34,6 @@ class CachingDirectoryProvider(DirectoryProvider):
         """
         Returns a list of all directories including, if specified, the directories which id is in the ignore list, otherwise these are filtered out.
         """
-        original_directories = []
         if include_ignored_ids:
             original_directories = self.__directory_cache_service.get_all_directories_caches_include_ignored_ids(include_ignored_ids=include_ignored_ids)
         else:
@@ -47,7 +46,7 @@ class CachingDirectoryProvider(DirectoryProvider):
         Returns a specific directory by their unique identifier or raises Exception if the directory provider could not be reached.
         """
         try:
-            directory = self.__directoryProvider.get_one_directory(directory_id)
+            directory = self.__inner.get_one_directory(directory_id)
             if self.__validate_capability_statement and not self.check_capability_statement(directory):
                 raise HTTPException(
                     status_code=400,
@@ -62,7 +61,7 @@ class CachingDirectoryProvider(DirectoryProvider):
                 status_code=404,
                 detail="Failed to retrieve directory from the directory provider and no cached data was available.",
             )
-            if self.__directoryProvider.check_if_directory_is_deleted(directory_id):
+            if self.__inner.directory_is_deleted(directory_id):
                 original_directory.is_deleted = True
                 self.__directory_cache_service.set_directory_cache(
                     original_directory
@@ -80,7 +79,7 @@ class CachingDirectoryProvider(DirectoryProvider):
 
     def __common_directory_cache_logic(self, include_ignored: bool, original_directories: list[DirectoryDto]) -> list[DirectoryDto]:
         try:
-            directories = self.__directoryProvider.get_all_directories(include_ignored=include_ignored)
+            directories = self.__inner.get_all_directories(include_ignored=include_ignored)
             if self.__validate_capability_statement:
                 directories = [d for d in directories if self.check_capability_statement(d)]
         except Exception as e:  # Retrieving directories failed
@@ -100,7 +99,7 @@ class CachingDirectoryProvider(DirectoryProvider):
 
         for original_directory in original_directories:
             if original_directory.id not in [directory.id for directory in directories]:
-                if self.__directoryProvider.check_if_directory_is_deleted(original_directory.id):
+                if self.__inner.directory_is_deleted(original_directory.id):
                     self.__directory_cache_service.set_directory_cache(
                         DirectoryDto(
                             id=original_directory.id,
@@ -110,3 +109,7 @@ class CachingDirectoryProvider(DirectoryProvider):
                         )
                     )
         return directories
+
+    def directory_is_deleted(self, directory_id: str) -> bool:
+        return self.__inner.directory_is_deleted(directory_id)
+

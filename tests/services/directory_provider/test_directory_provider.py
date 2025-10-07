@@ -10,7 +10,7 @@ class MockDirectoryProvider(DirectoryProvider):
 
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
         return self.directories
-    
+
     def get_all_directories_include_ignored(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
         return self.directories
 
@@ -19,6 +19,12 @@ class MockDirectoryProvider(DirectoryProvider):
         if directory is None:
             raise ValueError(f"Directory with ID '{directory_id}' not found.")
         return directory
+
+    def directory_is_deleted(self, directory_id: str) -> bool:
+        directory =  next((s for s in self.directories if s.id == directory_id), None)
+        if directory is None:
+            raise ValueError(f"Directory with ID '{directory_id}' not found.")
+        return directory.is_deleted
 
 
 @pytest.fixture

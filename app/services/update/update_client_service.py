@@ -198,7 +198,7 @@ class UpdateClientService:
                 lock.release()
         else:
             return {
-                "message": f"cannot perform uptate, {directory.id} currently in the background"
+                "message": f"cannot perform update, {directory.id} is currently locked",
             }
 
         return {

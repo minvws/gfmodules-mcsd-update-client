@@ -58,7 +58,7 @@ class DirectoryProviderFactory:
             )
             directory_cache_service = DirectoryCacheService(self.__db)
             return CachingDirectoryProvider(
-                directory_provider=directory_api_provider,
+                inner_directory_provider=directory_api_provider,
                 directory_cache_service=directory_cache_service,
                 validate_capability_statement=self.__mcsd_config.check_capability_statement,
             )
