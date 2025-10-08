@@ -7,10 +7,6 @@ from app.db.db import Database
 from app.models.adjacency.node import Node, NodeReference
 from app.services.api.fhir_api import FhirApi
 from app.services.entity.resource_map_service import ResourceMapService
-from app.services.entity.ignored_directory_service import (
-    IgnoredDirectoryService,
-)
-from app.services.entity.directory_cache_service import DirectoryCacheService
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.fhir.bundle.parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
@@ -29,26 +25,11 @@ def config() -> Config:
     return get_config()
 
 
-@pytest.fixture
-def ignored_directory_service(
-    database: Database, config: Config
-) -> IgnoredDirectoryService:
-    set_config(config)
-    return IgnoredDirectoryService(database=database)
-
 
 @pytest.fixture()
 def directory_info_service(database: Database, config: Config) -> DirectoryInfoService:
     set_config(config)
-    return DirectoryInfoService(database=database, directory_stale_timeout_seconds=0)
-
-
-@pytest.fixture()
-def directory_cache_service(
-    database: Database, config: Config
-) -> DirectoryCacheService:
-    set_config(config)
-    return DirectoryCacheService(database=database)
+    return DirectoryInfoService(database=database, directory_marked_as_unhealthy_after_success_timeout_seconds=3600, cleanup_delay_after_client_directory_marked_deleted_in_sec=2592000)
 
 
 @pytest.fixture()
@@ -260,9 +241,9 @@ def null_authenticator() -> NullAuthenticator:
 @pytest.fixture()
 def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
     return FhirApi(
-        timeout=config.directory_api.timeout,
-        backoff=config.directory_api.backoff,
-        retries=config.directory_api.retries,
+        timeout=config.client_directory.timeout,
+        backoff=config.client_directory.backoff,
+        retries=config.client_directory.retries,
         auth=null_authenticator,
         base_url="http://example.com/fhir",
         request_count=10,
