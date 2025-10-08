@@ -17,6 +17,7 @@ class ExternalCachingService(CachingService):
         ssl: bool = False,
         ssl_keyfile: str | None = None,
         ssl_ca_certs: str | None = None,
+        ssl_certfile: str | None = None,
         ssl_check_hostname: bool = True,
     ) -> None:
         self.run_id = run_id
@@ -26,6 +27,7 @@ class ExternalCachingService(CachingService):
             db=0,
             ssl=ssl,
             ssl_keyfile=ssl_keyfile,
+            ssl_certfile=ssl_certfile,
             ssl_ca_certs=ssl_ca_certs,
             ssl_check_hostname=ssl_check_hostname,
         )

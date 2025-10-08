@@ -26,6 +26,7 @@ class CacheProvider:
                 port=self.__config.port,
                 ssl=self.__config.ssl,
                 ssl_keyfile=self.__config.key,
+                ssl_certfile=self.__config.cert,
                 ssl_ca_certs=self.__config.cafile,
                 ssl_check_hostname=self.__config.check_hostname,
             )
