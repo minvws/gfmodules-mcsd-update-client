@@ -40,7 +40,7 @@ def get_one_directory(
 ) -> Dict[str, Any]:
     directory = provider.get_one_directory(_id)
     if directory is None:
-        logger.warning(f"Directory with ID {_id} not found.")
+        logger.warning("Directory with ID not found.")
         return {}
 
     return directory.model_dump()
