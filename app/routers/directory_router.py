@@ -7,7 +7,7 @@ from app.container import (
 from app.services.directory_provider.directory_provider import DirectoryProvider
 from app.services.entity.directory_info_service import DirectoryInfoService
 
-import logging 
+import logging
 from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,9 @@ def get_all_directories(
 def get_one_directory(
     _id: str, provider: DirectoryProvider = Depends(get_directory_provider),
 ) -> Dict[str, Any]:
-    return provider.get_one_directory(_id).model_dump()
+    directory = provider.get_one_directory(_id)
+    if directory is None:
+        logger.warning("Directory with ID not found.")
+        return {}
 
-
+    return directory.model_dump()

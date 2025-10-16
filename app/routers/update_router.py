@@ -44,6 +44,9 @@ def update_single_directory(
 ) -> Any:
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
     directory = directory_provider.get_one_directory(directory_id)
+    if directory is None:
+        raise HTTPException(status_code=404, detail=f"Directory {directory_id} not found")
+
     if not override_ignore:
         is_ignored = directory_service.get_one_by_id(directory_id).is_ignored
 
