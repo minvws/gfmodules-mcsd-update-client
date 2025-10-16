@@ -43,7 +43,6 @@ class DirectoryJsonProvider(DirectoryProvider):
 
     @staticmethod
     def _read_directories_file(directory_urls_path: str) -> List[DirectoryDto]:
-        print(__name__)
         try:
             with open(directory_urls_path) as f:
                 data = json.load(f)
