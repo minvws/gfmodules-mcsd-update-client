@@ -17,6 +17,7 @@ from app.services.entity.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.fhir_api import FhirApi
 from app.services.update.computation_service import ComputationService
+from app.services.update.filter_ura import filter_ura
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ class AdjacencyMapService:
         update_client_api: FhirApi,
         resource_map_service: ResourceMapService,
         cache_service: CachingService,
+        ura_whitelist: list[str],
     ) -> None:
         self.directory_id = directory_id
         self.__directory_api = directory_api
@@ -55,6 +57,7 @@ class AdjacencyMapService:
         self.__computation_service = ComputationService(
             directory_id=directory_id,
         )
+        self.__ura_whitelist = ura_whitelist
 
     def build_adjacency_map(self, entries: List[BundleEntry]) -> AdjacencyMap:
         nodes = [self.create_node(entry) for entry in entries]
@@ -105,7 +108,7 @@ class AdjacencyMapService:
                 logger.error("Cannot resolve all references: %s", unresolved)
                 raise AdjacencyMapException("Unresolved references found")
         # All references are now resolved.
-        
+
 
     def _resolve_from_cache(
         self,
@@ -128,7 +131,7 @@ class AdjacencyMapService:
         if to_fetch:
             missing_entries = self.get_directory_data(
                 [BundleRequestParams(**ref.model_dump()) for ref in missing_refs]
-            )  
+            )
             # Create nodes for the entries we found
             missing_nodes = [self.create_node(entry) for entry in missing_entries]
             if missing_nodes:
@@ -164,6 +167,8 @@ class AdjacencyMapService:
                 resource_map=resource_map,
             )
             node.update_data = self.create_update_data(node, resource_map)
+
+
 
     def __filter_entries(self, entries: Bundle) -> List[BundleEntry]:
         return FhirService.filter_history_entries(
@@ -273,6 +278,11 @@ class AdjacencyMapService:
                     raise InvalidNodeStateException(
                         f"Resource {node.resource_id} {node.resource_type} cannot be None when a node is marked `new`"
                     )
+
+                # Filter URAs only for Organizations
+                if getattr(resource, "resource_type", None) == "Organization":
+                    resource = filter_ura(resource, self.__ura_whitelist)
+
                 FhirService.namespace_resource_references(resource, self.directory_id)
                 resource.id = update_client_resource_id
                 entry.resource = resource

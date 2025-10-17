@@ -197,6 +197,7 @@ class UpdateClientService:
             update_client_api=self.__update_client_fhir_api,
             resource_map_service=self.__resource_map_service,
             cache_service=cache_service,
+            ura_whitelist=[],
         )
 
         next_params: Dict[str, Any] | None = directory_fhir_api.build_history_params(
