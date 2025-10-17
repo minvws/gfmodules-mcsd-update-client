@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 from app.config import Config, ConfigExternalCache, set_config, get_config
 from app.db.db import Database
 from app.models.adjacency.node import Node, NodeReference
-from app.services.api.fhir_api import FhirApi
+from app.services.api.fhir_api import FhirApi, FhirApiConfig
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.fhir.bundle.parser import create_bundle_entry
@@ -240,7 +240,7 @@ def null_authenticator() -> NullAuthenticator:
 
 @pytest.fixture()
 def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
-    return FhirApi(
+    api_config = FhirApiConfig(
         timeout=config.client_directory.timeout,
         backoff=config.client_directory.backoff,
         retries=config.client_directory.retries,
@@ -248,7 +248,11 @@ def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
         base_url="http://example.com/fhir",
         request_count=10,
         fill_required_fields=False,
+        mtls_cert=None,
+        mtls_key=None,
+        mtls_ca=None,
     )
+    return FhirApi(api_config)
 
 
 @pytest.fixture()

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -23,33 +24,36 @@ ERR_MSG_FORMAT = "FHIR API error: %s"
 HTTP_ERR_MSG = "An error occurred while processing a FHIR request."
 logger = logging.getLogger(__name__)
 
+@dataclass
+class FhirApiConfig:
+    base_url: str
+    auth: Authenticator
+    timeout: int
+    retries: int
+    backoff: float
+    mtls_cert: str | None
+    mtls_key: str | None
+    mtls_ca: str | None
+    request_count: int
+    fill_required_fields: bool
 
 class FhirApi(HttpService):
     def __init__(
         self,
-        base_url: str,
-        timeout: int,
-        backoff: float,
-        auth: Authenticator,
-        request_count: int,
-        fill_required_fields: bool,
-        retries: int,
-        mtls_cert: str | None = None,
-        mtls_key: str | None = None,
-        mtls_ca: str | None = None,
+        config: FhirApiConfig,
     ):
         super().__init__(
-            base_url=base_url,
-            timeout=timeout,
-            backoff=backoff,
-            retries=retries,
-            authenticator=auth,
-            mtls_ca=mtls_ca,
-            mtls_cert=mtls_cert,
-            mtls_key=mtls_key,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            backoff=config.backoff,
+            retries=config.retries,
+            authenticator=config.auth,
+            mtls_ca=config.mtls_ca,
+            mtls_cert=config.mtls_cert,
+            mtls_key=config.mtls_key,
         )
-        self.request_count = request_count
-        self.__fhir_service = FhirService(fill_required_fields)
+        self.request_count = config.request_count
+        self.__fhir_service = FhirService(config.fill_required_fields)
 
     def post_bundle(self, bundle: Bundle) -> tuple[Bundle, list[BundleError]]:
         """

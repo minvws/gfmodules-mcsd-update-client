@@ -1,3 +1,4 @@
+from app.services.api.fhir_api import FhirApiConfig
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.directory_provider.factory import DirectoryProviderFactory
 from app.services.directory_provider.directory_provider import DirectoryProvider
@@ -28,7 +29,7 @@ def container_config(binder: inject.Binder) -> None:
     auth = auth_factory.create_authenticator()
 
     directory_info_service = DirectoryInfoService(
-        db, 
+        db,
         config.client_directory.directory_marked_as_unhealthy_after_success_timeout_in_sec, # type: ignore
         config.client_directory.cleanup_delay_after_client_directory_marked_deleted_in_sec # type: ignore
     )
@@ -40,20 +41,23 @@ def container_config(binder: inject.Binder) -> None:
     directory_provider = directory_provider_factory.create()
     binder.bind(DirectoryProvider, directory_provider)
 
-    cache_provider = CacheProvider(config=config.external_cache)
-    update_service = UpdateClientService(
-        update_client_url=config.mcsd.update_client_url,
+    api_config = FhirApiConfig(
+        base_url=config.mcsd.update_client_url,
         fill_required_fields=config.mcsd.fill_required_fields,
         timeout=config.client_directory.timeout,
         backoff=config.client_directory.backoff,
         request_count=config.mcsd.request_count,
-        resource_map_service=resource_map_service,
         auth=auth,
-        cache_provider=cache_provider,
         retries=config.client_directory.retries,
         mtls_cert=config.mcsd.mtls_client_cert_path,
         mtls_key=config.mcsd.mtls_client_key_path,
         mtls_ca=config.mcsd.mtls_server_ca_path,
+    )
+    cache_provider = CacheProvider(config=config.external_cache)
+    update_service = UpdateClientService(
+        api_config=api_config,
+        resource_map_service=resource_map_service,
+        cache_provider=cache_provider,
     )
     binder.bind(UpdateClientService, update_service)
 

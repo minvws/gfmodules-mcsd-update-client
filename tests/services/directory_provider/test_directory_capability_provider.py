@@ -7,6 +7,7 @@ import pytest
 from app.services.directory_provider.capability_provider import CapabilityProvider
 from app.services.directory_provider.directory_provider import DirectoryProvider
 from app.models.directory.dto import DirectoryDto
+from app.services.api.fhir_api import FhirApiConfig
 
 
 def _dto(id_: str, url: str = "https://example.org/fhir") -> DirectoryDto:
@@ -103,8 +104,8 @@ def test_get_one_directory_propagates_none_from_inner(provider: DirectoryProvide
 
 def test_check_capability_statement_success(monkeypatch: pytest.MonkeyPatch, caplog: Any) -> None:
     class FakeFhirApi:
-        def __init__(self, **kwargs) -> None: # type: ignore
-            assert "base_url" in kwargs
+        def __init__(self, _config: FhirApiConfig): ...
+
         def validate_capability_statement(self) -> bool:
             return True
 
@@ -121,7 +122,7 @@ def test_check_capability_statement_success(monkeypatch: pytest.MonkeyPatch, cap
 
 def test_check_capability_statement_failure_logs_warning(monkeypatch: pytest.MonkeyPatch, caplog: Any) -> None:
     class FakeFhirApi:
-        def __init__(self, **kwargs): ...  # type: ignore
+        def __init__(self, _config: FhirApiConfig): ...
         def validate_capability_statement(self) -> bool:
             return False
 

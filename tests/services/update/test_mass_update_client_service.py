@@ -19,7 +19,7 @@ def mock_directory_provider() -> MagicMock:
 @pytest.fixture
 def mass_update_client_service(
     mock_update_client_service: MagicMock,
-    mock_directory_provider: MagicMock, 
+    mock_directory_provider: MagicMock,
     directory_info_service: DirectoryInfoService,
 ) -> MassUpdateClientService:
     return MassUpdateClientService(
@@ -108,7 +108,7 @@ def test_cleanup_old_directories_ignores_directories_with_failed_attempts_thresh
             assert not d.is_ignored
         else:
             assert d.is_ignored
-    
+
     mock_update_client_service.cleanup.assert_not_called()
 
 
@@ -118,20 +118,20 @@ def test_cleanup_old_directories_cleans_deleted_directories_from_cache(
     mock_update_client_service: MagicMock
 ) -> None:
     directory_info_service.update(
-        directory_id="deleted_2", 
-            endpoint_address="http://example.com", 
+        directory_id="deleted_2",
+            endpoint_address="http://example.com",
             deleted_at=datetime.now() - timedelta(days=1)
         )
     directory_info_service.update(
-        directory_id="deleted_1", 
-            endpoint_address="http://example.com", 
+        directory_id="deleted_1",
+            endpoint_address="http://example.com",
             deleted_at=datetime.now() - timedelta(days=1)
         )
 
     mass_update_client_service.cleanup_old_directories()
 
     assert mock_update_client_service.cleanup.call_count == 2
-    
+
     assert len(directory_info_service.get_all(include_ignored=True, include_deleted=True)) == 0
 
 
@@ -141,13 +141,13 @@ def test_cleanup_old_directories_skips_deleted_directories_when_disabled(
     mass_update_client_service: MassUpdateClientService,
 ) -> None:
     directory_info_service.update(
-        directory_id="deleted_2", 
-            endpoint_address="http://example.com", 
+        directory_id="deleted_2",
+            endpoint_address="http://example.com",
             deleted_at=datetime.now() - timedelta(days=1)
         )
     directory_info_service.update(
-        directory_id="deleted_1", 
-            endpoint_address="http://example.com", 
+        directory_id="deleted_1",
+            endpoint_address="http://example.com",
             deleted_at=datetime.now() - timedelta(days=1)
         )
 
@@ -177,29 +177,29 @@ def test_cleanup_old_directories_mixed_scenarios(
 ) -> None:
     directory_info_service.update(
         directory_id="very_old_directory",
-        endpoint_address="http://example.com", 
+        endpoint_address="http://example.com",
             last_success_sync=datetime.now() - timedelta(hours=30),
         )
     directory_info_service.update(
         directory_id="old_directory",
-        endpoint_address="http://example.com", 
+        endpoint_address="http://example.com",
             last_success_sync=datetime.now() - timedelta(seconds=4000),
         )
     directory_info_service.update(
         directory_id="recent_directory",
-        endpoint_address="http://example.com", 
+        endpoint_address="http://example.com",
             last_success_sync=datetime.now() - timedelta(minutes=10),
         )
     directory_info_service.update(
         directory_id="never_synced",
-        endpoint_address="http://example.com", 
+        endpoint_address="http://example.com",
             last_success_sync=None,
             failed_attempts=20,
             failed_sync_count=20,
         )
     directory_info_service.update(
         directory_id="lrza_deleted_directory",
-        endpoint_address="http://example.com", 
+        endpoint_address="http://example.com",
             deleted_at=datetime.now() - timedelta(days=1),
         )
 

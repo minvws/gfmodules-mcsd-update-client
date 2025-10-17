@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime
 import threading
 import time
@@ -26,9 +27,8 @@ from app.services.update.adjacency_map_service import (
 from app.services.entity.resource_map_service import (
     ResourceMapService,
 )
-from app.services.api.authenticators.authenticator import Authenticator
 from app.services.fhir.fhir_service import FhirService
-from app.services.api.fhir_api import FhirApi
+from app.services.api.fhir_api import FhirApi, FhirApiConfig
 
 logger = logging.getLogger(__name__)
 
@@ -47,40 +47,13 @@ class CacheServiceUnavailableException(UpdateClientException):
 class UpdateClientService:
     def __init__(
         self,
-        update_client_url: str,
-        fill_required_fields: bool,
-        timeout: int,
-        backoff: float,
-        retries: int,
-        request_count: int,
+        api_config: FhirApiConfig,
         resource_map_service: ResourceMapService,
-        auth: Authenticator,
         cache_provider: CacheProvider,
-        mtls_cert: str | None = None,
-        mtls_key: str | None = None,
-        mtls_ca: str | None = None,
     ) -> None:
-        self.fill_required_fields = fill_required_fields
-        self.timeout = timeout
-        self.backoff = backoff
-        self.auth = auth
-        self.request_count = request_count
+        self.api_config = api_config
         self.__resource_map_service = resource_map_service
-        self.mtls_cert = mtls_cert
-        self.mtls_key = mtls_key
-        self.mtls_ca = mtls_ca
-        self.__update_client_fhir_api = FhirApi(
-            base_url=update_client_url,
-            auth=auth,
-            timeout=timeout,
-            retries=retries,
-            backoff=backoff,
-            mtls_cert=self.mtls_cert,
-            mtls_key=self.mtls_key,
-            mtls_ca=self.mtls_ca,
-            request_count=request_count,
-            fill_required_fields=fill_required_fields,
-        )
+        self.__update_client_fhir_api = FhirApi(api_config)
         self.__cache_provider = cache_provider
         self.mutex: Dict[str, threading.Lock] = {}
         self.directory_lock = threading.Lock()
@@ -214,18 +187,9 @@ class UpdateClientService:
         cache_service: CachingService,
         since: datetime | None = None,
     ) -> None:
-        directory_fhir_api = FhirApi(
-            timeout=self.timeout,
-            backoff=self.backoff,
-            auth=self.auth,
-            request_count=self.request_count,
-            fill_required_fields=self.fill_required_fields,
-            base_url=directory.endpoint_address,
-            retries=10,
-            mtls_cert=self.mtls_cert,
-            mtls_key=self.mtls_key,
-            mtls_ca=self.mtls_ca,
-        )
+        config = copy.deepcopy(self.api_config)
+        config.base_url = directory.endpoint_address
+        directory_fhir_api = FhirApi(config)
 
         adjacency_map_service = AdjacencyMapService(
             directory_id=directory.id,
