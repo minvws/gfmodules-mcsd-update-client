@@ -16,6 +16,7 @@ from app.models.resource_map.dto import (
     ResourceMapUpdateDto,
 )
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
+from app.services.api.fhir_api import FhirApiConfig
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
 from app.services.update.cache.in_memory import InMemoryCachingService
@@ -88,15 +89,21 @@ def directory_dto() -> DirectoryDto:
 
 @pytest.fixture
 def update_client_service(resource_map_service: MagicMock) -> UpdateClientService:
-    return UpdateClientService(
-        update_client_url="https://example.com",
+    api_config = FhirApiConfig(
+        base_url="https://example.com",
         fill_required_fields=False,
         timeout=30,
         backoff=0.1,
         retries=5,
         request_count=3,
-        resource_map_service=resource_map_service,
         auth=NullAuthenticator(),
+        mtls_cert=None,
+        mtls_key=None,
+        mtls_ca=None,
+    )
+    return UpdateClientService(
+        api_config=api_config,
+        resource_map_service=resource_map_service,
         cache_provider=CacheProvider(config=ConfigExternalCache()),
     )
 
@@ -339,7 +346,7 @@ def test_update_resource_requests_history_batch(
         "GET",
         sub_route=f"{McsdResources.ENDPOINT.value}/_history",
         params={
-            "_count": str(update_client_service.request_count),
+            "_count": str(3),
             "_since": since.isoformat(),
         },
     )
@@ -434,7 +441,7 @@ def test_update_requests_resources(
     for res_type in McsdResources:
         mock_request.assert_any_call(
             method="GET",
-            url=f"https://example.com/directory/{res_type.value}/_history?_count={update_client_service.request_count}&_since={since.isoformat()}",
+            url=f"https://example.com/directory/{res_type.value}/_history?_count=3&_since={since.isoformat()}",
             headers=ANY,
             timeout=ANY,
             json=ANY,

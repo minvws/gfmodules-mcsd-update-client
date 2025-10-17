@@ -1,5 +1,5 @@
 from app.services.api.authenticators.authenticator import Authenticator
-from app.services.api.fhir_api import FhirApi
+from app.services.api.fhir_api import FhirApi, FhirApiConfig
 from app.services.directory_provider.capability_provider import CapabilityProvider
 from app.services.directory_provider.fhir_provider import FhirDirectoryProvider
 from app.services.entity.directory_info_service import DirectoryInfoService
@@ -37,19 +37,20 @@ class DirectoryProviderFactory:
             # Use API-based provider if directories_provider_url is provided
 
             # Api service to interact with the FHIR server
+            config = FhirApiConfig(
+                timeout=self.__directory_config.timeout,
+                backoff=self.__directory_config.backoff,
+                auth=self.__auth,
+                base_url=self.__directory_config.directories_provider_url,
+                request_count=5,
+                fill_required_fields=False,
+                retries=10,
+                mtls_cert=self.__mcsd_config.mtls_client_cert_path,
+                mtls_key=self.__mcsd_config.mtls_client_key_path,
+                mtls_ca=self.__mcsd_config.mtls_server_ca_path,
+            )
             api_service = DirectoryApiService(
-                fhir_api=FhirApi(
-                    timeout=self.__directory_config.timeout,
-                    backoff=self.__directory_config.backoff,
-                    auth=self.__auth,
-                    base_url=self.__directory_config.directories_provider_url,
-                    request_count=5,
-                    fill_required_fields=False,
-                    retries=10,
-                    mtls_cert=self.__mcsd_config.mtls_client_cert_path,
-                    mtls_key=self.__mcsd_config.mtls_client_key_path,
-                    mtls_ca=self.__mcsd_config.mtls_server_ca_path,
-                ),
+                fhir_api=FhirApi(config),
                 provider_url=self.__directory_config.directories_provider_url,
             )
 
