@@ -290,5 +290,5 @@ def adjacency_map_service(
         update_client_api=fhir_api,
         resource_map_service=resource_map_service,
         cache_service=in_memory_cache_service,
-        ura_whitelist=[],
+        uras_allowed=[],
     )

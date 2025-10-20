@@ -177,6 +177,7 @@ def mock_get_history_batch(
     return_value=[
         DirectoryDto(
             id="test-directory",
+            ura="87654321",
             endpoint_address="https://testserver/test",
         )
     ],
@@ -185,6 +186,7 @@ def mock_get_history_batch(
     "app.services.api.directory_api_service.DirectoryApiService.fetch_one_directory",
     return_value=DirectoryDto(
         id="test-directory",
+        ura="87654321",
         endpoint_address="https://testserver/test",
     ),
 )

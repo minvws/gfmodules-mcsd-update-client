@@ -7,9 +7,9 @@ from app.services.entity.directory_info_service import DirectoryInfoService
 
 def dto_list() -> list[DirectoryDto]:
     return [
-        DirectoryDto(id="dir_1", endpoint_address="http://example.com/1"),
-        DirectoryDto(id="dir_2", endpoint_address="http://example.com/2"),
-        DirectoryDto(id="dir_3", endpoint_address="http://example.com/3", is_ignored=True),
+        DirectoryDto(id="dir_1", ura="87654321", endpoint_address="http://example.com/1"),
+        DirectoryDto(id="dir_2", ura="87654322", endpoint_address="http://example.com/2"),
+        DirectoryDto(id="dir_3", ura="87654323", endpoint_address="http://example.com/3", is_ignored=True),
     ]
 
 

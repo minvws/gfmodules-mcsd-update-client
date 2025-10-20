@@ -84,6 +84,7 @@ def resource_map_service() -> MagicMock:
 def directory_dto() -> DirectoryDto:
     return DirectoryDto(
         id="1",
+        ura="87654321",
         endpoint_address="https://example.com/directory",
     )
 
@@ -670,5 +671,6 @@ def test_update_invokes_update_resource_for_all_resource_types(
             directory_dto,
             res.value,
             fake_cache,
+            None,
             None,
         )

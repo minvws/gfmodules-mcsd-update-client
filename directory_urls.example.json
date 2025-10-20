@@ -1,19 +1,23 @@
 {
     "directories": [
         {
-            "id": "cloud-directory", 
+            "id": "cloud-directory",
+            "ura": "12345678",
             "endpoint_address": "http://cloud-directory:1234/fhir"
         },
         {
-            "id": "data-directory", 
+            "id": "data-directory",
+            "ura": "11111111",
             "endpoint_address": "http://data-directory:8080/fhir"
         },
         {
-            "id": "R5-hapi", 
+            "id": "R5-hapi",
+            "ura": "22222222",
             "endpoint_address": "http://r5-hapi:9876/fhir"
         },
         {
-            "id": "R4-hapi", 
+            "id": "R4-hapi",
+            "ura": "33333333",
             "endpoint_address": "http://r4-directory:80/fhir"
         }
     ]

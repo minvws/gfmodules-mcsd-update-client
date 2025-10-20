@@ -11,6 +11,7 @@ class TestDirectoryInfoService:
     def sample_directory_info_ignored(self) -> DirectoryDto:
         return DirectoryDto(
             id="test-directory-ignored",
+            ura="87654321",
             endpoint_address="https://example.com/fhir",
             failed_sync_count=2,
             failed_attempts=1,
@@ -22,6 +23,7 @@ class TestDirectoryInfoService:
     def sample_directory_info_deleted(self) -> DirectoryDto:
         return DirectoryDto(
             id="test-directory-deleted",
+            ura="87654321",
             endpoint_address="https://example.com/fhir",
             last_success_sync=datetime.now() - timedelta(hours=1),
             deleted_at=datetime.now(),
@@ -157,7 +159,7 @@ class TestDirectoryInfoService:
     ) -> None:
         with pytest.raises(HTTPException, match="Directory with ID nonexistent not found"):
             directory_info_service.set_ignored_status("nonexistent", ignored=True)
-    
+
     def test_health_check_all_healthy(
         self,
         directory_info_service: DirectoryInfoService,

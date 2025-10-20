@@ -10,7 +10,7 @@ class MockDirectoryProvider(DirectoryProvider):
 
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
         return self.directories
-    
+
     def get_all_directories_include_ignored_ids(self, include_ignored_ids: List[str]) -> List[DirectoryDto]:
         return self.directories
 
@@ -25,10 +25,14 @@ class MockDirectoryProvider(DirectoryProvider):
 def mock_directories() -> list[DirectoryDto]:
     return [
         DirectoryDto(
-            id="1", endpoint_address="http://example.com/directory1"
+            id="1",
+            ura="11111111",
+            endpoint_address="http://example.com/directory1"
         ),
         DirectoryDto(
-            id="2", endpoint_address="http://example.com/directory2"
+            id="2",
+            ura="22222222",
+            endpoint_address="http://example.com/directory2"
         ),
     ]
 

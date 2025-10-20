@@ -17,7 +17,10 @@ class DirectoryInfoService:
     """
 
     def __init__(
-        self, database: Database, directory_marked_as_unhealthy_after_success_timeout_seconds: int, cleanup_delay_after_client_directory_marked_deleted_in_sec: int
+        self,
+        database: Database,
+        directory_marked_as_unhealthy_after_success_timeout_seconds: int,
+        cleanup_delay_after_client_directory_marked_deleted_in_sec: int
     ) -> None:
         self.__database = database
         self.__directory_marked_as_unhealthy_after_success_timeout_seconds = directory_marked_as_unhealthy_after_success_timeout_seconds,
@@ -30,6 +33,7 @@ class DirectoryInfoService:
         #  Check if kwargs are valid fields of DirectoryDto
         if not kwargs:
             raise ValueError("No fields provided for update")
+
         valid_fields = {field for field in DirectoryDto.__annotations__.keys() if field != "id"}
         for key in kwargs.keys():
             if key not in valid_fields:
@@ -51,7 +55,7 @@ class DirectoryInfoService:
             session.commit()
             session.session.refresh(directory_info)
             return directory_info.to_dto()
-    
+
 
     def delete(self, directory_id: str) -> None:
         """
@@ -75,6 +79,7 @@ class DirectoryInfoService:
             directory = repository.get_by_id(directory_id)
         if directory is None:
             raise HTTPException(status_code=404, detail=f"Directory with ID {directory_id} not found")
+
         return directory.to_dto()
 
     def get_all(
@@ -87,7 +92,7 @@ class DirectoryInfoService:
             repository = session.get_repository(DirectoryInfoRepository)
             directories = repository.get_all(include_deleted=include_deleted, include_ignored=include_ignored)
             return [directory.to_dto() for directory in directories]
-    
+
     def get_all_including_ignored_ids(
         self, include_ignored_ids: List[str] | None = None, include_deleted: bool = False
     ) -> List[DirectoryDto]:
@@ -107,7 +112,7 @@ class DirectoryInfoService:
             repository = session.get_repository(DirectoryInfoRepository)
             directories = repository.get_all_deleted()
             return [directory.to_dto() for directory in directories]
-        
+
     def exists(self, directory_id: str) -> bool:
         """
         Checks if a directory information entry exists by its ID.
@@ -115,7 +120,7 @@ class DirectoryInfoService:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoRepository)
             return repository.exists(directory_id)
-        
+
     def set_deleted_at(self, directory_id: str, specific_datetime: datetime | None = None) -> None:
         """
         Sets the deleted_at timestamp for a directory.
@@ -194,7 +199,7 @@ class DirectoryInfoService:
         with self.__database.get_db_session() as session:
             repository = session.get_repository(DirectoryInfoRepository)
             directories = repository.get_all(include_deleted=False, include_ignored=False)
-            
+
             for s in directories:
                 labels = f'directory_id="{s.id}"'
 

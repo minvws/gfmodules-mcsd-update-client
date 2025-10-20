@@ -12,11 +12,13 @@ class MockApi(DirectoryProvider):
         if directory_id == "1":
             return DirectoryDto(
                 id="1",
+                ura="12345678",
                 endpoint_address="http://test1.directory.example.org",
             )
         elif directory_id == "2":
             return DirectoryDto(
                 id="2",
+                ura="12345678",
                 endpoint_address="http://test2.directory.example.org",
             )
         else:
@@ -26,10 +28,12 @@ class MockApi(DirectoryProvider):
         return [
             DirectoryDto(
                 id="1",
+                ura="12345678",
                 endpoint_address="http://test1.directory.example.org",
             ),
             DirectoryDto(
                 id="2",
+                ura="12345678",
                 endpoint_address="http://test2.directory.example.org",
             ),
         ]

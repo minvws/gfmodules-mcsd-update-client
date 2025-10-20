@@ -10,6 +10,7 @@ from app.container import (
     get_update_client_service,
 )
 from app.services.entity.directory_info_service import DirectoryInfoService
+from app.services.update.filter_ura import create_ura_whitelist
 from app.services.update.update_client_service import UpdateClientService
 from app.services.directory_provider.directory_provider import DirectoryProvider
 
@@ -29,8 +30,9 @@ def update_all_directories(
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
 
     directories = directory_provider.get_all_directories_include_ignored_ids(include_ignored_ids=override_ignore if override_ignore else [])
+    ura_whitelist = create_ura_whitelist(directories)
 
-    return [service.update(directory, since) for directory in directories]
+    return [service.update(directory, since, ura_whitelist) for directory in directories]
 
 
 @router.post("/{directory_id}", response_model=None, summary="Update by directory ID")
@@ -42,6 +44,11 @@ def update_single_directory(
     directory_provider: DirectoryProvider = Depends(get_directory_provider),
     directory_service: DirectoryInfoService = Depends(get_directory_info_service),
 ) -> Any:
+
+    # Even though we update a single directory, we still need to build the URA whitelist from all directories
+    all_directories = directory_provider.get_all_directories()
+    ura_whitelist = create_ura_whitelist(all_directories)
+
     since = query_params.since.astimezone(timezone.utc) if query_params.since else None
     directory = directory_provider.get_one_directory(directory_id)
     if directory is None:
@@ -56,5 +63,5 @@ def update_single_directory(
                 detail=f"Directory {directory_id} is ignored. Use override_ignore to update.",
             )
 
-    return service.update(directory, since)
+    return service.update(directory, since, ura_whitelist)
 
