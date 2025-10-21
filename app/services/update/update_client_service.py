@@ -29,6 +29,7 @@ from app.services.entity.resource_map_service import (
 )
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.fhir_api import FhirApi, FhirApiConfig
+from app.services.update.filter_ura import UraWhitelist
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +146,7 @@ class UpdateClientService:
                     f"Errors occurred when flushing delete bundle for stale directory {directory_id}: {errors}"
                 )
 
-    def update(self, directory: DirectoryDto, since: datetime | None = None) -> Any:
+    def update(self, directory: DirectoryDto, since: datetime | None = None, ura_whitelist: UraWhitelist | None = None) -> Any:
         current_thread = threading.current_thread()
         logger.debug(f"starting update for {directory.id} from {current_thread.name}")
 
@@ -162,7 +163,7 @@ class UpdateClientService:
                 start_time = time.time()
 
                 for res in McsdResources:
-                    self.update_resource(directory, res.value, cache_service, since)
+                    self.update_resource(directory, res.value, cache_service, since, ura_whitelist)
                     time.sleep(0.5)
                 results = cache_service.keys()
                 end_time = time.time()
@@ -171,7 +172,7 @@ class UpdateClientService:
                 lock.release()
         else:
             return {
-                "message": f"cannot perform uptate, {directory.id} currently in the background"
+                "message": f"cannot perform update, {directory.id} currently in the background"
             }
 
         return {
@@ -186,6 +187,7 @@ class UpdateClientService:
         resource_type: str,
         cache_service: CachingService,
         since: datetime | None = None,
+        ura_whitelist: UraWhitelist | None = None,
     ) -> None:
         config = copy.deepcopy(self.api_config)
         config.base_url = directory.endpoint_address
@@ -197,7 +199,7 @@ class UpdateClientService:
             update_client_api=self.__update_client_fhir_api,
             resource_map_service=self.__resource_map_service,
             cache_service=cache_service,
-            ura_whitelist=[],
+            uras_allowed=ura_whitelist[directory.endpoint_address] if ura_whitelist and directory.endpoint_address in ura_whitelist else [],
         )
 
         next_params: Dict[str, Any] | None = directory_fhir_api.build_history_params(

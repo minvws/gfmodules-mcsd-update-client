@@ -15,6 +15,12 @@ class DirectoryInfo(Base):
         String,
         nullable=False,
     )
+    ura: Mapped[str] = mapped_column(
+        "ura",
+        String,
+        default="",
+        nullable=False,
+    )
     endpoint_address: Mapped[str] = mapped_column(
         "endpoint_address",
         String,
@@ -61,6 +67,7 @@ class DirectoryInfo(Base):
     def to_dto(self) -> DirectoryDto:
         return DirectoryDto(
             id=self.id,
+            ura=self.ura,
             endpoint_address=self.endpoint_address,
             deleted_at=self.deleted_at,
             is_ignored=self.is_ignored,

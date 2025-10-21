@@ -5,6 +5,7 @@ from typing import Any
 from app.models.directory.dto import DirectoryDto
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.directory_provider.directory_provider import DirectoryProvider
+from app.services.update.filter_ura import create_ura_whitelist
 from app.services.update.update_client_service import UpdateClientService
 from app.stats import Stats
 
@@ -28,7 +29,7 @@ class MassUpdateClientService:
         self.__directory_info_service = directory_info_service
         self.__mark_client_directory_as_deleted_after_success_timeout_seconds = mark_client_directory_as_deleted_after_success_timeout_seconds
         self.__stats = stats
-        self.__mark_client_directory_as_deleted_after_lrza_delete = mark_client_directory_as_deleted_after_lrza_delete 
+        self.__mark_client_directory_as_deleted_after_lrza_delete = mark_client_directory_as_deleted_after_lrza_delete
         self.__ignore_client_directory_after_success_timeout_seconds = ignore_client_directory_after_success_timeout_seconds
         self.__ignore_client_directory_after_failed_attempts_threshold = ignore_client_directory_after_failed_attempts_threshold
 
@@ -40,6 +41,9 @@ class MassUpdateClientService:
             except Exception as e:
                 logging.error(f"Failed to retrieve directories: {e}")
                 return []
+
+            ura_whitelist = create_ura_whitelist(all_directories)
+
             data: list[dict[str, Any]] = []
             for directory in all_directories:
                 info = self.__directory_info_service.get_one_by_id(directory.id)
@@ -47,7 +51,9 @@ class MassUpdateClientService:
                 try:
                     data.append(
                         self.__update_client_service.update(
-                            directory, info.last_success_sync
+                            directory,
+                            info.last_success_sync,
+                            ura_whitelist
                         )
                     )
 
@@ -61,7 +67,7 @@ class MassUpdateClientService:
                     self.__directory_info_service.update(directory_id=info.id, failed_attempts=info.failed_attempts, failed_sync_count=info.failed_sync_count)
 
             return data
-    
+
     def cleanup_old_directories(self) -> None:
         with self.__stats.timer("cleanup_old_directories"):
             directories = self.__directory_info_service.get_all(include_ignored=True, include_deleted=True)

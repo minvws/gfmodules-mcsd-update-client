@@ -1,6 +1,9 @@
 import copy
 import logging
 from typing import List
+
+from fhir.resources.R4B.organization import Organization
+
 from app.db.entities.resource_map import ResourceMap
 from app.models.fhir.types import BundleRequestParams
 from app.services.update.cache.caching_service import CachingService
@@ -22,9 +25,10 @@ from app.services.update.filter_ura import filter_ura
 logger = logging.getLogger(__name__)
 
 
+MAX_PASSES = 50
+
 class AdjacencyMapException(Exception):
     """Base exception for adjacency map operations"""
-
     pass
 
 
@@ -36,7 +40,7 @@ def ref_key(ref: NodeReference) -> tuple[str, str]:
     """
     Returns an id we can use for our attempted_keys set.
     """
-    return (ref.resource_type, ref.id)
+    return ref.resource_type, ref.id
 
 
 class AdjacencyMapService:
@@ -47,7 +51,7 @@ class AdjacencyMapService:
         update_client_api: FhirApi,
         resource_map_service: ResourceMapService,
         cache_service: CachingService,
-        ura_whitelist: list[str],
+        uras_allowed: list[str],
     ) -> None:
         self.directory_id = directory_id
         self.__directory_api = directory_api
@@ -57,7 +61,7 @@ class AdjacencyMapService:
         self.__computation_service = ComputationService(
             directory_id=directory_id,
         )
-        self.__ura_whitelist = ura_whitelist
+        self.__uras_allowed = uras_allowed
 
     def build_adjacency_map(self, entries: List[BundleEntry]) -> AdjacencyMap:
         nodes = [self.create_node(entry) for entry in entries]
@@ -74,7 +78,6 @@ class AdjacencyMapService:
         adj_map: AdjacencyMap,
         attempted_keys: set[tuple[str, str]]
     ) -> None:
-        MAX_PASSES = 50
         passes = 0
         while True:
             passes += 1
@@ -169,8 +172,8 @@ class AdjacencyMapService:
             node.update_data = self.create_update_data(node, resource_map)
 
 
-
-    def __filter_entries(self, entries: Bundle) -> List[BundleEntry]:
+    @staticmethod
+    def __filter_entries(entries: Bundle) -> List[BundleEntry]:
         return FhirService.filter_history_entries(
             FhirService.get_entries_from_bundle_of_bundles(entries)
         )
@@ -280,8 +283,8 @@ class AdjacencyMapService:
                     )
 
                 # Filter URAs only for Organizations
-                if getattr(resource, "resource_type", None) == "Organization":
-                    resource = filter_ura(resource, self.__ura_whitelist)
+                if isinstance(resource, Organization):
+                    resource = filter_ura(resource, self.__uras_allowed)
 
                 FhirService.namespace_resource_references(resource, self.directory_id)
                 resource.id = update_client_resource_id
@@ -312,6 +315,10 @@ class AdjacencyMapService:
                     raise InvalidNodeStateException(
                         f"Resource {node.resource_id} {node.resource_type} cannot be None and node marked as `update`"
                     )
+
+                # Filter URAs only for Organizations
+                if isinstance(resource, Organization):
+                    resource = filter_ura(resource, self.__uras_allowed)
 
                 FhirService.namespace_resource_references(resource, self.directory_id)
                 resource.id = update_client_resource_id
