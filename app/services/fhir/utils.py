@@ -1,7 +1,10 @@
+import logging
 from typing import Any, Dict
 
 from fhir.resources.R4B.bundle import Bundle, BundleEntryResponse
 from fhir.resources.R4B.operationoutcome import OperationOutcome
+from fhir.resources.R4B.organization import Organization
+from fhir.resources.R4B.identifier import Identifier
 
 from app.models.fhir.types import (
     McsdResources,
@@ -10,6 +13,9 @@ from app.models.fhir.types import (
     ERROR_SEVERITIES,
 )
 
+logger = logging.getLogger(__name__)
+
+ID_SYSTEM_URA = "http://fhir.nl/fhir/namingsystem/ura" # NOSONAR
 
 def validate_resource_type(resource_type: str) -> bool:
     return any(resource_type in r.value for r in McsdResources)
@@ -46,6 +52,20 @@ def collect_errors(bundle: Bundle) -> list[BundleError]:
         errs.extend(_build_errors_from_response(idx, status_code, resp))
 
     return errs
+
+def get_ura_from_organization(organization: Organization) -> str:
+        """
+        Extracts the URA from the Organization resource's identifier.
+        """
+        for identifier in organization.identifier or []:
+            if isinstance(identifier, Identifier):
+                if identifier.system.lower() == ID_SYSTEM_URA:  # type: ignore
+                    if identifier.value is None:  # type: ignore
+                        raise ValueError("Identifier value is None")
+                    return str(identifier.value)  # type: ignore
+        logger.error(f"Organization {organization.id} has no URA identifier")
+        raise ValueError("No URA identifier found")
+
 
 
 def _parse_status_code(resp: BundleEntryResponse) -> int | None:

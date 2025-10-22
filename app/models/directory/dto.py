@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class DirectoryDto(BaseModel):
     id: str
-    ura: str | None = None
+    ura: str
     endpoint_address: str
     deleted_at: datetime | None = None
     is_ignored: bool = False
