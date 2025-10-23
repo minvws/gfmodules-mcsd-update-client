@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import logging
-from typing import Any, List
+from typing import List
 
 from fastapi import HTTPException
 
@@ -23,35 +23,78 @@ class DirectoryInfoService:
         cleanup_delay_after_client_directory_marked_deleted_in_sec: int
     ) -> None:
         self.__database = database
-        self.__directory_marked_as_unhealthy_after_success_timeout_seconds = directory_marked_as_unhealthy_after_success_timeout_seconds,
+        self.__directory_marked_as_unhealthy_after_success_timeout_seconds = directory_marked_as_unhealthy_after_success_timeout_seconds
         self.__cleanup_delay_after_client_directory_marked_deleted_in_sec = cleanup_delay_after_client_directory_marked_deleted_in_sec
 
-    def update(self, directory_id: str, **kwargs: Any) -> DirectoryDto:
+    def create_or_update(self, directory_id: str, endpoint_address: str, ura: str) -> DirectoryDto:
+        """
+        Creates a new directory information entry or updates an existing one.
+        """
+        if self.exists(directory_id):
+            return self.update(
+                directory_id=directory_id,
+                endpoint_address=endpoint_address,
+                ura=ura
+            )
+        else:
+            return self.create(
+                directory_id=directory_id,
+                endpoint_address=endpoint_address,
+                ura=ura
+            )
+    
+    def create(self, directory_id: str, endpoint_address: str, ura: str) -> DirectoryDto:
+        """
+        Creates a new directory information entry.
+        """
+        if self.exists(directory_id):
+            raise HTTPException(status_code=400, detail=f"Directory with ID {directory_id} already exists")
+        with self.__database.get_db_session() as session:
+            directory_info = DirectoryInfo(
+                id=directory_id,
+                endpoint_address=endpoint_address,
+                ura=ura,
+            )
+            session.add(directory_info)
+            session.commit()
+            session.session.refresh(directory_info)
+            return directory_info.to_dto()
+
+    def update(
+            self, 
+            directory_id: str, 
+            endpoint_address: str | None = None, 
+            ura: str | None = None,
+            deleted_at: datetime | None = None,
+            is_ignored: bool | None = None,
+            failed_sync_count: int | None = None,
+            failed_attempts: int | None = None,
+            last_success_sync: datetime | None = None,
+    ) -> DirectoryDto:
         """
         Updates an existing directory information entry.
         """
-        #  Check if kwargs are valid fields of DirectoryDto
-        if not kwargs:
-            raise ValueError("No fields provided for update")
-
-        valid_fields = {field for field in DirectoryDto.__annotations__.keys() if field != "id"}
-        for key in kwargs.keys():
-            if key not in valid_fields:
-                raise ValueError(f"Invalid field '{key}' for DirectoryDto")
-
         with self.__database.get_db_session() as session:
-            # Get existing directory info
+            # Check if the directory exists
             repository = session.get_repository(DirectoryInfoRepository)
             directory_info = repository.get_by_id(directory_id)
             if directory_info is None:
-                directory_info = DirectoryInfo(
-                    id=directory_id,
-                    **kwargs
-            )
-            else:
-                for key, value in kwargs.items():
-                    setattr(directory_info, key, value)
-            session.add(directory_info)
+                raise HTTPException(status_code=404, detail=f"Directory with ID {directory_id} not found")
+            # Update fields if new values are provided
+            if endpoint_address is not None:
+                directory_info.endpoint_address = endpoint_address
+            if ura is not None:
+                directory_info.ura = ura
+            if deleted_at is not None:
+                directory_info.deleted_at = deleted_at
+            if is_ignored is not None:
+                directory_info.is_ignored = is_ignored
+            if failed_sync_count is not None:
+                directory_info.failed_sync_count = failed_sync_count
+            if failed_attempts is not None:
+                directory_info.failed_attempts = failed_attempts
+            if last_success_sync is not None:
+                directory_info.last_success_sync = last_success_sync
             session.commit()
             session.session.refresh(directory_info)
             return directory_info.to_dto()
@@ -168,7 +211,7 @@ class DirectoryInfoService:
                 - directory_dto.last_success_sync.astimezone(timezone.utc)
             ).total_seconds()
 
-            return time_since_last_success < int(self.__directory_marked_as_unhealthy_after_success_timeout_seconds[0])
+            return time_since_last_success < int(self.__directory_marked_as_unhealthy_after_success_timeout_seconds)
 
         directories = self.get_all(include_deleted=False, include_ignored=False)
         return all(

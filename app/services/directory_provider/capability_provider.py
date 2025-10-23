@@ -38,14 +38,13 @@ class CapabilityProvider(DirectoryProvider):
 
         return dirs
 
-    def get_one_directory(self, directory_id: str) -> DirectoryDto|None:
+    def get_one_directory(self, directory_id: str) -> DirectoryDto:
         the_dir = self.__inner.get_one_directory(directory_id)
-        if the_dir is None:
-            return None
 
         dirs = self.filter_on_capability([the_dir])
         if not dirs or len(dirs) == 0:
-            return None
+            logger.error(f"Requested directory {directory_id} does not meet capability requirements")
+            raise Exception(f"Requested directory {directory_id} does not meet capability requirements")
 
         return dirs[0]
 

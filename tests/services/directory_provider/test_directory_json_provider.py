@@ -33,7 +33,7 @@ def test_get_all_dirs(
     json_provider: DirectoryJsonProvider,
     dir_info_service: DirectoryInfoService,
 ) -> None:
-    dir_info_service.get_all_ignored = MagicMock(return_value=[DirectoryDto(id="dir_3", endpoint_address="http://example.com/1")])   # type: ignore
+    dir_info_service.get_all_ignored = MagicMock(return_value=[DirectoryDto(id="dir_3", ura="12345678",endpoint_address="http://example.com/1")])   # type: ignore
 
     # Test without ignored directories
     result = json_provider.get_all_directories(include_ignored=False)
@@ -95,5 +95,6 @@ def test_get_one_directory_should_return_correct_directory(
 def test_get_one_directory_should_return_none_if_not_found(
     json_provider: DirectoryJsonProvider,
 ) -> None:
-    result = json_provider.get_one_directory("dir_not_existing")
-    assert result is None
+    with pytest.raises(Exception) as exc_info:
+        _result = json_provider.get_one_directory("dir_not_existing")
+    assert "Directory with id dir_not_existing not found" in str(exc_info.value)

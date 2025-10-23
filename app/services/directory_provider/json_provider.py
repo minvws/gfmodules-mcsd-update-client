@@ -37,9 +37,11 @@ class DirectoryJsonProvider(DirectoryProvider):
 
         return return_dirs
 
-    def get_one_directory(self, directory_id: str) -> DirectoryDto|None:
-        return next((s for s in self.__directories if s.id == directory_id), None)
-
+    def get_one_directory(self, directory_id: str) -> DirectoryDto:
+        directory = next((s for s in self.__directories if s.id == directory_id), None)
+        if not directory:
+            raise ValueError(f"Directory with id {directory_id} not found in JSON data source.")
+        return directory
 
     @staticmethod
     def _read_directories_file(directory_urls_path: str) -> List[DirectoryDto]:

@@ -13,7 +13,7 @@ from typing import Any, Dict, List
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/directory", tags=["Directory"])
 
-@router.get("/health", response_model=dict[str, Any], description="Check the health of the directory services")
+@router.get("/health", response_model=dict[str, Any], description="Checks the health of all directories based on their last successful sync time.")
 def directory_health(
     info_service: DirectoryInfoService = Depends(get_directory_info_service),
 ) -> Dict[str, Any]:

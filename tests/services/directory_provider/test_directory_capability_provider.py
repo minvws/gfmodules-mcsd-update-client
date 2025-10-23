@@ -80,26 +80,24 @@ def test_get_one_directory_returns_none_if_capability_fails(provider: DirectoryP
 
     monkeypatch.setattr(CapabilityProvider, "check_capability_statement", staticmethod(lambda d: False))
 
-    out = provider.get_one_directory("a")
-    assert out is None
+    with pytest.raises(Exception) as exc_info:
+        _out = provider.get_one_directory("a")
+    assert "Requested directory a does not meet capability requirements" in str(exc_info.value)
     inner_provider.get_one_directory.assert_called_once_with("a")
 
 
 def test_get_one_directory_propagates_none_from_inner(provider: DirectoryProvider, inner_provider: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
     inner_provider.get_one_directory.return_value = None
 
-    called = {"n": 0}
     def fake_check(d: DirectoryDto) -> bool:
-        assert d is not None
-        called["n"] += 1
-        return True
+        raise Exception("Dir not exist")
 
     monkeypatch.setattr(CapabilityProvider, "check_capability_statement", staticmethod(fake_check))
 
-    out = provider.get_one_directory("missing")
-    assert out is None
+    with pytest.raises(Exception) as exc_info:
+        _out = provider.get_one_directory("missing")
+    assert "Dir not exist" in str(exc_info.value)
     inner_provider.get_one_directory.assert_called_once_with("missing")
-    assert called["n"] == 0
 
 
 def test_check_capability_statement_success(monkeypatch: pytest.MonkeyPatch, caplog: Any) -> None:
