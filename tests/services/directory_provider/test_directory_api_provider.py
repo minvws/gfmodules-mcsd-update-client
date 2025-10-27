@@ -44,9 +44,13 @@ def ignored_dirs() -> list[DirectoryDto]:
     return [_dto("b")]
 
 
-def test_get_all_directories_filters_ignored(provider: DirectoryProvider, api_provider: MagicMock,
-                                             info_service: MagicMock, sample_dirs: List[DirectoryDto],
-                                             ignored_dirs: List[str]) -> None:
+def test_get_all_directories_filters_ignored(
+    provider: DirectoryProvider,
+    api_provider: MagicMock,
+    info_service: MagicMock,
+    sample_dirs: List[DirectoryDto],
+    ignored_dirs: List[str],
+) -> None:
     api_provider.fetch_directories.return_value = sample_dirs
     info_service.get_all_ignored.return_value = ignored_dirs
 
@@ -57,22 +61,30 @@ def test_get_all_directories_filters_ignored(provider: DirectoryProvider, api_pr
     info_service.get_all_ignored.assert_called_once()
 
 
-def test_get_all_directories_include_ignored_returns_all(provider: DirectoryProvider, api_provider: MagicMock,
-                                                         info_service: MagicMock, sample_dirs: List[DirectoryDto],
-                                                         ignored_dirs: List[str]) -> None:
+def test_get_all_directories_include_ignored_returns_all(
+    provider: DirectoryProvider,
+    api_provider: MagicMock,
+    info_service: MagicMock,
+    sample_dirs: List[DirectoryDto],
+    ignored_dirs: List[str],
+) -> None:
     api_provider.fetch_directories.return_value = sample_dirs
-    info_service.get_all_ignored.return_value = ignored_dirs  # should be ignored when include_ignored=True
+    info_service.get_all_ignored.return_value = (
+        ignored_dirs  # should be ignored when include_ignored=True
+    )
 
     result = provider.get_all_directories(include_ignored=True)
 
     assert [d.id for d in result] == ["a", "b", "c"]
 
 
-def test_get_all_directories_include_ignored_ids_keeps_requested_ignored(provider: DirectoryProvider,
-                                                                         api_provider: MagicMock,
-                                                                         info_service: MagicMock,
-                                                                         sample_dirs: List[DirectoryDto],
-                                                                         ignored_dirs: List[str]) -> None:
+def test_get_all_directories_include_ignored_ids_keeps_requested_ignored(
+    provider: DirectoryProvider,
+    api_provider: MagicMock,
+    info_service: MagicMock,
+    sample_dirs: List[DirectoryDto],
+    ignored_dirs: List[str],
+) -> None:
     api_provider.fetch_directories.return_value = sample_dirs
     info_service.get_all_ignored.return_value = ignored_dirs
 
@@ -81,11 +93,13 @@ def test_get_all_directories_include_ignored_ids_keeps_requested_ignored(provide
     assert [d.id for d in result] == ["a", "b", "c"]
 
 
-def test_get_all_directories_include_ignored_ids_filters_when_non_empty_list(provider: DirectoryProvider,
-                                                                             api_provider: MagicMock,
-                                                                             info_service: MagicMock,
-                                                                             sample_dirs: List[DirectoryDto],
-                                                                             ignored_dirs: List[str]) -> None:
+def test_get_all_directories_include_ignored_ids_filters_when_non_empty_list(
+    provider: DirectoryProvider,
+    api_provider: MagicMock,
+    info_service: MagicMock,
+    sample_dirs: List[DirectoryDto],
+    ignored_dirs: List[str],
+) -> None:
     api_provider.fetch_directories.return_value = sample_dirs
     info_service.get_all_ignored.return_value = ignored_dirs
 
@@ -94,11 +108,13 @@ def test_get_all_directories_include_ignored_ids_filters_when_non_empty_list(pro
     assert [d.id for d in result] == ["a", "c"]
 
 
-def test_get_all_directories_include_ignored_ids_empty_list_returns_unfiltered(provider: DirectoryProvider,
-                                                                               api_provider: MagicMock,
-                                                                               info_service: MagicMock,
-                                                                               sample_dirs: List[DirectoryDto],
-                                                                               ignored_dirs: List[str]) -> None:
+def test_get_all_directories_include_ignored_ids_empty_list_returns_unfiltered(
+    provider: DirectoryProvider,
+    api_provider: MagicMock,
+    info_service: MagicMock,
+    sample_dirs: List[DirectoryDto],
+    ignored_dirs: List[str],
+) -> None:
     api_provider.fetch_directories.return_value = sample_dirs
     info_service.get_all_ignored.return_value = ignored_dirs
 
@@ -107,7 +123,9 @@ def test_get_all_directories_include_ignored_ids_empty_list_returns_unfiltered(p
     assert [d.id for d in result] == ["a", "b", "c"]
 
 
-def test_get_one_directory_success(provider: DirectoryProvider, api_provider: MagicMock) -> None:
+def test_get_one_directory_success(
+    provider: DirectoryProvider, api_provider: MagicMock
+) -> None:
     d = _dto("x")
     api_provider.fetch_one_directory.return_value = d
 
@@ -116,21 +134,23 @@ def test_get_one_directory_success(provider: DirectoryProvider, api_provider: Ma
     assert result is d
 
 
-def test_get_one_directory_http_exception_returns_none_and_logs(provider: DirectoryProvider, api_provider: MagicMock,
-                                                                caplog: Any) -> None:
-    api_provider.fetch_one_directory.side_effect = HTTPException(status_code=404, detail="Not found")
-
-    with caplog.at_level(logging.WARNING):
-        result = provider.get_one_directory("missing")
-
-    assert result is None
-    assert any(
-        "Fetching directory with ID 'missing' from FHIR provider failed." in rec.message
-        for rec in caplog.records
+def test_get_one_directory_http_exception_returns_none_and_logs(
+    provider: DirectoryProvider, api_provider: MagicMock, caplog: Any
+) -> None:
+    api_provider.fetch_one_directory.side_effect = HTTPException(
+        status_code=404, detail="Not found"
     )
 
+    with caplog.at_level(logging.WARNING):
+        with pytest.raises(HTTPException) as exc_info:
+            _result = provider.get_one_directory("missing")
 
-def test_is_deleted_delegates_to_api_provider(provider: DirectoryProvider, api_provider: MagicMock) -> None:
+    assert exc_info.value.status_code == 404
+
+
+def test_is_deleted_delegates_to_api_provider(
+    provider: DirectoryProvider, api_provider: MagicMock
+) -> None:
     dto = _dto("gone")
     api_provider.check_if_directory_is_deleted.return_value = True
 

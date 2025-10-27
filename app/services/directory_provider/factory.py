@@ -1,6 +1,7 @@
 from app.services.api.authenticators.authenticator import Authenticator
 from app.services.api.fhir_api import FhirApi, FhirApiConfig
 from app.services.directory_provider.capability_provider import CapabilityProvider
+from app.services.directory_provider.db_provider import DbProvider
 from app.services.directory_provider.fhir_provider import FhirDirectoryProvider
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.api.directory_api_service import DirectoryApiService
@@ -44,7 +45,7 @@ class DirectoryProviderFactory:
                 base_url=self.__directory_config.directories_provider_url,
                 request_count=5,
                 fill_required_fields=False,
-                retries=10,
+                retries=3,
                 mtls_cert=self.__mcsd_config.mtls_client_cert_path,
                 mtls_key=self.__mcsd_config.mtls_client_key_path,
                 mtls_ca=self.__mcsd_config.mtls_server_ca_path,
@@ -67,7 +68,13 @@ class DirectoryProviderFactory:
             )
 
         # Wrap with capability filter provider
-        return CapabilityProvider(
+        capability_provider = CapabilityProvider(
             inner=provider,
             validate_capability_statement=self.__mcsd_config.check_capability_statement,
         )
+
+        db_provider = DbProvider(
+            inner=capability_provider,
+            directory_info_service=self.__directory_info_service,
+        )
+        return db_provider

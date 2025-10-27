@@ -38,7 +38,7 @@ class DirectoryProvider(ABC):
         pass
 
     @abc.abstractmethod
-    def get_one_directory(self, directory_id: str) -> DirectoryDto|None:
+    def get_one_directory(self, directory_id: str) -> DirectoryDto:
         """
         Returns a specific directory by their unique identifier or raises Exception if the directory provider could not be reached.
         """

@@ -1,7 +1,6 @@
 import logging
 from typing import List
 
-from fastapi import HTTPException
 from app.models.directory.dto import DirectoryDto
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.api.directory_api_service import (
@@ -20,7 +19,6 @@ class FhirDirectoryProvider(DirectoryProvider):
         self,
         api_provider: DirectoryApiService,
         directory_info_service: DirectoryInfoService,
-        validate_capability_statement: bool = False,
     ) -> None:
         # Api provider to fetch directories from FHIR server
         self.__api_provider = api_provider
@@ -55,15 +53,11 @@ class FhirDirectoryProvider(DirectoryProvider):
 
         return dirs
 
-    def get_one_directory(self, directory_id: str) -> DirectoryDto|None:
+    def get_one_directory(self, directory_id: str) -> DirectoryDto:
         """
         Returns a specific directory by their unique identifier
         """
-        try:
-            directory = self.__api_provider.fetch_one_directory(directory_id)
-        except HTTPException:
-            logger.warning(f"Fetching directory with ID '{directory_id}' from FHIR provider failed.")
-            return None
+        directory = self.__api_provider.fetch_one_directory(directory_id)
 
         return directory
 

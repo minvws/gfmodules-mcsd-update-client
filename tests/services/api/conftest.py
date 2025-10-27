@@ -1,3 +1,8 @@
+import os
+
+if os.getenv("APP_ENV") is None:
+    os.environ["APP_ENV"] = "test" # noqa
+
 from typing import Any, Dict, Final
 import pytest
 
@@ -11,6 +16,7 @@ from app.services.api.authenticators.azure_oauth2_authenticator import (
     AzureOAuth2Authenticator,
 )
 from app.services.api.fhir_api import FhirApi
+
 
 config: Final[Config] = get_config()
 

@@ -10,6 +10,7 @@ from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.endpoint import Endpoint
 from fhir.resources.R4B.reference import Reference
 from app.services.fhir.references.reference_misc import build_node_reference
+from app.services.fhir.utils import get_ura_from_organization
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,7 @@ class DirectoryApiService:
                         DirectoryDto(
                             id=resource.id,
                             endpoint_address=endpoint_address,
+                            ura=get_ura_from_organization(resource),
                         )
                     )
             return orgs
