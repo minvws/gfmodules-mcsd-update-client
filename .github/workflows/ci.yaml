@@ -177,6 +177,13 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v5
 
+            - name: Set env
+              run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV &&
+                echo "PKG_NAME=`basename $GITHUB_REPOSITORY -private`" >> $GITHUB_ENV
+
+            - name: Add version file
+              run: 'echo "{ \"version\": \"${{ env.RELEASE_VERSION }}\", \"git_ref\": \"$GITHUB_SHA\"}" > version.json'
+
             - name: Log in to the Container registry
               uses: docker/login-action@v3
               with:
