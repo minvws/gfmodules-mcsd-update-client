@@ -49,7 +49,7 @@ class Scheduler(BaseModel):
     @computed_field
     def delay_input_in_sec(self) -> int:
         return _convert_conf_to_sec(self.delay_input)
-    
+
     @field_validator("max_logs_entries", mode="before")
     def validate_max_log_entries(cls, v: Any) -> int:
         if v in (None, "", " "):
@@ -140,7 +140,7 @@ class ConfigClientDirectory(BaseModel):
         default="30d",
         description="Delay after directory marked as to be deleted before permanent cleanup",
     )
-    
+
     @field_validator("timeout", mode="before")
     def validate_timeout(cls, v: Any) -> int:
         if v in (None, "", " "):
@@ -158,7 +158,7 @@ class ConfigClientDirectory(BaseModel):
         if v in (None, "", " "):
             return 20
         return int(v)
-    
+
     @computed_field
     def directory_marked_as_unhealthy_after_success_timeout_in_sec(self) -> int:
         return _convert_conf_to_sec(self.directory_marked_as_unhealthy_after_success_timeout)
@@ -170,7 +170,7 @@ class ConfigClientDirectory(BaseModel):
     @computed_field
     def ignore_client_directory_after_success_timeout_in_sec(self) -> int:
         return _convert_conf_to_sec(self.ignore_client_directory_after_success_timeout)
-    
+
     @computed_field
     def cleanup_delay_after_client_directory_marked_deleted_in_sec(self) -> int:
         return _convert_conf_to_sec(self.cleanup_delay_after_client_directory_marked_deleted)
@@ -292,7 +292,7 @@ class ConfigMcsd(BaseModel):
     fill_required_fields: bool = Field(default=False)
     mtls_client_cert_path: str | None = Field(default=None)
     mtls_client_key_path: str | None = Field(default=None)
-    mtls_server_ca_path: str | None = Field(default=None)
+    verify_ca: str | bool = Field(default=True)
     check_capability_statement: bool = Field(default=False, description="Whether to check the CapabilityStatement of client directories")
 
     @field_validator("request_count", mode="before")

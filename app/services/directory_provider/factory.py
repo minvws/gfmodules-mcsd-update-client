@@ -48,7 +48,7 @@ class DirectoryProviderFactory:
                 retries=3,
                 mtls_cert=self.__mcsd_config.mtls_client_cert_path,
                 mtls_key=self.__mcsd_config.mtls_client_key_path,
-                mtls_ca=self.__mcsd_config.mtls_server_ca_path,
+                verify_ca=self.__mcsd_config.verify_ca,
             )
             api_service = DirectoryApiService(
                 fhir_api=FhirApi(config),

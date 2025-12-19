@@ -33,7 +33,7 @@ class FhirApiConfig:
     backoff: float
     mtls_cert: str | None
     mtls_key: str | None
-    mtls_ca: str | None
+    verify_ca: str | bool
     request_count: int
     fill_required_fields: bool
 
@@ -48,7 +48,7 @@ class FhirApi(HttpService):
             backoff=config.backoff,
             retries=config.retries,
             authenticator=config.auth,
-            mtls_ca=config.mtls_ca,
+            verify_ca=config.verify_ca,
             mtls_cert=config.mtls_cert,
             mtls_key=config.mtls_key,
         )

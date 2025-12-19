@@ -51,7 +51,7 @@ def container_config(binder: inject.Binder) -> None:
         retries=config.client_directory.retries,
         mtls_cert=config.mcsd.mtls_client_cert_path,
         mtls_key=config.mcsd.mtls_client_key_path,
-        mtls_ca=config.mcsd.mtls_server_ca_path,
+        verify_ca=config.mcsd.verify_ca,
     )
     cache_provider = CacheProvider(config=config.external_cache)
     update_service = UpdateClientService(

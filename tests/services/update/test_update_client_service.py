@@ -100,7 +100,7 @@ def update_client_service(resource_map_service: MagicMock) -> UpdateClientServic
         auth=NullAuthenticator(),
         mtls_cert=None,
         mtls_key=None,
-        mtls_ca=None,
+        verify_ca=True,
     )
     return UpdateClientService(
         api_config=api_config,

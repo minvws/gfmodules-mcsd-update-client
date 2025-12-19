@@ -76,7 +76,7 @@ def http_service(base_url: str) -> HttpService:
         retries=1,
         mtls_cert=config.mcsd.mtls_client_cert_path,
         mtls_key=config.mcsd.mtls_client_key_path,
-        mtls_ca=config.mcsd.mtls_server_ca_path,
+        verify_ca=config.mcsd.verify_ca,
     )
 
 

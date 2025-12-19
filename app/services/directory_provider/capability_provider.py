@@ -73,7 +73,7 @@ class CapabilityProvider(DirectoryProvider):
                 # We assume no MTLS is needed for capability check. Otherwise we need to add this info to the dir_dto
                 mtls_cert=None,
                 mtls_key=None,
-                mtls_ca=None,
+                verify_ca=True,
             )
             fhir_api=FhirApi(config)
             if not fhir_api.validate_capability_statement():
