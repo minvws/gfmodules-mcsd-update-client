@@ -197,9 +197,9 @@ def test_do_request_should_use_mtls_cert_when_enabled(
         retries=1,
         mtls_cert="test.crt",
         mtls_key="test.key",
-        mtls_ca="test.ca"
+        verify_ca="test.ca"
     )
-    
+
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_request.return_value = mock_response
@@ -224,9 +224,9 @@ def test_do_request_should_use_ca_file_for_verification_when_provided(
         retries=1,
         mtls_cert="test.crt",
         mtls_key="test.key",
-        mtls_ca="ca.crt"
+        verify_ca="ca.crt"
     )
-    
+
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_request.return_value = mock_response
@@ -251,9 +251,9 @@ def test_do_request_should_not_use_cert_when_mtls_disabled(
         retries=1,
         mtls_cert=None,
         mtls_key=None,
-        mtls_ca=None
+        verify_ca=True
     )
-    
+
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_request.return_value = mock_response

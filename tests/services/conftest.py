@@ -250,7 +250,7 @@ def fhir_api(config: Config, null_authenticator: NullAuthenticator) -> FhirApi:
         fill_required_fields=False,
         mtls_cert=None,
         mtls_key=None,
-        mtls_ca=None,
+        verify_ca=True,
     )
     return FhirApi(api_config)
 

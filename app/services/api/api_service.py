@@ -25,13 +25,13 @@ class HttpService(ABC):
         authenticator: Authenticator | None = None,
         mtls_cert: str | None = None,
         mtls_key: str | None = None,
-        mtls_ca: str | None = None,
+        verify_ca: str | bool = True,
     ) -> None:
         self.base_url = base_url
         self.authenticator = authenticator
         self.__mtls_cert = mtls_cert
         self.__mtls_key = mtls_key
-        self.__mtls_ca = mtls_ca
+        self.__verify_ca = verify_ca
         self.__timeout = timeout
         self.__retries = retries
         self.__backoff = backoff
@@ -61,7 +61,7 @@ class HttpService(ABC):
                     cert=(self.__mtls_cert, self.__mtls_key)
                         if self.__mtls_cert and self.__mtls_key
                         else None,
-                    verify=self.__mtls_ca or True,
+                    verify=self.__verify_ca or True,
                     auth=self.authenticator.get_auth() if self.authenticator else None,
                 )
                 return response
