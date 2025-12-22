@@ -38,7 +38,7 @@ ruff = "^0.14.10"
 pip-audit = "^2.10.0"
 codespell = "^2.2.6"
 types-requests = "^2.32"
-faker = "^38.2.0"
+faker = "^39.0.0"
 numpy = "^2.4.0"
 psutil = "^7.1.3"
 
