@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from typing import Any, Dict
 from unittest.mock import ANY, MagicMock, patch
@@ -104,6 +104,8 @@ def update_client_service(resource_map_service: MagicMock) -> UpdateClientServic
     )
     return UpdateClientService(
         api_config=api_config,
+        update_client_api_config=api_config,
+        validate_capability_statement=False,
         resource_map_service=resource_map_service,
         cache_provider=CacheProvider(config=ConfigExternalCache()),
     )
@@ -310,7 +312,7 @@ def test_update_resource_calls_build_history_params(
     mock_directory_fhir_api = MagicMock()
     mock_fhir_api.return_value = mock_directory_fhir_api
     mock_directory_fhir_api.build_history_params.return_value = None
-    since = datetime.now() - timedelta(days=30)
+    since = datetime.now(tz=timezone.utc) - timedelta(days=30)
     update_client_service.update_resource(
         directory_dto, McsdResources.ENDPOINT.value, in_memory_cache_service, since
     )
@@ -329,7 +331,7 @@ def test_update_resource_requests_history_batch(
     update_client_service._UpdateClientService__cache = mock_cache  # type: ignore[attr-defined]
     mock_cache.key_exists.return_value = False
 
-    since = datetime.now() - timedelta(days=30)
+    since = datetime.now(tz=timezone.utc) - timedelta(days=30)
 
     mock_do_request.return_value = MagicMock(
         status_code=200,
@@ -362,7 +364,7 @@ def test_update_requests_resources(
     mock_ep: Dict[str, Any],
 ) -> None:
     fhir_service = FhirService(fill_required_fields=True)
-    since = datetime.now() - timedelta(days=30)
+    since = datetime.now(tz=timezone.utc) - timedelta(days=30)
 
     def mock_request_side_effect(*args: Any, **kwargs: Any) -> MagicMock:
         if f"{McsdResources.ORGANIZATION.value}/_history" in kwargs.get("url", ""):

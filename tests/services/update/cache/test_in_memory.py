@@ -6,7 +6,7 @@ def test_get_one_should_succeed_and_return_one_node(
     expected_node_org: Node, in_memory_cache_service: InMemoryCachingService
 ) -> None:
     in_memory_cache_service.add_node(expected_node_org)
-    actual = in_memory_cache_service.get_node(expected_node_org.resource_id)
+    actual = in_memory_cache_service.get_node(expected_node_org.cache_key())
 
     assert expected_node_org == actual
 
@@ -58,7 +58,7 @@ def test_make_target_id_should_succeed_and_return_namespaced_id(
 ) -> None:
     expected = f"{in_memory_cache_service.run_id}-{expected_node_org.resource_id}"
 
-    actual = in_memory_cache_service.make_target_id(expected_node_org.resource_id)
+    actual = in_memory_cache_service.make_target_id(expected_node_org.cache_key())
 
     assert expected == actual
 

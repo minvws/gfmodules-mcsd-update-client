@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pytest
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.update.mass_update_client_service import MassUpdateClientService
@@ -45,7 +45,7 @@ def test_cleanup_old_directories_ignores_outdated_directories(
     )
     directory_info_service.update(
         directory_id="outdated_directory",
-        last_success_sync=datetime.now() - timedelta(seconds=4000),
+        last_success_sync=datetime.now(tz=timezone.utc) - timedelta(seconds=4000),
     )
     directory_info_service.create(
         directory_id="recent_directory",
@@ -54,7 +54,7 @@ def test_cleanup_old_directories_ignores_outdated_directories(
     )
     directory_info_service.update(
         directory_id="recent_directory",
-        last_success_sync=datetime.now() - timedelta(minutes=30),
+        last_success_sync=datetime.now(tz=timezone.utc) - timedelta(minutes=30),
     )
 
     mass_update_client_service.cleanup_old_directories()
@@ -81,7 +81,7 @@ def test_cleanup_old_directories_only_ignores_when_exceeding_ignore_timeout(
     )
     directory_info_service.update(
         directory_id="directory_to_ignore_and_cleanup",
-        last_success_sync=datetime.now() - timedelta(days=10000),
+        last_success_sync=datetime.now(tz=timezone.utc) - timedelta(days=10000),
     )
 
     mass_update_client_service.cleanup_old_directories()
@@ -151,13 +151,13 @@ def test_cleanup_old_directories_cleans_deleted_directories_from_cache(
         directory_id="deleted_2", endpoint_address="http://example.com", ura="12345678"
     )
     directory_info_service.update(
-        directory_id="deleted_2", deleted_at=datetime.now() - timedelta(days=1)
+        directory_id="deleted_2", deleted_at=datetime.now(tz=timezone.utc) - timedelta(days=1)
     )
     directory_info_service.create(
         directory_id="deleted_1", endpoint_address="http://example.com", ura="87654321"
     )
     directory_info_service.update(
-        directory_id="deleted_1", deleted_at=datetime.now() - timedelta(days=1)
+        directory_id="deleted_1", deleted_at=datetime.now(tz=timezone.utc) - timedelta(days=1)
     )
 
     mass_update_client_service.cleanup_old_directories()
@@ -179,7 +179,7 @@ def test_cleanup_old_directories_skips_deleted_directories_when_disabled(
         directory_id="deleted_2", endpoint_address="http://example.com", ura="12345678"
     )
     directory_info_service.update(
-        directory_id="deleted_2", deleted_at=datetime.now() - timedelta(days=1)
+        directory_id="deleted_2", deleted_at=datetime.now(tz=timezone.utc) - timedelta(days=1)
     )
     directory_info_service.create(
         directory_id="deleted_1", endpoint_address="http://example.com", ura="87654321"
@@ -187,7 +187,7 @@ def test_cleanup_old_directories_skips_deleted_directories_when_disabled(
     directory_info_service.update(
         directory_id="deleted_1",
         endpoint_address="http://example.com",
-        deleted_at=datetime.now() - timedelta(days=1),
+        deleted_at=datetime.now(tz=timezone.utc) - timedelta(days=1),
     )
 
     setattr(
@@ -229,7 +229,7 @@ def test_cleanup_old_directories_mixed_scenarios(
     )
     directory_info_service.update(
         directory_id="very_old_directory",
-        last_success_sync=datetime.now() - timedelta(hours=30),
+        last_success_sync=datetime.now(tz=timezone.utc) - timedelta(hours=30),
     )
     directory_info_service.create(
         directory_id="old_directory",
@@ -238,7 +238,7 @@ def test_cleanup_old_directories_mixed_scenarios(
     )
     directory_info_service.update(
         directory_id="old_directory",
-        last_success_sync=datetime.now() - timedelta(seconds=4000),
+        last_success_sync=datetime.now(tz=timezone.utc) - timedelta(seconds=4000),
     )
     directory_info_service.create(
         directory_id="recent_directory",
@@ -247,7 +247,7 @@ def test_cleanup_old_directories_mixed_scenarios(
     )
     directory_info_service.update(
         directory_id="recent_directory",
-        last_success_sync=datetime.now() - timedelta(minutes=10),
+        last_success_sync=datetime.now(tz=timezone.utc) - timedelta(minutes=10),
     )
     directory_info_service.create(
         directory_id="never_synced",
@@ -267,7 +267,7 @@ def test_cleanup_old_directories_mixed_scenarios(
     )
     directory_info_service.update(
         directory_id="lrza_deleted_directory",
-        deleted_at=datetime.now() - timedelta(days=1),
+        deleted_at=datetime.now(tz=timezone.utc) - timedelta(days=1),
     )
 
     mass_update_client_service.cleanup_old_directories()

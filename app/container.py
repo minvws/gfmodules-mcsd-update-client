@@ -19,7 +19,13 @@ from app.stats import get_stats
 def container_config(binder: inject.Binder) -> None:
     config = get_config()
 
-    db = Database(dsn=config.database.dsn)
+    db = Database(
+        dsn=config.database.dsn,
+        pool_size=config.database.pool_size,
+        max_overflow=config.database.max_overflow,
+        pool_pre_ping=config.database.pre_ping,
+        pool_recycle=config.database.recycle,
+    )
     binder.bind(Database, db)
 
     resource_map_service = ResourceMapService(db)
@@ -72,6 +78,7 @@ def container_config(binder: inject.Binder) -> None:
         mark_client_directory_as_deleted_after_lrza_delete=config.client_directory.mark_client_directory_as_deleted_after_lrza_delete,
         ignore_client_directory_after_success_timeout_seconds=config.client_directory.ignore_client_directory_after_success_timeout_in_sec,  # type: ignore
         ignore_client_directory_after_failed_attempts_threshold=config.client_directory.ignore_client_directory_after_failed_attempts_threshold,
+        max_concurrent_directory_updates=config.scheduler.max_concurrent_directory_updates,
     )
 
     update_scheduler = Scheduler(

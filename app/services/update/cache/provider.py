@@ -12,12 +12,18 @@ logger = logging.getLogger(__name__)
 class CacheProvider:
     """
     Factory class to create a caching service based on the provided configuration.
+
+    - If an external cache is configured *and* healthy, use Redis.
+    - Otherwise fall back to in-memory cache.
     """
+
     def __init__(self, config: ConfigExternalCache) -> None:
         self.__config = config
 
     def create(self) -> CachingService:
         run_id = uuid4()
+        namespace = self.__config.default_cache_namespace or "mcsd"
+        ttl = self.__config.object_ttl
 
         if self.__config.host is not None and self.__config.port is not None:
             external_cache_instance = ExternalCachingService(
@@ -29,15 +35,27 @@ class CacheProvider:
                 ssl_certfile=self.__config.cert,
                 ssl_ca_certs=self.__config.cafile,
                 ssl_check_hostname=self.__config.check_hostname,
+                namespace=namespace,
+                object_ttl_seconds=ttl,
             )
-            healthy_external_cache = external_cache_instance.is_healthy()
-
-            if healthy_external_cache:
-                logger.info(f"creating external cache instance with runner id {run_id}")
+            if external_cache_instance.is_healthy():
+                logger.info(
+                    "Creating external cache instance. run_id=%s namespace=%s ttl=%s",
+                    run_id,
+                    namespace,
+                    ttl,
+                )
                 return external_cache_instance
 
-        logger.info(
-            f"Unable to create external cache instance, defaulting to in memory with run id {run_id}"
-        )
+            logger.warning(
+                "External cache configured but unhealthy; falling back to in-memory. run_id=%s",
+                run_id,
+            )
 
-        return InMemoryCachingService(run_id)
+        logger.info(
+            "Creating in-memory cache instance. run_id=%s namespace=%s ttl=%s",
+            run_id,
+            namespace,
+            ttl,
+        )
+        return InMemoryCachingService(run_id=run_id, namespace=namespace, object_ttl_seconds=ttl)

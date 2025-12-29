@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import String, TIMESTAMP, PrimaryKeyConstraint, Integer, BOOLEAN
 from sqlalchemy.orm import Mapped, mapped_column
@@ -48,14 +48,14 @@ class DirectoryInfo(Base):
         "created_at",
         TIMESTAMP(timezone=True),
         nullable=False,
-        default=datetime.now()
+        default=lambda: datetime.now(tz=timezone.utc),
     )
     modified_at: Mapped[datetime] = mapped_column(
         "modified_at",
         TIMESTAMP(timezone=True),
         nullable=False,
-        default=datetime.now(),
-        onupdate=datetime.now(),
+        default=lambda: datetime.now(tz=timezone.utc),
+        onupdate=lambda: datetime.now(tz=timezone.utc),
     )
     deleted_at: Mapped[datetime | None] = mapped_column(
         "deleted_at",

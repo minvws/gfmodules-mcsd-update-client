@@ -15,7 +15,7 @@ from app.models.adjacency.node import (
     NodeReference,
     NodeUpdateData,
 )
-from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto
+from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto, ResourceMapDeleteDto
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
 from app.services.api.fhir_api import FhirApi
@@ -119,7 +119,7 @@ class AdjacencyMapService:
         missing_refs: list[NodeReference],
     ) -> None:
         for ref in missing_refs:
-            node = self.__cache_service.get_node(ref.id)  # Find regular reference in cache
+            node = self.__cache_service.get_node(ref.cache_key())  # Find reference in cache (resourceType/id)
             if node:
                 adj_map.add_node(node)
 
@@ -133,7 +133,7 @@ class AdjacencyMapService:
         to_fetch = [r for r in still_missing if ref_key(r) not in attempted_keys]
         if to_fetch:
             missing_entries = self.get_directory_data(
-                [BundleRequestParams(**ref.model_dump()) for ref in missing_refs]
+                [BundleRequestParams(**ref.model_dump()) for ref in to_fetch]
             )
             # Create nodes for the entries we found
             missing_nodes = [self.create_node(entry) for entry in missing_entries]
@@ -147,12 +147,19 @@ class AdjacencyMapService:
         if len(update_client_targets) > 0:
             update_client_entries = self.get_update_client_data(update_client_targets)
             for entry in update_client_entries:
-                _, _id = FhirService.get_resource_type_and_id_from_entry(entry)
+                res_type, _id = FhirService.get_resource_type_and_id_from_entry(entry)
                 res_id = _id.replace(f"{self.directory_id}-", "")
-                node = adj_map.data[res_id]
-                node.update_client_hash = (
-                    self.__computation_service.hash_update_client_entry(entry)
-                )
+                node_key = f"{res_type}/{res_id}"
+                node = adj_map.data.get(node_key)
+                if node is None:
+                    logger.warning(
+                        "Update-client returned a resource that is not in the adjacency map. node_key=%s update_client_id=%s",
+                        node_key,
+                        _id,
+                    )
+                    continue
+                node.update_client_hash = self.__computation_service.hash_update_client_entry(entry)
+
 
     def _finalize_nodes(self, adj_map: AdjacencyMap) -> None:
         for node in adj_map.data.values():
@@ -259,7 +266,7 @@ class AdjacencyMapService:
                         f"Resource map for {node.resource_id} {node.resource_type} cannot be None and node marked as delete "
                     )
 
-                dto = ResourceMapUpdateDto(
+                dto = ResourceMapDeleteDto(
                     directory_id=self.directory_id,
                     resource_type=node.resource_type,
                     directory_resource_id=node.resource_id,
@@ -351,7 +358,7 @@ class AdjacencyMapService:
             if not self.__cache_service.key_exists(node_id):
                 update_client_targets.append(
                     BundleRequestParams(
-                        id=f"{self.directory_id}-{node_id}",
+                        id=f"{self.directory_id}-{node.resource_id}",
                         resource_type=node.resource_type,
                     )
                 )

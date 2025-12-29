@@ -45,6 +45,8 @@ class Scheduler(BaseModel):
     # Whether the scheduler should automatically run background tasks
     automatic_background_update: bool = Field(default=True)
     automatic_background_cleanup: bool = Field(default=True)
+    # Parallelism for updating multiple directories (1 = sequential)
+    max_concurrent_directory_updates: int = Field(default=1, ge=1, le=32)
 
     @computed_field
     def delay_input_in_sec(self) -> int:

@@ -172,7 +172,7 @@ class DirectoryInfoService:
             raise HTTPException(status_code=404, detail=f"Directory with ID {directory_id} not found")
 
         deleted_at = (
-            datetime.now() + timedelta(seconds=self.__cleanup_delay_after_client_directory_marked_deleted_in_sec)
+            datetime.now(tz=timezone.utc) + timedelta(seconds=self.__cleanup_delay_after_client_directory_marked_deleted_in_sec)
             if not specific_datetime else specific_datetime
         )
         self.update(directory_id=directory_id, deleted_at=deleted_at)
