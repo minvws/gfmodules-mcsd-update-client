@@ -1,8 +1,79 @@
 {
-    "directories": [
-        {
-            "id": "hapi-directory",
-            "endpoint_address": "http://hapi-directory:8080/fhir"
-        }
-    ]
+  "directories": [
+    {
+      "id": "000-Org",
+      "ura": "00000000000",
+      "endpoint_address": "https://platform-md.alpha-06.parsek.net/vitaly-service/mcsd/fhir/admin"
+    },
+    {
+      "id": "001-Org",
+      "ura": "00000000001",
+      "endpoint_address": "https://mcsd.nuts-hackathon.dev.hinq.nl/fhir/knpt-mcsd-admin"
+    },
+    {
+      "id": "002-Org",
+      "ura": "00000000002",
+      "endpoint_address": "https://bastion365addin.eu.ngrok.io/admin-directory"
+    },
+    {
+      "id": "003-Org",
+      "ura": "00000000003",
+      "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/414313212"
+    },
+    {
+      "id": "004-Org",
+      "ura": "00000000004",
+      "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/323424525"
+    },
+    {
+      "id": "005-Org",
+      "ura": "00000000005",
+      "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/212313414"
+    },
+    {
+      "id": "006-Org",
+      "ura": "00000000006",
+      "endpoint_address": "https://administration-directory.acceptatie1.ysis.nl/fhir"
+    },
+    {
+      "id": "008-Org",
+      "ura": "00000000008",
+      "endpoint_address": "https://gf-fhir.nlcom.nl/fhir/mcsdadmin"
+    },
+    {
+      "id": "009-Org",
+      "ura": "00000000009",
+      "endpoint_address": "https://ngfs-development.ons.io/fhir/ADMINISTRATION"
+    },
+    {
+      "id": "010-Org",
+      "ura": "00000000010",
+      "endpoint_address": "https://mtls.fort365.net/address-book/admin-directory"
+    },
+    {
+      "id": "011-Org",
+      "ura": "00000000011",
+      "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/515313212"
+    },
+    {
+      "id": "012-Org",
+      "ura": "00000000012",
+      "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/919313212"
+    },
+    {
+      "id": "Org-69599084",
+      "ura": "00000000015",
+      "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/81831321"
+    },
+    {
+      "id": "016-Org",
+      "ura": "00000000016",
+      "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/71731321"
+    },
+    {
+      "id": "017-Org",
+      "ura": "00000000017",
+      "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/61631321"
+    }
+  ]
 }

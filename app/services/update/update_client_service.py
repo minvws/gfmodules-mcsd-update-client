@@ -8,6 +8,7 @@ import time
 from typing import Dict, List
 from uuid import uuid4
 
+from fastapi import HTTPException
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
 from fhir.resources.R4B.bundle import BundleEntryRequest
 from fhir.resources.R4B.resource import Resource
@@ -42,6 +43,7 @@ class UpdateClientService:
         cache_provider: CacheProvider,
         update_client_api_config: FhirApiConfig | None = None,
         validate_capability_statement: bool = False,
+        allow_missing_resources: bool = False,
     ) -> None:
         self.api_config = api_config
         if update_client_api_config is None:
@@ -50,6 +52,7 @@ class UpdateClientService:
         self.__resource_map_service = resource_map_service
         self.__cache_provider = cache_provider
         self.__validate_capability_statement = validate_capability_statement
+        self.__allow_missing_resources = allow_missing_resources
 
         # One lock per directory id to prevent concurrent updates on the same directory.
         self.mutexes: Dict[str, threading.Lock] = {}
@@ -297,7 +300,18 @@ class UpdateClientService:
         processed_count = 0
 
         while next_params is not None:
-            next_params, history = directory_fhir_api.get_history_batch(resource_type, next_params)
+            try:
+                next_params, history = directory_fhir_api.get_history_batch(resource_type, next_params)
+            except HTTPException as e:
+                # Best-effort mode: some servers will 400 on unsupported resource types
+                if self.__allow_missing_resources and e.status_code == 400:
+                    logger.warning(
+                        "Directory %s does not support resource type %s; skipping due to allow_missing_resources=True",
+                        getattr(directory, "id", "<unknown>"),
+                        getattr(resource_type, "value", str(resource_type)),
+                    )
+                    return 0
+                raise
 
             # Build cache ids and check existence in bulk (fast for Redis).
             entry_by_cache_id: dict[str, BundleEntry] = {}

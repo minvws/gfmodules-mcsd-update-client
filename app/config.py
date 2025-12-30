@@ -295,7 +295,18 @@ class ConfigMcsd(BaseModel):
     mtls_client_cert_path: str | None = Field(default=None)
     mtls_client_key_path: str | None = Field(default=None)
     verify_ca: str | bool = Field(default=True)
-    check_capability_statement: bool = Field(default=False, description="Whether to check the CapabilityStatement of client directories")
+    check_capability_statement: bool = Field(
+        default=False,
+        description="Whether to check the CapabilityStatement of client directories",
+    )
+
+    allow_missing_resources: bool = Field(
+        default=False,
+        description=(
+            "If True, best-effort sync: skip resource types that the directory does not support. "
+            "If False, treat missing/unsupported required resources as a failure."
+        ),
+    )
 
     @field_validator("request_count", mode="before")
     def validate_request_count(cls, v: Any) -> int:

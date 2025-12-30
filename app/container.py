@@ -64,6 +64,7 @@ def container_config(binder: inject.Binder) -> None:
         api_config=api_config,
         resource_map_service=resource_map_service,
         cache_provider=cache_provider,
+        allow_missing_resources=config.mcsd.allow_missing_resources,
     )
     binder.bind(UpdateClientService, update_service)
 
