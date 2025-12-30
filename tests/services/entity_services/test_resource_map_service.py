@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 import pytest
 from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 
 from app.services.entity.resource_map_service import ResourceMapService
 from app.models.resource_map.dto import (
@@ -29,7 +30,12 @@ def test_get_should_return_a_resource_map_when_exists(
     )
     assert actual is not None
     for k in actual.__table__.columns.keys():
-        assert getattr(actual, k) == getattr(expected, k)
+        actual_val = getattr(actual, k)
+        expected_val = getattr(expected, k)
+        if isinstance(actual_val, datetime) and isinstance(expected_val, datetime):
+            assert actual_val.replace(tzinfo=None) == expected_val.replace(tzinfo=None)
+        else:
+            assert actual_val == expected_val
 
 
 def test_get_should_return_none_when_resource_map_does_not_exists(
@@ -49,7 +55,12 @@ def test_get_one_should_return_a_resource_map_when_exist(
         directory_resource_id=mock_dto.directory_resource_id
     )
     for k in actual.__table__.columns.keys():
-        assert getattr(actual, k) == getattr(expected, k)
+        actual_val = getattr(actual, k)
+        expected_val = getattr(expected, k)
+        if isinstance(actual_val, datetime) and isinstance(expected_val, datetime):
+            assert actual_val.replace(tzinfo=None) == expected_val.replace(tzinfo=None)
+        else:
+            assert actual_val == expected_val
 
 
 def test_get_one_should_raise_excption_when_map_does_not_exist(
@@ -71,7 +82,12 @@ def test_find_should_return_results_when_param_matches(
     actual = results[0]
     assert len(results) > 0
     for k in actual.__table__.columns.keys():
-        assert getattr(actual, k) == getattr(expected, k)
+        actual_val = getattr(actual, k)
+        expected_val = getattr(expected, k)
+        if isinstance(actual_val, datetime) and isinstance(expected_val, datetime):
+            assert actual_val.replace(tzinfo=None) == expected_val.replace(tzinfo=None)
+        else:
+            assert actual_val == expected_val
 
 
 def test_find_should_return_empty_list_when_params_do_not_match(

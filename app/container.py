@@ -23,8 +23,8 @@ def container_config(binder: inject.Binder) -> None:
         dsn=config.database.dsn,
         pool_size=config.database.pool_size,
         max_overflow=config.database.max_overflow,
-        pool_pre_ping=config.database.pre_ping,
-        pool_recycle=config.database.recycle,
+        pool_pre_ping=config.database.pool_pre_ping,
+        pool_recycle=config.database.pool_recycle,
     )
     binder.bind(Database, db)
 

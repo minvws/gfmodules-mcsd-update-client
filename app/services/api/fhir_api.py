@@ -73,7 +73,7 @@ class FhirApi(HttpService):
             (bundle, bundle_errors)
         """
         try:
-            response = self.do_request("POST", json=jsonable_encoder(bundle.model_dump()))
+            response = self.do_request("POST", json=jsonable_encoder(bundle.model_dump(exclude_none=True)))
         except Exception as e:
             logger.exception("FHIR POST bundle failed. base_url=%s", self.base_url)
             raise HTTPException(status_code=500, detail=str(e))

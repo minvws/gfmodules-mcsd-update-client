@@ -5,7 +5,8 @@ import pytest
 from app.models.directory.dto import DirectoryDto
 from app.services.api.authenticators.null_authenticator import NullAuthenticator
 from app.services.api.fhir_api import FhirApiConfig
-from app.services.fhir.bundle.parser import create_bundle_entry
+from fhir.resources.bundle import BundleEntry
+from fhir.resources.organization import Organization
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.update_client_service import UpdateClientService
 from app.config import ConfigExternalCache
@@ -54,9 +55,8 @@ def update_client_service() -> UpdateClientService:
 def directory_dto() -> DirectoryDto:
     return DirectoryDto(
         id="D1",
-        name="Dir",
+        ura="12345678",
         endpoint_address="https://directory.example/fhir",
-        uras_allowed=[],
     )
 
 
@@ -65,18 +65,9 @@ def test_update_resource_uses_bulk_exists_and_deduplicates_before_calling_update
 ) -> None:
     # History contains duplicates of the same resource id
     history = [
-        create_bundle_entry(
-            {"fullUrl": "urn:uuid:1", "resource": {"resourceType": "Organization", "id": "A"}},
-            fill_required_fields=True,
-        ),
-        create_bundle_entry(
-            {"fullUrl": "urn:uuid:2", "resource": {"resourceType": "Organization", "id": "A"}},
-            fill_required_fields=True,
-        ),
-        create_bundle_entry(
-            {"fullUrl": "urn:uuid:3", "resource": {"resourceType": "Organization", "id": "B"}},
-            fill_required_fields=True,
-        ),
+        BundleEntry.model_construct(fullUrl="urn:uuid:1", resource=Organization.model_construct(id="A")),
+        BundleEntry.model_construct(fullUrl="urn:uuid:2", resource=Organization.model_construct(id="A")),
+        BundleEntry.model_construct(fullUrl="urn:uuid:3", resource=Organization.model_construct(id="B")),
     ]
 
     fake_api = MagicMock()
@@ -109,14 +100,8 @@ def test_update_resource_skips_update_page_when_all_entries_already_processed(
     update_client_service: UpdateClientService, directory_dto: DirectoryDto
 ) -> None:
     history = [
-        create_bundle_entry(
-            {"fullUrl": "urn:uuid:1", "resource": {"resourceType": "Organization", "id": "A"}},
-            fill_required_fields=True,
-        ),
-        create_bundle_entry(
-            {"fullUrl": "urn:uuid:2", "resource": {"resourceType": "Organization", "id": "B"}},
-            fill_required_fields=True,
-        ),
+        BundleEntry.model_construct(fullUrl="urn:uuid:1", resource=Organization.model_construct(id="A")),
+        BundleEntry.model_construct(fullUrl="urn:uuid:2", resource=Organization.model_construct(id="B")),
     ]
 
     fake_api = MagicMock()
@@ -142,35 +127,37 @@ def test_update_resource_skips_update_page_when_all_entries_already_processed(
     update_client_service.update_page.assert_not_called()
 
 def test_update_resource_does_not_fallback_to_individual_key_exists_for_history_filtering(
-    update_client_service: UpdateClientService,
+    update_client_service: UpdateClientService, directory_dto: DirectoryDto
 ):
-    history_page = MagicMock()
-    history_page.entry = [
-        MagicMock(fullUrl=f"Organization/{i}") for i in range(100)
+    history = [
+        BundleEntry.model_construct(fullUrl=f"urn:uuid:{i}", resource=Organization.model_construct(id=str(i)))
+        for i in range(100)
     ] + [
-        MagicMock(fullUrl="Organization/A"),
-        MagicMock(fullUrl="Organization/B"),
-        MagicMock(fullUrl="Organization/A"),
+        BundleEntry.model_construct(fullUrl="urn:uuid:A1", resource=Organization.model_construct(id="A")),
+        BundleEntry.model_construct(fullUrl="urn:uuid:B1", resource=Organization.model_construct(id="B")),
+        BundleEntry.model_construct(fullUrl="urn:uuid:A2", resource=Organization.model_construct(id="A")),
     ]
 
-    update_client_service.get_update_client_history_pages = MagicMock(
-        return_value=[history_page]
-    )
+    fake_api = MagicMock()
+    fake_api.validate_capability_statement.return_value = True
+    fake_api.build_history_params.return_value = {"_count": "50"}
+    fake_api.get_history_batch.side_effect = [(None, history)]
 
     cache_service = MagicMock()
     cache_service.bulk_exists = MagicMock(return_value=set())
     cache_service.key_exists = MagicMock(return_value=False)
 
-    update_client_service._UpdateClientService__create_cache_run = MagicMock(
-        return_value=cache_service
-    )
+    with patch("app.services.update.update_client_service.FhirApi", return_value=fake_api):
+        update_client_service.update_page = MagicMock(return_value=[])  # type: ignore[method-assign]
+        update_client_service._UpdateClientService__clear_and_add_nodes = MagicMock(return_value=0)  # type: ignore[attr-defined]
 
-    update_client_service.update_page = MagicMock(return_value=[])
-
-    update_client_service.update_resource(
-        res_type="Organization",
-        history_criteria={},
-    )
+        update_client_service.update_resource(
+            directory=directory_dto,
+            resource_type="Organization",
+            cache_service=cache_service,
+            since=None,
+            ura_whitelist={},
+        )
 
     assert cache_service.bulk_exists.call_count == 1
-    assert cache_service.key_exists.call_count <= 2
+    assert cache_service.key_exists.call_count == 0

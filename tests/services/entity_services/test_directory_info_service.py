@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from app.models.directory.dto import DirectoryDto
 from app.services.entity.directory_info_service import DirectoryInfoService
@@ -14,7 +14,7 @@ def sample_directory_info_ignored() -> DirectoryDto:
         endpoint_address="https://example.com/fhir",
         failed_sync_count=2,
         failed_attempts=1,
-        last_success_sync=datetime.now(tz=timezone.utc) - timedelta(hours=2),
+        last_success_sync=datetime.now() - timedelta(hours=2),
         is_ignored=True,
     )
 
@@ -24,8 +24,8 @@ def sample_directory_info_deleted() -> DirectoryDto:
         id="test-directory-deleted",
         ura="87654321",
         endpoint_address="https://example.com/fhir",
-        last_success_sync=datetime.now(tz=timezone.utc) - timedelta(hours=1),
-        deleted_at=datetime.now(tz=timezone.utc),
+        last_success_sync=datetime.now() - timedelta(hours=1),
+        deleted_at=datetime.now(),
     )
 
 def test_create_directory_info(
@@ -112,7 +112,7 @@ def test_get_all(
     directory_info_service.create(directory_id="test-directory-deleted", endpoint_address="https://example.com/deleted-fhir", ura="12345678")
 
     directory_info_service.update("test-directory-ignored", is_ignored=True)
-    directory_info_service.update("test-directory-deleted", deleted_at=datetime.now(tz=timezone.utc)-timedelta(days=1))
+    directory_info_service.update("test-directory-deleted", deleted_at=datetime.now()-timedelta(days=1))
 
     all_entries = directory_info_service.get_all()
     assert len(all_entries) == 1
@@ -184,7 +184,7 @@ def test_health_check_all_healthy(
     directory_info_service: DirectoryInfoService,
 ) -> None:
     directory_info_service.create(directory_id="test-directory-1", endpoint_address="https://example.com/fhir", ura="12345678")
-    directory_info_service.update(directory_id="test-directory-1", last_success_sync = datetime.now(tz=timezone.utc) - timedelta(minutes=30))
+    directory_info_service.update(directory_id="test-directory-1", last_success_sync = datetime.now() - timedelta(minutes=30))
     assert directory_info_service.health_check() is True
 
 def test_health_check_unhealthy_no_sync(
@@ -197,14 +197,14 @@ def test_health_check_unhealthy_stale(
     directory_info_service: DirectoryInfoService,
 ) -> None:
     directory_info_service.create(directory_id="test-directory-1", endpoint_address="https://example.com/fhir", ura="12345678")
-    directory_info_service.update(directory_id="test-directory-1", last_success_sync = datetime.now(tz=timezone.utc) - timedelta(hours=2))
+    directory_info_service.update(directory_id="test-directory-1", last_success_sync = datetime.now() - timedelta(hours=2))
     assert directory_info_service.health_check() is False
 
 def test_health_check_mixed(
     directory_info_service: DirectoryInfoService,
 ) -> None:
     directory_info_service.create(directory_id="test-directory-1", endpoint_address="https://example.com/fhir", ura="12345678")
-    directory_info_service.update(directory_id="test-directory-1", last_success_sync = datetime.now(tz=timezone.utc) - timedelta(minutes=30))
+    directory_info_service.update(directory_id="test-directory-1", last_success_sync = datetime.now() - timedelta(minutes=30))
     assert directory_info_service.health_check() is True
     directory_info_service.create(directory_id="unhealthy-dir", endpoint_address="https://example.com/fhir", ura="12345678")
     directory_info_service.update(directory_id="unhealthy-dir", last_success_sync=None)

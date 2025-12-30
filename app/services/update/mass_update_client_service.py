@@ -94,7 +94,7 @@ class MassUpdateClientService:
             # Only mark as successful when the update was actually executed.
             if isinstance(result, dict) and result.get("status") == "success":
                 # We apply a small lookback window to reduce risk of missing events due to clock skew.
-                new_updated = datetime.now(tz=timezone.utc) - timedelta(seconds=60)
+                new_updated = datetime.now(timezone.utc) - timedelta(seconds=60)
                 info.last_success_sync = new_updated
                 info.failed_attempts = 0
                 self.__directory_info_service.update(
@@ -151,9 +151,13 @@ class MassUpdateClientService:
     ) -> None:
         """Handle directories that have been synced successfully at least once."""
         assert directory.last_success_sync is not None  # Guaranteed by caller
-        elapsed_time = (
-            datetime.now(tz=timezone.utc) - directory.last_success_sync.astimezone(timezone.utc)
-        ).total_seconds()
+        last_success_sync = directory.last_success_sync
+        if last_success_sync.tzinfo is None:
+            last_success_sync = last_success_sync.replace(tzinfo=timezone.utc)
+        else:
+            last_success_sync = last_success_sync.astimezone(timezone.utc)
+
+        elapsed_time = (datetime.now(tz=timezone.utc) - last_success_sync).total_seconds()
 
         directory_is_stale = (
             elapsed_time > self.__ignore_client_directory_after_success_timeout_seconds and is_not_ignored
@@ -205,7 +209,7 @@ class MassUpdateClientService:
             )
             raise ValueError("Directory deleted_at is None")
 
-        if datetime.now(tz=timezone.utc) > directory.deleted_at.astimezone(timezone.utc):
+        if datetime.now(timezone.utc) > directory.deleted_at.astimezone(timezone.utc):
             logger.warning("Directory %s deleted_at timestamp reached, deleting data.", dir_id)
             self.__directory_info_service.delete(dir_id)
             self.__update_client_service.cleanup(dir_id)

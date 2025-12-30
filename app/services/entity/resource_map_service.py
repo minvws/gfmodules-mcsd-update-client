@@ -106,7 +106,7 @@ class ResourceMapService:
             resource_type=dto.resource_type,
             directory_resource_id=dto.directory_resource_id,
         )
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(timezone.utc)
 
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)
@@ -143,7 +143,7 @@ class ResourceMapService:
             key = (dto.directory_id, dto.resource_type, dto.directory_resource_id)  # type: ignore[attr-defined]
             deduped[key] = dto
 
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(timezone.utc)
 
         with self.__database.get_db_session() as session:
             repository = session.get_repository(ResourceMapRepository)

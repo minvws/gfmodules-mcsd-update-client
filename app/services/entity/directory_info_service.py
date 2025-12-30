@@ -172,7 +172,7 @@ class DirectoryInfoService:
             raise HTTPException(status_code=404, detail=f"Directory with ID {directory_id} not found")
 
         deleted_at = (
-            datetime.now(tz=timezone.utc) + timedelta(seconds=self.__cleanup_delay_after_client_directory_marked_deleted_in_sec)
+            datetime.now() + timedelta(seconds=self.__cleanup_delay_after_client_directory_marked_deleted_in_sec)
             if not specific_datetime else specific_datetime
         )
         self.update(directory_id=directory_id, deleted_at=deleted_at)
@@ -206,9 +206,14 @@ class DirectoryInfoService:
             if not directory_dto.last_success_sync:
                 return False # Never synced successfully
 
+            last_success_sync = directory_dto.last_success_sync
+            if last_success_sync.tzinfo is None:
+                last_success_sync = last_success_sync.replace(tzinfo=timezone.utc)
+            else:
+                last_success_sync = last_success_sync.astimezone(timezone.utc)
+
             time_since_last_success = (
-                datetime.now(tz=timezone.utc)
-                - directory_dto.last_success_sync.astimezone(timezone.utc)
+                datetime.now(tz=timezone.utc) - last_success_sync
             ).total_seconds()
 
             return time_since_last_success < int(self.__directory_marked_as_unhealthy_after_success_timeout_seconds)

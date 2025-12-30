@@ -21,9 +21,9 @@ def test_scheduler_update_runner() -> None:
     scheduler = Scheduler(function=mock_function, delay=1, max_logs_entries=2)
 
     # Simulate runner updates
-    scheduler.update_runner(start_time=1.0, end_time=2.0)
-    scheduler.update_runner(start_time=3.0, end_time=4.0)
-    scheduler.update_runner(start_time=5.0, end_time=6.0)
+    scheduler.update_runner(start_time=1.0, end_time=2.0, success=True, error=None)
+    scheduler.update_runner(start_time=3.0, end_time=4.0, success=True, error=None)
+    scheduler.update_runner(start_time=5.0, end_time=6.0, success=True, error=None)
 
     # Verify the runner logs are capped at max_logs_entries
     runner_history = scheduler.get_runner_history()
@@ -37,8 +37,8 @@ def test_scheduler_get_runner_history() -> None:
     scheduler = Scheduler(function=mock_function, delay=1, max_logs_entries=5)
 
     # Simulate runner updates
-    scheduler.update_runner(start_time=1.0, end_time=2.0)
-    scheduler.update_runner(start_time=3.0, end_time=4.0)
+    scheduler.update_runner(start_time=1.0, end_time=2.0, success=True, error=None)
+    scheduler.update_runner(start_time=3.0, end_time=4.0, success=True, error=None)
 
     # Verify the runner history
     runner_history = scheduler.get_runner_history()

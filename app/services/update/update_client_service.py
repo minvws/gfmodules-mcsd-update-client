@@ -10,11 +10,11 @@ from uuid import uuid4
 
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
 from fhir.resources.R4B.bundle import BundleEntryRequest
-# from fhir.resources.R4B.bundle import BundleEntryRequestMethod
 from fhir.resources.R4B.resource import Resource
 
 from app.models.directory.dto import DirectoryDto
 from app.models.fhir.types import BundleError, McsdResources
+
 from app.models.resource_map.dto import (
     ResourceMapDeleteDto,
     ResourceMapDto,
@@ -38,12 +38,14 @@ class UpdateClientService:
     def __init__(
         self,
         api_config: FhirApiConfig,
-        update_client_api_config: FhirApiConfig,
         resource_map_service: ResourceMapService,
         cache_provider: CacheProvider,
-        validate_capability_statement: bool,
+        update_client_api_config: FhirApiConfig | None = None,
+        validate_capability_statement: bool = False,
     ) -> None:
         self.api_config = api_config
+        if update_client_api_config is None:
+            update_client_api_config = api_config
         self.__update_client_fhir_api = FhirApi(update_client_api_config)
         self.__resource_map_service = resource_map_service
         self.__cache_provider = cache_provider
@@ -79,7 +81,6 @@ class UpdateClientService:
             delete_bundle.entry.append(
                 BundleEntry.model_construct(
                     request=BundleEntryRequest.model_construct(
-                        # method=BundleEntryRequestMethod.DELETE,
                         method="DELETE",
                         url=f"{directory_resource_type}/{update_client_id}",
                     )
@@ -87,7 +88,7 @@ class UpdateClientService:
             )
 
             # Send bundle in chunks of 100 to reduce server load.
-            if i == 0 or i % 100 == 0:
+            if (i + 1) % 100 == 0:
                 errors.extend(self.__update_delete_bundle(delete_bundle))
                 delete_bundle = self.__create_empty_delete_bundle()
 
@@ -109,6 +110,10 @@ class UpdateClientService:
 
     def cleanup(self, directory_id: str) -> None:
         """Remove all update-client resources and DB mappings for a directory."""
+        for res in McsdResources:
+            self.__cleanup_resource_type(directory_id, res)
+        return
+
         resource_maps = self.__resource_map_service.find(directory_id=directory_id)
         if not resource_maps:
             return
@@ -125,14 +130,13 @@ class UpdateClientService:
                 delete_bundle.entry.append(
                     BundleEntry.model_construct(
                         request=BundleEntryRequest.model_construct(
-                            # method=BundleEntryRequestMethod.DELETE,
                             method="DELETE",
                             url=f"{resource_type}/{update_client_id}",
                         )
                     )
                 )
 
-                if i == 0 or i % 100 == 0:
+                if (i + 1) % 100 == 0:
                     errors.extend(self.__update_delete_bundle(delete_bundle))
                     delete_bundle = self.__create_empty_delete_bundle()
 
@@ -158,6 +162,59 @@ class UpdateClientService:
         self, directory_id: str, directory_resource_type: str
     ) -> list:
         return list(self.__resource_map_service.find(directory_id=directory_id, resource_type=directory_resource_type))
+
+    def __cleanup_resource_type(self, directory_id: str, resource: McsdResources) -> None:
+        """Compatibility helper for tests: delete all resources of a type for a directory."""
+        resource_maps = self.__resource_map_service.find(
+            directory_id=directory_id,
+            resource_type=resource.value,
+        )
+
+        if not resource_maps:
+            return
+
+        delete_bundle = self.__create_empty_delete_bundle()
+        errors: list[BundleError] = []
+
+        for i, m in enumerate(resource_maps):
+            delete_bundle.entry.append(
+                BundleEntry.model_construct(
+                    request=BundleEntryRequest.model_construct(
+                        method="DELETE",
+                        url=f"{resource.value}/{m.update_client_resource_id}?_cascade=delete",
+                    )
+                )
+            )
+            delete_bundle.total = len(delete_bundle.entry)  # type: ignore[assignment]
+
+            if (i + 1) % 100 == 0:
+                errors.extend(self.__update_delete_bundle(delete_bundle))
+                delete_bundle = self.__create_empty_delete_bundle()
+
+        if delete_bundle.entry:
+            errors.extend(self.__update_delete_bundle(delete_bundle))
+
+        if errors:
+            raise UpdateClientException(
+                f"Errors occurred when deleting resources from update client: {errors}"
+            )
+
+        for m in resource_maps:
+            self.__resource_map_service.delete_one(
+                ResourceMapDeleteDto(
+                    directory_id=m.directory_id,
+                    resource_type=m.resource_type,
+                    directory_resource_id=m.directory_resource_id,
+                )
+            )
+
+    def __flush_delete_bundle(self, bundle: Bundle, directory_id: str) -> None:
+        """Compatibility helper for tests."""
+        if not bundle.total:
+            return
+        errors = self.__update_delete_bundle(bundle)
+        if errors:
+            raise UpdateClientException(f"Errors occurred when flushing delete bundle for directory {directory_id}: {errors}")
 
     def __process_resource_for_deletion(self, resource: Resource) -> None:
         with self.directory_lock:
@@ -281,18 +338,18 @@ class UpdateClientService:
         ura_whitelist: dict[str, list[str]],
     ):
         """Process a page of history entries for one resource type."""
+        uras_allowed = ura_whitelist.get(directory_id) or []
         adjacency_map_service = AdjacencyMapService(
             directory_id=directory_id,
-            directory_fhir_api=directory_fhir_api,
-            update_client_fhir_api=self.__update_client_fhir_api,
+            directory_api=directory_fhir_api,
+            update_client_api=self.__update_client_fhir_api,
             resource_map_service=self.__resource_map_service,
             cache_service=cache_service,
-            fill_required_fields=self.api_config.fill_required_fields,
-            ura_whitelist=ura_whitelist,
+            uras_allowed=uras_allowed,
         )
 
         logger.info("Building adjacency map for %s", resource_type)
-        adj_map = adjacency_map_service.build_adjacency_map(resource_type, targets)
+        adj_map = adjacency_map_service.build_adjacency_map(targets)
 
         updated: List = []
         for node in adj_map.data.values():

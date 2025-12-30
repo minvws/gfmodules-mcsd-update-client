@@ -2,7 +2,8 @@ from unittest.mock import MagicMock
 
 from app.models.adjacency.adjacency_map import AdjacencyMap
 from app.models.adjacency.node import Node, NodeReference
-from app.services.fhir.bundle.parser import create_bundle_entry
+from fhir.resources.bundle import BundleEntry
+from fhir.resources.organization import Organization
 from app.services.update.adjacency_map_service import AdjacencyMapService
 
 
@@ -19,12 +20,9 @@ def test_update_client_hashes_should_warn_and_skip_when_entry_not_in_adjacency_m
     )
 
     # Update-client returns Organization/<dir>-B which is NOT in adj_map -> should warn and continue
-    update_client_entry = create_bundle_entry(
-        {
-            "fullUrl": "urn:uuid:1",
-            "resource": {"resourceType": "Organization", "id": f"{mock_directory_id}-B"},
-        },
-        fill_required_fields=True,
+    update_client_entry = BundleEntry.model_construct(
+        fullUrl="urn:uuid:1",
+        resource=Organization.model_construct(id=f"{mock_directory_id}-B"),
     )
     adjacency_map_service.get_update_client_data = MagicMock(return_value=[update_client_entry])
 
