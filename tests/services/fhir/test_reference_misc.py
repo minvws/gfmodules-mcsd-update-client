@@ -39,3 +39,23 @@ def test_build_node_reference_invalid_format(monkeypatch: Any, caplog: Any) -> N
 
     # Check error log entry
     assert "Failed to parse reference" in caplog.text
+
+
+def test_build_node_reference_with_cross_host_absolute_url() -> None:
+    ref = Reference.model_construct(reference="https://other.example.org/fhir/Organization/abc")
+    node_ref = build_node_reference(ref, "https://example.com/fhir")
+
+    assert isinstance(node_ref, NodeReference)
+    assert node_ref.resource_type == "Organization"
+    assert node_ref.id == "abc"
+
+
+def test_build_node_reference_with_history_absolute_url() -> None:
+    ref = Reference.model_construct(
+        reference="https://other.example.org/fhir/Practitioner/123/_history/1"
+    )
+    node_ref = build_node_reference(ref, "https://example.com/fhir")
+
+    assert isinstance(node_ref, NodeReference)
+    assert node_ref.resource_type == "Practitioner"
+    assert node_ref.id == "123"

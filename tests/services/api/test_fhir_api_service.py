@@ -235,6 +235,48 @@ def test_get_resource_by_id_should_raise_exception_when_error_code_from_server_o
 
 
 @patch(PATCHED_MODULE)
+def test_get_resource_history_by_id_should_fall_back_to_get_by_id_on_400(
+    mock_response: MagicMock,
+    fhir_api: FhirApi,
+    mock_org: Dict[str, Any],
+) -> None:
+    mock_history_request = MagicMock()
+    mock_history_request.status_code = 400
+    mock_get_request = MagicMock()
+    mock_get_request.status_code = 200
+    mock_get_request.json.return_value = mock_org
+    mock_response.side_effect = [mock_history_request, mock_get_request]
+
+    entries = fhir_api.get_resource_history_by_id(
+        resource_type=mock_org["resourceType"], resource_id=mock_org["id"]
+    )
+
+    assert len(entries) == 1
+    assert entries[0].request.method == "PUT"  # type: ignore[union-attr]
+    assert entries[0].request.url == f"{mock_org['resourceType']}/{mock_org['id']}"  # type: ignore[union-attr]
+    assert entries[0].resource.id == mock_org["id"]  # type: ignore[union-attr]
+
+
+@patch(PATCHED_MODULE)
+def test_get_resource_history_by_id_should_return_empty_when_get_by_id_404s_after_400(
+    mock_response: MagicMock,
+    fhir_api: FhirApi,
+    mock_org: Dict[str, Any],
+) -> None:
+    mock_history_request = MagicMock()
+    mock_history_request.status_code = 400
+    mock_get_request = MagicMock()
+    mock_get_request.status_code = 404
+    mock_response.side_effect = [mock_history_request, mock_get_request]
+
+    entries = fhir_api.get_resource_history_by_id(
+        resource_type=mock_org["resourceType"], resource_id=mock_org["id"]
+    )
+
+    assert entries == []
+
+
+@patch(PATCHED_MODULE)
 def test_search_resource_should_succeed(
     mock_response: MagicMock,
     mock_org_history_bundle: Dict[str, Any],

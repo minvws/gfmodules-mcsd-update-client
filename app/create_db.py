@@ -1,8 +1,10 @@
-import application
-import container
+from app import application
+from app import container
 
-if __name__ == "__main__":
+def main() -> None:
     application.application_init()
-
     db = container.get_database()
     db.generate_tables()
+
+if __name__ == "__main__":
+    main()
