@@ -74,6 +74,11 @@
       "id": "017-Org",
       "ura": "00000000017",
       "endpoint_address": "https://proxy.matrix.ozo.headease.nl/mcsd/61631321"
+    },
+    {
+      "id": "SYS",
+      "ura": "00000000018",
+      "endpoint_address": "http://hapi-directory:8080/fhir/"
     }
   ]
 }
