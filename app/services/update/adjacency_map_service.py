@@ -1,6 +1,9 @@
 import copy
 import logging
+import re
 from typing import List
+
+from fastapi import HTTPException
 
 from fhir.resources.R4B.organization import Organization
 
@@ -26,6 +29,8 @@ logger = logging.getLogger(__name__)
 
 
 MAX_PASSES = 50
+
+_MCSD_URA_IN_BASE_URL = re.compile(r"/mcsd/(?P<ura>[^/]+)(?:/|$)")
 
 class AdjacencyMapException(Exception):
     """Base exception for adjacency map operations"""
@@ -187,7 +192,23 @@ class AdjacencyMapService:
 
     def get_directory_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
         bundle_request = FhirService.create_bundle_request(refs)
-        entries, errors = self.__directory_api.post_bundle(bundle_request)
+        self.__prefix_mcsd_urls_if_needed(bundle_request, self.__directory_api.base_url)
+        try:
+            entries, errors = self.__directory_api.post_bundle(bundle_request)
+        except HTTPException as e:
+            # Some mCSD proxy endpoints (notably /mcsd/{ura}/...) reject POSTs to the base URL,
+            # even though individual GETs to /mcsd/{ura}/{resourceType}/{id}/_history work.
+            # Fall back to per-resource instance history fetch for missing references.
+            if e.status_code == 400 and _MCSD_URA_IN_BASE_URL.search(self.__directory_api.base_url):
+                logger.warning(
+                    "Batch fetch rejected by directory endpoint; falling back to per-resource history GETs. directory_id=%s",
+                    self.directory_id,
+                )
+                out: List[BundleEntry] = []
+                for ref in refs:
+                    out.extend(self.__directory_api.get_resource_history_by_id(ref.resource_type, ref.id))
+                return out
+            raise
         if errors:
             logger.error("Errors occurred when fetching entries: %s", errors)
             raise AdjacencyMapException("Errors occurred when fetching entries")
@@ -197,6 +218,7 @@ class AdjacencyMapService:
         self, refs: List[BundleRequestParams]
     ) -> List[BundleEntry]:
         bundle_request = FhirService.create_bundle_request(refs)
+        self.__prefix_mcsd_urls_if_needed(bundle_request, self.__update_client_api.base_url)
         entries, errors = self.__update_client_api.post_bundle(bundle_request)
         if errors and any(
             err.status != 404 for err in errors
@@ -207,6 +229,34 @@ class AdjacencyMapService:
             )
             raise AdjacencyMapException("Errors occurred when fetching entries")
         return self.__filter_entries(entries)
+
+    @staticmethod
+    def __prefix_mcsd_urls_if_needed(bundle: Bundle, base_url: str) -> None:
+        """Some directory proxies expect bundle entry URLs to include `/mcsd/{ura}/...`.
+
+        Our request bundle builder generates URLs like `/{resourceType}/{id}/_history`.
+        If the target base URL already contains `/mcsd/{ura}`, prefix each entry URL
+        so the proxy sees the expected format.
+        """
+
+        match = _MCSD_URA_IN_BASE_URL.search(base_url)
+        if not match:
+            return
+
+        ura = match.group("ura")
+        prefix = f"/mcsd/{ura}"
+
+        if not bundle.entry:
+            return
+
+        for entry in bundle.entry:
+            if not entry.request or not getattr(entry.request, "url", None):
+                continue
+            url = entry.request.url  # type: ignore[assignment]
+            if isinstance(url, str) and url.startswith(prefix + "/"):
+                continue
+            if isinstance(url, str):
+                entry.request.url = f"{prefix}{url if url.startswith('/') else '/' + url}"  # type: ignore[assignment]
 
     def create_node(self, entry: BundleEntry) -> Node:
         res_type, _id = FhirService.get_resource_type_and_id_from_entry(entry)

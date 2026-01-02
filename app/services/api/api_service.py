@@ -183,10 +183,18 @@ class HttpService(ABC):
                 logger.exception("Request failed. method=%s url=%s", method, url)
                 break
 
-        logger.error("Failed to make request after %s attempts. method=%s url=%s", self.__retries, method, url)
-        # Re-raise the last exception to preserve context.
         if last_exc is not None:
+            logger.error(
+                "Failed to make request after %s attempts. error=%s detail=%s method=%s url=%s",
+                self.__retries,
+                type(last_exc).__name__,
+                last_exc,
+                method,
+                url,
+            )
             raise last_exc
+
+        logger.error("Failed to make request after %s attempts. method=%s url=%s", self.__retries, method, url)
         raise RequestsConnectionError("Failed to make request after too many retries")
 
     def __compute_backoff(self, attempt: int) -> float:

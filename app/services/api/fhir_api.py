@@ -95,6 +95,22 @@ class FhirApi(HttpService):
         bundle_errors = collect_errors(parsed_bundle)
         return parsed_bundle, bundle_errors
 
+    def get_resource_history_by_id(self, resource_type: str, resource_id: str) -> List[BundleEntry]:
+        """Fetch a single resource's instance history and return filtered entries."""
+        response = self.do_request(method="GET", sub_route=f"{resource_type}/{resource_id}/_history")
+        if response.status_code >= 400:
+            logger.error(
+                "FHIR instance history fetch failed. status=%s resource=%s/%s body=%s",
+                response.status_code,
+                resource_type,
+                resource_id,
+                self._safe_json(response),
+            )
+            raise HTTPException(status_code=response.status_code, detail=HTTP_ERR_MSG)
+
+        bundle = self.__fhir_service.create_bundle(response.json())
+        return filter_history_entries(bundle.entry) if bundle.entry else []
+
     def search_resource(
         self, resource_type: str, params: dict[str, Any]
     ) -> tuple[URL | None, List[BundleEntry]]:

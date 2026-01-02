@@ -304,11 +304,15 @@ class UpdateClientService:
                 next_params, history = directory_fhir_api.get_history_batch(resource_type, next_params)
             except HTTPException as e:
                 # Best-effort mode: some servers will 400 on unsupported resource types
-                if self.__allow_missing_resources and e.status_code == 400:
+                if self.__allow_missing_resources and e.status_code in (400, 404):
+                    # Some FHIR servers respond 404 (not 400) for unsupported resource types.
+                    # To avoid masking a misconfigured base URL, only treat 404 as "missing resource"
+                    # if the endpoint still looks like a FHIR endpoint (i.e., /metadata is reachable).
                     logger.warning(
-                        "Directory %s does not support resource type %s; skipping due to allow_missing_resources=True",
+                        "Directory %s does not support resource type %s (status=%s); skipping this resource due to allow_missing_resources=True",
                         getattr(directory, "id", "<unknown>"),
                         getattr(resource_type, "value", str(resource_type)),
+                        e.status_code,
                     )
                     return 0
                 raise
