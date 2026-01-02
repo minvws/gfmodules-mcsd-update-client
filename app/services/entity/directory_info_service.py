@@ -70,6 +70,7 @@ class DirectoryInfoService:
             failed_sync_count: int | None = None,
             failed_attempts: int | None = None,
             last_success_sync: datetime | None = None,
+            reason_ignored: str | None = None,
     ) -> DirectoryDto:
         """
         Updates an existing directory information entry.
@@ -95,6 +96,8 @@ class DirectoryInfoService:
                 directory_info.failed_attempts = failed_attempts
             if last_success_sync is not None:
                 directory_info.last_success_sync = last_success_sync
+            if reason_ignored is not None:
+                directory_info.reason_ignored = reason_ignored
             session.commit()
             session.session.refresh(directory_info)
             return directory_info.to_dto()

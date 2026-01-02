@@ -4,6 +4,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from app.models.directory.dto import DirectoryDto
 from app.services.entity.directory_info_service import DirectoryInfoService
@@ -101,10 +102,26 @@ class MassUpdateClientService:
                     directory_id=info.id,
                     last_success_sync=info.last_success_sync,
                     failed_attempts=info.failed_attempts,
+                    reason_ignored="",
                 )
 
             return result
 
+        except RequestsConnectionError as e:
+            logger.warning("Directory %s appears offline/unreachable: %s", directory.id, str(e))
+            info.failed_attempts += 1
+            info.failed_sync_count += 1
+            self.__directory_info_service.update(
+                directory_id=info.id,
+                failed_attempts=info.failed_attempts,
+                failed_sync_count=info.failed_sync_count,
+                reason_ignored=str("Directory appears offline/unreachable."),
+            )
+            return {
+                "directory_id": directory.id,
+                "status": "offline",
+                "error": str(e),
+            }
         except Exception as e:
             logger.exception("Failed to update directory %s", directory.id)
             info.failed_attempts += 1
@@ -113,6 +130,7 @@ class MassUpdateClientService:
                 directory_id=info.id,
                 failed_attempts=info.failed_attempts,
                 failed_sync_count=info.failed_sync_count,
+                reason_ignored=str(e),
             )
             return {
                 "directory_id": directory.id,

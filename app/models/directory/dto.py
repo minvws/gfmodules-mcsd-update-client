@@ -10,3 +10,4 @@ class DirectoryDto(BaseModel):
     failed_sync_count: int = 0
     failed_attempts: int = 0
     last_success_sync: datetime | None = None
+    reason_ignored: str | None = None

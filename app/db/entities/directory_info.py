@@ -63,6 +63,12 @@ class DirectoryInfo(Base):
         nullable=True,
         default=None,
     )
+    reason_ignored: Mapped[str | None] = mapped_column(
+        "reason_ignored",
+        String,
+        nullable=True,
+        default=None,
+    )
 
     def to_dto(self) -> DirectoryDto:
         return DirectoryDto(
@@ -74,4 +80,5 @@ class DirectoryInfo(Base):
             failed_sync_count=self.failed_sync_count,
             failed_attempts=self.failed_attempts,
             last_success_sync=self.last_success_sync,
+            reason_ignored=self.reason_ignored,
         )
