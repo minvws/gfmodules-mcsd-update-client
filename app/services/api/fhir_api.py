@@ -7,7 +7,7 @@ from typing import Any, Dict, List
 
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from fhir.resources.R4B.bundle import Bundle, BundleEntry
+from fhir.resources.R4B.bundle import Bundle, BundleEntry, BundleEntryRequest
 from fhir.resources.R4B.domainresource import DomainResource
 from requests import JSONDecodeError, Response
 from yarl import URL
@@ -99,6 +99,18 @@ class FhirApi(HttpService):
         """Fetch a single resource's instance history and return filtered entries."""
         response = self.do_request(method="GET", sub_route=f"{resource_type}/{resource_id}/_history")
         if response.status_code >= 400:
+            if response.status_code == 400:
+                try:
+                    resource = self.get_resource_by_id(resource_type=resource_type, resource_id=resource_id)
+                    entry = BundleEntry.model_construct()
+                    entry.resource = resource  # type: ignore[assignment]
+                    entry.request = BundleEntryRequest.model_construct(method="PUT", url=f"{resource_type}/{resource_id}")  # type: ignore[assignment]
+                    return [entry]
+                except HTTPException as e:
+                    if e.status_code in (404, 410):
+                        return []
+                except Exception:
+                    pass
             logger.error(
                 "FHIR instance history fetch failed. status=%s resource=%s/%s body=%s",
                 response.status_code,

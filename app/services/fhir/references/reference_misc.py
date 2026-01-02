@@ -1,6 +1,7 @@
 
 from fhir.resources.R4B.reference import Reference
 import logging
+from yarl import URL
 
 from app.models.adjacency.node import NodeReference
 
@@ -14,11 +15,24 @@ def build_node_reference(data: Reference, base_url: str) -> NodeReference:
     if ref is None:
         raise ValueError("Invalid reference (None)")
 
-    if ref.startswith(base_url):
-        ref = ref[len(base_url):].lstrip("/")
+    base_url_norm = base_url.rstrip("/")
+    if ref.startswith(base_url_norm):
+        ref = ref[len(base_url_norm):].lstrip("/")
 
     if ref.startswith("https://") or ref.startswith("http://"): # NOSONAR
-        raise ValueError("Invalid absolute URL found")
+        try:
+            url = URL(ref)
+            parts = [p for p in url.path.split("/") if p]
+            if "_history" in parts:
+                i = parts.index("_history")
+                if i >= 2:
+                    return NodeReference(resource_type=parts[i - 2], id=parts[i - 1])
+                raise ValueError("Invalid absolute URL found")
+            if len(parts) >= 2:
+                return NodeReference(resource_type=parts[-2], id=parts[-1])
+            raise ValueError("Invalid absolute URL found")
+        except Exception:
+            raise ValueError("Invalid absolute URL found")
 
     parts = ref.split("/")
     if len(parts) != 2:

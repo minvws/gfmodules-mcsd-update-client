@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import heapq
 from dataclasses import replace
 from datetime import datetime
 import threading
@@ -386,7 +387,8 @@ class UpdateClientService:
         bundle.entry = []
         dtos: list[ResourceMapDto | ResourceMapUpdateDto | ResourceMapDeleteDto] = []
 
-        for node in nodes:
+        nodes_ordered = self.__order_nodes_for_transaction(nodes)
+        for node in nodes_ordered:
             if node.update_data is None:
                 continue
 
@@ -413,6 +415,50 @@ class UpdateClientService:
             node.updated = True
 
         return nodes
+
+    @staticmethod
+    def __order_nodes_for_transaction(nodes: List) -> List:
+        """Order nodes so referenced resources are created/updated before dependents."""
+        if not nodes:
+            return nodes
+        try:
+            keys = [n.cache_key() for n in nodes]
+            by_key = dict(zip(keys, nodes))
+            pos = {k: i for i, k in enumerate(keys)}
+            edges: dict[str, set[str]] = {k: set() for k in keys}
+            indeg: dict[str, int] = {k: 0 for k in keys}
+
+            for n in nodes:
+                n_key = n.cache_key()
+                for ref in getattr(n, "references", []) or []:
+                    ref_key = ref.cache_key()
+                    if ref_key not in by_key:
+                        continue
+                    if n_key in edges[ref_key]:
+                        continue
+                    edges[ref_key].add(n_key)
+                    indeg[n_key] += 1
+
+            heap: list[tuple[int, str]] = []
+            for k in keys:
+                if indeg[k] == 0:
+                    heapq.heappush(heap, (pos[k], k))
+
+            ordered: list[str] = []
+            while heap:
+                _, k = heapq.heappop(heap)
+                ordered.append(k)
+                for dep in edges[k]:
+                    indeg[dep] -= 1
+                    if indeg[dep] == 0:
+                        heapq.heappush(heap, (pos[dep], dep))
+
+            if len(ordered) != len(nodes):
+                return nodes
+            return [by_key[k] for k in ordered]
+        except Exception:
+            logger.exception("Failed to order nodes for transaction bundle")
+            return nodes
 
     def __handle_dtos(
         self, dtos: List[ResourceMapDto | ResourceMapUpdateDto | ResourceMapDeleteDto]

@@ -1,6 +1,5 @@
 import copy
 import logging
-import re
 from typing import List
 
 from fastapi import HTTPException
@@ -29,8 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 MAX_PASSES = 50
-
-_MCSD_URA_IN_BASE_URL = re.compile(r"/mcsd/(?P<ura>[^/]+)(?:/|$)")
 
 class AdjacencyMapException(Exception):
     """Base exception for adjacency map operations"""
@@ -67,6 +64,7 @@ class AdjacencyMapService:
             directory_id=directory_id,
         )
         self.__uras_allowed = uras_allowed
+        self.__nodes_with_unresolved_refs: set[str] = set()
 
     def build_adjacency_map(self, entries: List[BundleEntry]) -> AdjacencyMap:
         nodes = [self.create_node(entry) for entry in entries]
@@ -113,8 +111,15 @@ class AdjacencyMapService:
             nodes_after = adj_map.node_count()
             if nodes_after == nodes_before:
                 unresolved = adj_map.get_missing_refs()
-                logger.error("Cannot resolve all references: %s", unresolved)
-                raise AdjacencyMapException("Unresolved references found")
+                logger.warning("Cannot resolve all references; dropping unresolved: %s", unresolved)
+                unresolved_keys = {r.cache_key() for r in unresolved}
+                for node in adj_map.data.values():
+                    if not node.references:
+                        continue
+                    if any(r.cache_key() in unresolved_keys for r in node.references):
+                        self.__nodes_with_unresolved_refs.add(node.cache_key())
+                    node.references = [r for r in node.references if r.cache_key() not in unresolved_keys]
+                continue
         # All references are now resolved.
 
 
@@ -170,6 +175,16 @@ class AdjacencyMapService:
         for node in adj_map.data.values():
             if node.updated:
                 continue
+            if node.cache_key() in self.__nodes_with_unresolved_refs:
+                logger.warning(
+                    "Skipping node update due to unresolved references. directory_id=%s node=%s/%s",
+                    self.directory_id,
+                    node.resource_type,
+                    node.resource_id,
+                )
+                node.status = "ignore"
+                node.update_data = None
+                continue
             resource_map = self.__resource_map_service.get(
                 directory_id=self.directory_id,
                 resource_type=node.resource_type,
@@ -192,16 +207,12 @@ class AdjacencyMapService:
 
     def get_directory_data(self, refs: List[BundleRequestParams]) -> List[BundleEntry]:
         bundle_request = FhirService.create_bundle_request(refs)
-        self.__prefix_mcsd_urls_if_needed(bundle_request, self.__directory_api.base_url)
         try:
             entries, errors = self.__directory_api.post_bundle(bundle_request)
         except HTTPException as e:
-            # Some mCSD proxy endpoints (notably /mcsd/{ura}/...) reject POSTs to the base URL,
-            # even though individual GETs to /mcsd/{ura}/{resourceType}/{id}/_history work.
-            # Fall back to per-resource instance history fetch for missing references.
-            if e.status_code == 400 and _MCSD_URA_IN_BASE_URL.search(self.__directory_api.base_url):
+            if e.status_code == 400:
                 logger.warning(
-                    "Batch fetch rejected by directory endpoint; falling back to per-resource history GETs. directory_id=%s",
+                    "Batch fetch rejected by directory endpoint; falling back to per-resource GETs. directory_id=%s",
                     self.directory_id,
                 )
                 out: List[BundleEntry] = []
@@ -218,7 +229,6 @@ class AdjacencyMapService:
         self, refs: List[BundleRequestParams]
     ) -> List[BundleEntry]:
         bundle_request = FhirService.create_bundle_request(refs)
-        self.__prefix_mcsd_urls_if_needed(bundle_request, self.__update_client_api.base_url)
         entries, errors = self.__update_client_api.post_bundle(bundle_request)
         if errors and any(
             err.status != 404 for err in errors
@@ -229,34 +239,6 @@ class AdjacencyMapService:
             )
             raise AdjacencyMapException("Errors occurred when fetching entries")
         return self.__filter_entries(entries)
-
-    @staticmethod
-    def __prefix_mcsd_urls_if_needed(bundle: Bundle, base_url: str) -> None:
-        """Some directory proxies expect bundle entry URLs to include `/mcsd/{ura}/...`.
-
-        Our request bundle builder generates URLs like `/{resourceType}/{id}/_history`.
-        If the target base URL already contains `/mcsd/{ura}`, prefix each entry URL
-        so the proxy sees the expected format.
-        """
-
-        match = _MCSD_URA_IN_BASE_URL.search(base_url)
-        if not match:
-            return
-
-        ura = match.group("ura")
-        prefix = f"/mcsd/{ura}"
-
-        if not bundle.entry:
-            return
-
-        for entry in bundle.entry:
-            if not entry.request or not getattr(entry.request, "url", None):
-                continue
-            url = entry.request.url  # type: ignore[assignment]
-            if isinstance(url, str) and url.startswith(prefix + "/"):
-                continue
-            if isinstance(url, str):
-                entry.request.url = f"{prefix}{url if url.startswith('/') else '/' + url}"  # type: ignore[assignment]
 
     def create_node(self, entry: BundleEntry) -> Node:
         res_type, _id = FhirService.get_resource_type_and_id_from_entry(entry)
