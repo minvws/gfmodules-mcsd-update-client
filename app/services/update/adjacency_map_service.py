@@ -20,6 +20,7 @@ from app.models.adjacency.node import (
 from app.models.resource_map.dto import ResourceMapDto, ResourceMapUpdateDto, ResourceMapDeleteDto
 from app.services.entity.resource_map_service import ResourceMapService
 from app.services.fhir.fhir_service import FhirService
+from app.services.fhir.id_utils import make_namespaced_fhir_id
 from app.services.api.fhir_api import FhirApi
 from app.services.update.computation_service import ComputationService
 from app.services.update.filter_ura import filter_ura
@@ -156,15 +157,16 @@ class AdjacencyMapService:
         update_client_targets = self.__get_update_client_missing_targets(adj_map)
         if len(update_client_targets) > 0:
             update_client_entries = self.get_update_client_data(update_client_targets)
+            node_by_update_client_id = {
+                make_namespaced_fhir_id(self.directory_id, n.resource_id): n
+                for n in adj_map.data.values()
+            }
             for entry in update_client_entries:
                 res_type, _id = FhirService.get_resource_type_and_id_from_entry(entry)
-                res_id = _id.replace(f"{self.directory_id}-", "")
-                node_key = f"{res_type}/{res_id}"
-                node = adj_map.data.get(node_key)
+                node = node_by_update_client_id.get(_id)
                 if node is None:
                     logger.warning(
-                        "Update-client returned a resource that is not in the adjacency map. node_key=%s update_client_id=%s",
-                        node_key,
+                        "Update-client returned a resource that is not in the adjacency map. update_client_id=%s",
                         _id,
                     )
                     continue
@@ -276,7 +278,7 @@ class AdjacencyMapService:
     def create_update_data(
         self, node: Node, resource_map: ResourceMap | None
     ) -> NodeUpdateData | None:
-        update_client_resource_id = f"{self.directory_id}-{node.resource_id}"
+        update_client_resource_id = make_namespaced_fhir_id(self.directory_id, node.resource_id)
         url = f"{node.resource_type}/{update_client_resource_id}"
 
         match node.status:
@@ -390,7 +392,7 @@ class AdjacencyMapService:
             if not self.__cache_service.key_exists(node_id):
                 update_client_targets.append(
                     BundleRequestParams(
-                        id=f"{self.directory_id}-{node.resource_id}",
+                        id=make_namespaced_fhir_id(self.directory_id, node.resource_id),
                         resource_type=node.resource_type,
                     )
                 )

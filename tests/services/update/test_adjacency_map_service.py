@@ -36,7 +36,7 @@ def update_client_ep_entry(
     resource_id = f"{mock_directory_id}-{mock_ep['id']}"
     return {
         "fullUrl": f"http://example-update_client-url/Endpoint/{resource_id}",
-        "resource": mock_ep,
+        "resource": {**mock_ep, "id": resource_id},
         "request": {"method": "POST", "url": f"Endpoint/{resource_id}"},
     }
 
