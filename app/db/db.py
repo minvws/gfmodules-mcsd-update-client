@@ -3,6 +3,8 @@ import logging
 from sqlalchemy import MetaData, StaticPool, create_engine, text
 from sqlalchemy.orm import Session
 
+import app.db.entities  # noqa: F401
+
 from app.db.entities.base import Base
 from app.db.session import DbSession
 

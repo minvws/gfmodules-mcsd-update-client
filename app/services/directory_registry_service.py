@@ -149,11 +149,19 @@ class DirectoryRegistryService:
                 existing_id = self.__directory_info_service.get_id_by_endpoint_address(dto.endpoint_address)
                 dir_id = existing_id or dto.id
                 endpoint_to_id[dto.endpoint_address] = dir_id
+                origin = "provider"
+                if existing_id is not None:
+                    try:
+                        existing = self.__directory_info_service.get_one_by_id(existing_id)
+                        if existing.origin == "manual":
+                            origin = None
+                    except Exception:
+                        pass
                 stored = self.__directory_info_service.create_or_update(
                     directory_id=dir_id,
                     endpoint_address=dto.endpoint_address,
                     ura=dto.ura,
-                    origin="provider",
+                    origin=origin,
                 )
                 seen_directory_ids.add(stored.id)
                 link_repo.upsert_seen(provider_id=provider.id, directory_id=stored.id, now=now)
@@ -164,6 +172,14 @@ class DirectoryRegistryService:
             session.commit()
 
         archived: list[str] = []
+        if not self.__config.client_directory.mark_client_directory_as_deleted_after_lrza_delete:
+            return {
+                "provider_id": provider_id,
+                "url": provider_url,
+                "fetched": len(fetched),
+                "removed": len(removed),
+                "archived": archived,
+            }
         for removed_dir_id in removed:
             try:
                 info = self.__directory_info_service.get_one_by_id(removed_dir_id)
