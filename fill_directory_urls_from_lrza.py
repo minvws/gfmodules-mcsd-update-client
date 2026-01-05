@@ -4,7 +4,6 @@ import fhir.resources.bundle as bundle_module
 from uuid import uuid4
 import json
 
-# HAPI_ENDPOINT = "http://localhost:8080/fhir"
 NUTS_LRZA = "https://knooppunt-test.nuts-services.nl/lrza/mcsd"
 
 

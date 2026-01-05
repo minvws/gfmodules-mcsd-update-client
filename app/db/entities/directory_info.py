@@ -26,6 +26,12 @@ class DirectoryInfo(Base):
         String,
         nullable=False,
     )
+    origin: Mapped[str] = mapped_column(
+        "origin",
+        String,
+        nullable=False,
+        default="provider",
+    )
     failed_sync_count: Mapped[int] = mapped_column(
         "failed_sync_count", Integer, nullable=False, default=0
     )
@@ -75,6 +81,7 @@ class DirectoryInfo(Base):
             id=self.id,
             ura=self.ura,
             endpoint_address=self.endpoint_address,
+            origin=self.origin,
             deleted_at=self.deleted_at,
             is_ignored=self.is_ignored,
             failed_sync_count=self.failed_sync_count,

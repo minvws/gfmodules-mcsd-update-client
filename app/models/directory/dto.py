@@ -5,6 +5,7 @@ class DirectoryDto(BaseModel):
     id: str
     ura: str
     endpoint_address: str
+    origin: str | None = None
     deleted_at: datetime | None = None
     is_ignored: bool = False
     failed_sync_count: int = 0

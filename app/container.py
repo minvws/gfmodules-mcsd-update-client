@@ -2,6 +2,9 @@ from app.services.api.fhir_api import FhirApiConfig
 from app.services.entity.directory_info_service import DirectoryInfoService
 from app.services.directory_provider.factory import DirectoryProviderFactory
 from app.services.directory_provider.directory_provider import DirectoryProvider
+from app.services.directory_provider.capability_provider import CapabilityProvider
+from app.services.directory_provider.registry_db_provider import RegistryDbDirectoryProvider
+from app.services.directory_registry_service import DirectoryRegistryService
 from app.services.update.cache.provider import CacheProvider
 from app.services.update.mass_update_client_service import MassUpdateClientService
 from app.services.scheduler import Scheduler
@@ -41,12 +44,6 @@ def container_config(binder: inject.Binder) -> None:
     )
     binder.bind(DirectoryInfoService, directory_info_service)
 
-    directory_provider_factory = DirectoryProviderFactory(
-        config=config, auth=auth, directory_info_service=directory_info_service
-    )
-    directory_provider = directory_provider_factory.create()
-    binder.bind(DirectoryProvider, directory_provider)
-
     api_config = FhirApiConfig(
         base_url=config.mcsd.update_client_url,
         fill_required_fields=config.mcsd.fill_required_fields,
@@ -67,6 +64,31 @@ def container_config(binder: inject.Binder) -> None:
         allow_missing_resources=config.mcsd.allow_missing_resources,
     )
     binder.bind(UpdateClientService, update_service)
+
+    if config.client_directory.use_directory_registry_db:
+        registry_service = DirectoryRegistryService(
+            database=db,
+            config=config,
+            directory_info_service=directory_info_service,
+            update_client_service=update_service,
+            auth=auth,
+        )
+        binder.bind(DirectoryRegistryService, registry_service)
+        registry_service.ensure_config_providers()
+        registry_service.refresh_all_enabled_providers()
+
+        base_provider = RegistryDbDirectoryProvider(directory_info_service=directory_info_service)
+        directory_provider = CapabilityProvider(
+            inner=base_provider,
+            validate_capability_statement=config.mcsd.check_capability_statement,
+        )
+    else:
+        directory_provider_factory = DirectoryProviderFactory(
+            config=config, auth=auth, directory_info_service=directory_info_service
+        )
+        directory_provider = directory_provider_factory.create()
+
+    binder.bind(DirectoryProvider, directory_provider)
 
 
 
@@ -122,6 +144,10 @@ def get_update_client_service() -> UpdateClientService:
 
 def get_directory_info_service() -> DirectoryInfoService:
     return inject.instance(DirectoryInfoService)
+
+
+def get_directory_registry_service() -> DirectoryRegistryService:
+    return inject.instance(DirectoryRegistryService)
 
 
 def setup_container() -> None:

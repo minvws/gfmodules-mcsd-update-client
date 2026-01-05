@@ -109,7 +109,9 @@ class ConfigDatabase(BaseModel):
 class ConfigClientDirectory(BaseModel):
     # either provider_url or urls_path should be set from config
     directories_provider_url: str | None = Field(default=None)
+    directories_provider_urls: list[str] = Field(default_factory=list)
     directories_file_path: str | None = Field(default=None)
+    use_directory_registry_db: bool = Field(default=False)
     timeout: int = Field(default=1)
     backoff: float = Field(default=0.1)
     retries: int = Field(default=5)
@@ -160,6 +162,22 @@ class ConfigClientDirectory(BaseModel):
         if v in (None, "", " "):
             return 20
         return int(v)
+
+    @field_validator("directories_provider_urls", mode="before")
+    def validate_directories_provider_urls(cls, v: Any) -> list[str]:
+        if v in (None, "", " "):
+            return []
+        if isinstance(v, str):
+            return [p.strip() for p in v.split(",") if p.strip()]
+        return v  # type: ignore
+
+    @field_validator("use_directory_registry_db", mode="before")
+    def validate_use_directory_registry_db(cls, v: Any) -> Any:
+        if v in (None, "", " "):
+            return False
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
 
     @computed_field
     def directory_marked_as_unhealthy_after_success_timeout_in_sec(self) -> int:
