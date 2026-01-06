@@ -8,7 +8,7 @@ def test_add_nodes_should_succeed(
     adjacency_map: AdjacencyMap, mock_loc_node: Node
 ) -> None:
     adjacency_map.add_nodes([mock_loc_node])
-    actual = adjacency_map.data[mock_loc_node.resource_id]
+    actual = adjacency_map.data[mock_loc_node.cache_key()]
 
     assert mock_loc_node == actual
 
@@ -17,7 +17,7 @@ def test_add_node_should_succeed(
     adjacency_map: AdjacencyMap, mock_loc_node: Node
 ) -> None:
     adjacency_map.add_node(mock_loc_node)
-    actual = adjacency_map.data[mock_loc_node.resource_id]
+    actual = adjacency_map.data[mock_loc_node.cache_key()]
 
     assert mock_loc_node == actual
 
@@ -61,7 +61,7 @@ def test_get_group_should_succeed_when_a_new_node_with_refs_to_existing_ones_is_
 def test_get_group_should_raise_exception_when_node_does_not_exist(
     adjacency_map: AdjacencyMap, mock_loc_node: Node, mock_node_ep: Node
 ) -> None:
-    adjacency_map.data.pop(mock_node_ep.resource_id)
+    adjacency_map.data.pop(mock_node_ep.cache_key())
     with pytest.raises(KeyError):
         adjacency_map.get_group(mock_loc_node)
 
@@ -71,7 +71,7 @@ def test_get_missing_refs_should_succeed(
     mock_node_ep: Node,
     org_node_references: List[NodeReference],
 ) -> None:
-    adjacency_map.data.pop(mock_node_ep.resource_id)
+    adjacency_map.data.pop(mock_node_ep.cache_key())
     expected = org_node_references
 
     actual = adjacency_map.get_missing_refs()

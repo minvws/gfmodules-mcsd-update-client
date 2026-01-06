@@ -44,11 +44,12 @@ class ResourceMap(Base):
         TIMESTAMP(timezone=True),
         nullable=False,
         default=func.now(),
-        onupdate=datetime.now(),
+        onupdate=datetime.now,
     )
     created_at: Mapped[datetime] = mapped_column(
-        "created_at", TIMESTAMP, nullable=False, default=datetime.now()
+        "created_at", TIMESTAMP, nullable=False, default=datetime.now
     )
     modified_at: Mapped[datetime] = mapped_column(
-        "modified_at", TIMESTAMP, nullable=False, default=datetime.now()
+        "modified_at", TIMESTAMP, nullable=False, default=datetime.now,
+        onupdate=datetime.now,
     )

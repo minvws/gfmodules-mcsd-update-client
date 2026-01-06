@@ -15,6 +15,7 @@ from app.routers.resource_map_router import router as resource_map_router
 from app.routers.update_router import router as update_router
 from app.routers.update_client import router as update_client_router
 from app.routers.scheduler_router import router as scheduler_router
+from app.routers.directory_registry_router import router as directory_registry_router
 from app.config import get_config
 from app.stats import StatsdMiddleware, setup_stats
 from app.telemetry import setup_telemetry
@@ -103,6 +104,7 @@ def setup_fastapi() -> FastAPI:
         update_client_router,
         scheduler_router,
         ignore_list_router,
+        directory_registry_router,
     ]
     for router in routers:
         fastapi.include_router(router)

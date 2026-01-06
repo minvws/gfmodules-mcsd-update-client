@@ -26,7 +26,7 @@ class DirectoryInfoService:
         self.__directory_marked_as_unhealthy_after_success_timeout_seconds = directory_marked_as_unhealthy_after_success_timeout_seconds
         self.__cleanup_delay_after_client_directory_marked_deleted_in_sec = cleanup_delay_after_client_directory_marked_deleted_in_sec
 
-    def create_or_update(self, directory_id: str, endpoint_address: str, ura: str) -> DirectoryDto:
+    def create_or_update(self, directory_id: str, endpoint_address: str, ura: str, origin: str | None = None) -> DirectoryDto:
         """
         Creates a new directory information entry or updates an existing one.
         """
@@ -34,16 +34,18 @@ class DirectoryInfoService:
             return self.update(
                 directory_id=directory_id,
                 endpoint_address=endpoint_address,
-                ura=ura
+                ura=ura,
+                origin=origin,
             )
         else:
             return self.create(
                 directory_id=directory_id,
                 endpoint_address=endpoint_address,
-                ura=ura
+                ura=ura,
+                origin=origin,
             )
     
-    def create(self, directory_id: str, endpoint_address: str, ura: str) -> DirectoryDto:
+    def create(self, directory_id: str, endpoint_address: str, ura: str, origin: str | None = None) -> DirectoryDto:
         """
         Creates a new directory information entry.
         """
@@ -54,6 +56,7 @@ class DirectoryInfoService:
                 id=directory_id,
                 endpoint_address=endpoint_address,
                 ura=ura,
+                origin=origin or "provider",
             )
             session.add(directory_info)
             session.commit()
@@ -65,11 +68,13 @@ class DirectoryInfoService:
             directory_id: str, 
             endpoint_address: str | None = None, 
             ura: str | None = None,
+            origin: str | None = None,
             deleted_at: datetime | None = None,
             is_ignored: bool | None = None,
             failed_sync_count: int | None = None,
             failed_attempts: int | None = None,
             last_success_sync: datetime | None = None,
+            reason_ignored: str | None = None,
     ) -> DirectoryDto:
         """
         Updates an existing directory information entry.
@@ -85,6 +90,8 @@ class DirectoryInfoService:
                 directory_info.endpoint_address = endpoint_address
             if ura is not None:
                 directory_info.ura = ura
+            if origin is not None:
+                directory_info.origin = origin
             if deleted_at is not None:
                 directory_info.deleted_at = deleted_at
             if is_ignored is not None:
@@ -95,9 +102,17 @@ class DirectoryInfoService:
                 directory_info.failed_attempts = failed_attempts
             if last_success_sync is not None:
                 directory_info.last_success_sync = last_success_sync
+            if reason_ignored is not None:
+                directory_info.reason_ignored = reason_ignored
             session.commit()
             session.session.refresh(directory_info)
             return directory_info.to_dto()
+
+    def get_id_by_endpoint_address(self, endpoint_address: str) -> str | None:
+        with self.__database.get_db_session() as session:
+            repository = session.get_repository(DirectoryInfoRepository)
+            entry = repository.get_by_endpoint_address(endpoint_address)
+            return entry.id if entry is not None else None
 
 
     def delete(self, directory_id: str) -> None:
@@ -206,9 +221,14 @@ class DirectoryInfoService:
             if not directory_dto.last_success_sync:
                 return False # Never synced successfully
 
+            last_success_sync = directory_dto.last_success_sync
+            if last_success_sync.tzinfo is None:
+                last_success_sync = last_success_sync.replace(tzinfo=timezone.utc)
+            else:
+                last_success_sync = last_success_sync.astimezone(timezone.utc)
+
             time_since_last_success = (
-                datetime.now(tz=timezone.utc)
-                - directory_dto.last_success_sync.astimezone(timezone.utc)
+                datetime.now(tz=timezone.utc) - last_success_sync
             ).total_seconds()
 
             return time_since_last_success < int(self.__directory_marked_as_unhealthy_after_success_timeout_seconds)

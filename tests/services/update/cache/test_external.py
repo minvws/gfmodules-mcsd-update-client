@@ -6,42 +6,35 @@ from app.services.update.cache.external import ExternalCachingService
 PATCHED_MODULE = "app.services.update.cache.external.Redis"
 
 
-@patch(f"{PATCHED_MODULE}.exists")
 @patch(f"{PATCHED_MODULE}.get")
 def test_get_one_should_succeed_and_return_node(
     mock_get: MagicMock,
-    mock_exists: MagicMock,
     external_caching_service: ExternalCachingService,
     expected_node_org: Node,
 ) -> None:
     expected_node_org.clear_for_cache()
-    target_key = external_caching_service.make_target_id(expected_node_org.resource_id)
+    target_key = external_caching_service.make_target_id(expected_node_org.cache_key())
     mock_get.return_value = expected_node_org.model_dump_json()
-    mock_exists.return_value = True
 
-    actual = external_caching_service.get_node(expected_node_org.resource_id)
+    actual = external_caching_service.get_node(expected_node_org.cache_key())
 
     assert expected_node_org == actual
     mock_get.assert_called_once_with(target_key)
-    mock_exists.assert_called_once_with(target_key)
 
 
 @patch(f"{PATCHED_MODULE}.get")
-@patch(f"{PATCHED_MODULE}.exists")
 def test_get_one_should_return_none_if_node_does_not_exist(
-    mock_exists: MagicMock,
     mock_get: MagicMock,
     external_caching_service: ExternalCachingService,
     expected_node_org: Node,
 ) -> None:
-    target_id = external_caching_service.make_target_id(expected_node_org.resource_id)
-    mock_exists.return_value = False
+    target_id = external_caching_service.make_target_id(expected_node_org.cache_key())
+    mock_get.return_value = None
 
-    actual = external_caching_service.get_node(expected_node_org.resource_id)
+    actual = external_caching_service.get_node(expected_node_org.cache_key())
 
     assert actual is None
-    mock_exists.assert_called_once_with(target_id)
-    mock_get.assert_not_called()
+    mock_get.assert_called_once_with(target_id)
 
 
 @patch(f"{PATCHED_MODULE}.set")
@@ -50,7 +43,7 @@ def test_add_node_should_succeed(
     external_caching_service: ExternalCachingService,
     expected_node_org: Node,
 ) -> None:
-    target_id = external_caching_service.make_target_id(expected_node_org.resource_id)
+    target_id = external_caching_service.make_target_id(expected_node_org.cache_key())
     expected_node_org.clear_for_cache()
     data = expected_node_org.model_dump_json()
     # even though the function beign tested does not return, redis set does. So
@@ -69,9 +62,9 @@ def test_key_exists_should_return_true_if_key_is_valid(
     expected_node_org: Node,
 ) -> None:
     mock_exists.return_value = 1
-    target_id = external_caching_service.make_target_id(expected_node_org.resource_id)
+    target_id = external_caching_service.make_target_id(expected_node_org.cache_key())
 
-    actual = external_caching_service.key_exists(target_id)
+    actual = external_caching_service.key_exists(expected_node_org.cache_key())
 
     assert actual is True
     mock_exists.assert_called_once_with(target_id)
@@ -84,9 +77,9 @@ def test_key_exists_should_return_false_if_key_is_invalid(
     expected_node_org: Node,
 ) -> None:
     mock_exists.return_value = 0
-    target_id = external_caching_service.make_target_id(expected_node_org.resource_id)
+    target_id = external_caching_service.make_target_id(expected_node_org.cache_key())
 
-    actual = external_caching_service.key_exists(target_id)
+    actual = external_caching_service.key_exists(expected_node_org.cache_key())
 
     assert actual is False
     mock_exists.assert_called_once_with(target_id)
@@ -123,9 +116,9 @@ def test_keys_should_return_list_of_keys_in_cache(
     external_caching_service: ExternalCachingService,
     expected_node_org: Node,
 ) -> None:
-    target_id = external_caching_service.make_target_id(expected_node_org.resource_id)
+    target_id = external_caching_service.make_target_id(expected_node_org.cache_key())
     mock_scan_iter.return_value = [target_id.encode()]
-    expected = [expected_node_org.resource_id]
+    expected = [expected_node_org.cache_key()]
 
     actual = external_caching_service.keys()
 

@@ -16,6 +16,10 @@ class DirectoryInfoRepository(RepositoryBase):
         stmt = select(DirectoryInfo).where(DirectoryInfo.id == id_)
         return self.db_session.session.scalars(stmt).first()
 
+    def get_by_endpoint_address(self, endpoint_address: str) -> DirectoryInfo | None:
+        stmt = select(DirectoryInfo).where(DirectoryInfo.endpoint_address == endpoint_address)
+        return self.db_session.session.scalars(stmt).first()
+
     def get_all(
         self, include_deleted: bool = False, include_ignored: bool = False
     ) -> Sequence[DirectoryInfo]:

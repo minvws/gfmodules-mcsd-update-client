@@ -12,6 +12,7 @@ from app.services.fhir.bundle.parser import create_bundle_entry
 from app.services.fhir.fhir_service import FhirService
 from app.services.update.adjacency_map_service import AdjacencyMapService
 from app.services.update.computation_service import ComputationService
+from fastapi import HTTPException
 
 PATCHED_MODULE = "app.services.update.adjacency_map_service.FhirApi.post_bundle"
 
@@ -35,7 +36,7 @@ def update_client_ep_entry(
     resource_id = f"{mock_directory_id}-{mock_ep['id']}"
     return {
         "fullUrl": f"http://example-update_client-url/Endpoint/{resource_id}",
-        "resource": mock_ep,
+        "resource": {**mock_ep, "id": resource_id},
         "request": {"method": "POST", "url": f"Endpoint/{resource_id}"},
     }
 
@@ -212,6 +213,36 @@ def test_get_directory_data_should_succeed(
     actual = adjacency_map_service.get_directory_data(node_refs)
 
     assert expected == actual
+
+
+def test_get_directory_data_should_fall_back_to_get_by_id_when_batch_rejected(
+    adjacency_map_service: AdjacencyMapService,
+    mock_org_bundle_entry: Dict[str, Any],
+    mock_ep_bundle_entry: Dict[str, Any],
+) -> None:
+    org_entry = create_bundle_entry(mock_org_bundle_entry)
+    ep_entry = create_bundle_entry(mock_ep_bundle_entry)
+    node_refs = [
+        BundleRequestParams(
+            id=mock_org_bundle_entry["resource"]["id"],
+            resource_type=mock_org_bundle_entry["resource"]["resourceType"],
+        ),
+        BundleRequestParams(
+            id=mock_ep_bundle_entry["resource"]["id"],
+            resource_type=mock_ep_bundle_entry["resource"]["resourceType"],
+        ),
+    ]
+    directory_api = adjacency_map_service._AdjacencyMapService__directory_api  # type: ignore[attr-defined]
+    directory_api.post_bundle = MagicMock(  # type: ignore[assignment]
+        side_effect=HTTPException(status_code=400, detail="bad request")
+    )
+    directory_api.get_resource_history_by_id = MagicMock(  # type: ignore[assignment]
+        side_effect=[[org_entry], [ep_entry]]
+    )
+
+    actual = adjacency_map_service.get_directory_data(node_refs)
+
+    assert actual == [org_entry, ep_entry]
 
 
 @patch(PATCHED_MODULE)

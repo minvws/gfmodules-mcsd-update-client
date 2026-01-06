@@ -17,7 +17,7 @@ hapi:
     tester:
       home:
         id: home
-        name: hapi2 Tester
+        name: hapi2 Tester (8081 for local adresboek)
         server_address: 'http://localhost:8081/fhir'
         refuse_to_fetch_third_party_urls: false
         fhir_version: R4

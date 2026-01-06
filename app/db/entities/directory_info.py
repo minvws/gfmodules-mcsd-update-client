@@ -26,6 +26,12 @@ class DirectoryInfo(Base):
         String,
         nullable=False,
     )
+    origin: Mapped[str] = mapped_column(
+        "origin",
+        String,
+        nullable=False,
+        default="provider",
+    )
     failed_sync_count: Mapped[int] = mapped_column(
         "failed_sync_count", Integer, nullable=False, default=0
     )
@@ -48,18 +54,24 @@ class DirectoryInfo(Base):
         "created_at",
         TIMESTAMP(timezone=True),
         nullable=False,
-        default=datetime.now()
+        default=datetime.now
     )
     modified_at: Mapped[datetime] = mapped_column(
         "modified_at",
         TIMESTAMP(timezone=True),
         nullable=False,
-        default=datetime.now(),
-        onupdate=datetime.now(),
+        default=datetime.now,
+        onupdate=datetime.now,
     )
     deleted_at: Mapped[datetime | None] = mapped_column(
         "deleted_at",
         TIMESTAMP(timezone=True),
+        nullable=True,
+        default=None,
+    )
+    reason_ignored: Mapped[str | None] = mapped_column(
+        "reason_ignored",
+        String,
         nullable=True,
         default=None,
     )
@@ -69,9 +81,11 @@ class DirectoryInfo(Base):
             id=self.id,
             ura=self.ura,
             endpoint_address=self.endpoint_address,
+            origin=self.origin,
             deleted_at=self.deleted_at,
             is_ignored=self.is_ignored,
             failed_sync_count=self.failed_sync_count,
             failed_attempts=self.failed_attempts,
             last_success_sync=self.last_success_sync,
+            reason_ignored=self.reason_ignored,
         )

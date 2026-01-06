@@ -39,12 +39,16 @@ def pytest_collection_modifyitems(config: Any, items: Any) -> None:
 
 @pytest.fixture
 def database() -> Generator[Database, Any, None]:
+    db = None
     try:
         db = Database("sqlite:///:memory:")
         db.generate_tables()
         yield db
     except Exception as e:
         raise e
+    finally:
+        if db is not None:
+            db.engine.dispose()
 
 
 @pytest.fixture
@@ -53,6 +57,7 @@ def fastapi_app() -> Generator[FastAPI, None, None]:
     db = get_database()
     db.generate_tables()
     yield app
+    db.engine.dispose()
     inject.clear()
 
 

@@ -45,6 +45,8 @@ class Scheduler(BaseModel):
     # Whether the scheduler should automatically run background tasks
     automatic_background_update: bool = Field(default=True)
     automatic_background_cleanup: bool = Field(default=True)
+    # Parallelism for updating multiple directories (1 = sequential)
+    max_concurrent_directory_updates: int = Field(default=1, ge=1, le=32)
 
     @computed_field
     def delay_input_in_sec(self) -> int:
@@ -107,7 +109,9 @@ class ConfigDatabase(BaseModel):
 class ConfigClientDirectory(BaseModel):
     # either provider_url or urls_path should be set from config
     directories_provider_url: str | None = Field(default=None)
+    directories_provider_urls: list[str] = Field(default_factory=list)
     directories_file_path: str | None = Field(default=None)
+    use_directory_registry_db: bool = Field(default=False)
     timeout: int = Field(default=1)
     backoff: float = Field(default=0.1)
     retries: int = Field(default=5)
@@ -158,6 +162,22 @@ class ConfigClientDirectory(BaseModel):
         if v in (None, "", " "):
             return 20
         return int(v)
+
+    @field_validator("directories_provider_urls", mode="before")
+    def validate_directories_provider_urls(cls, v: Any) -> list[str]:
+        if v in (None, "", " "):
+            return []
+        if isinstance(v, str):
+            return [p.strip() for p in v.split(",") if p.strip()]
+        return v  # type: ignore
+
+    @field_validator("use_directory_registry_db", mode="before")
+    def validate_use_directory_registry_db(cls, v: Any) -> Any:
+        if v in (None, "", " "):
+            return False
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
 
     @computed_field
     def directory_marked_as_unhealthy_after_success_timeout_in_sec(self) -> int:
@@ -293,7 +313,18 @@ class ConfigMcsd(BaseModel):
     mtls_client_cert_path: str | None = Field(default=None)
     mtls_client_key_path: str | None = Field(default=None)
     verify_ca: str | bool = Field(default=True)
-    check_capability_statement: bool = Field(default=False, description="Whether to check the CapabilityStatement of client directories")
+    check_capability_statement: bool = Field(
+        default=False,
+        description="Whether to check the CapabilityStatement of client directories",
+    )
+
+    allow_missing_resources: bool = Field(
+        default=False,
+        description=(
+            "If True, best-effort sync: skip resource types that the directory does not support. "
+            "If False, treat missing/unsupported required resources as a failure."
+        ),
+    )
 
     @field_validator("request_count", mode="before")
     def validate_request_count(cls, v: Any) -> int:

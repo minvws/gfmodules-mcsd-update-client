@@ -3,6 +3,7 @@ from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.reference import Reference
 
 from app.services.fhir.bundle.utils import get_resource_from_reference
+from app.services.fhir.id_utils import make_namespaced_fhir_id
 from app.services.fhir.references.reference_extractor import (
     validate_reference,
 )
@@ -18,7 +19,7 @@ def _namespace_reference(ref: Reference, namespace: str) -> Reference | None:
 
     res_type, _id = get_resource_from_reference(ref.reference)
 
-    ref.reference = f"{res_type}/{namespace}-{_id}"
+    ref.reference = f"{res_type}/{make_namespaced_fhir_id(namespace, _id)}"
     return ref
 
 

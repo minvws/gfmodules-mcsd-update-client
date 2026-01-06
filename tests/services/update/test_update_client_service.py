@@ -1,7 +1,8 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from typing import Any, Dict
+from inspect import signature
 from unittest.mock import ANY, MagicMock, patch
 from uuid import uuid4
 
@@ -104,21 +105,39 @@ def update_client_service(resource_map_service: MagicMock) -> UpdateClientServic
     )
     return UpdateClientService(
         api_config=api_config,
+        update_client_api_config=api_config,
+        validate_capability_statement=False,
         resource_map_service=resource_map_service,
         cache_provider=CacheProvider(config=ConfigExternalCache()),
     )
 
 
-@patch.object(
-    UpdateClientService, "_UpdateClientService__cleanup_resource_type", autospec=True
-)
-def test_clean_up_calls_cleanup_resource_type(
-    mock_cleanup_resource_type: MagicMock, update_client_service: UpdateClientService
+def test_cleanup_should_send_delete_bundles_and_remove_mappings(
+    update_client_service: UpdateClientService, resource_map_service: MagicMock
 ) -> None:
     directory_id = "directory_1"
+    all_maps = [
+        ResourceMap(
+            id=uuid.uuid4(),
+            directory_id=directory_id,
+            resource_type=res.value,
+            directory_resource_id=f"dir_res_{res.value}",
+            update_client_resource_id=f"uc_{res.value}",
+        )
+        for res in McsdResources
+    ]
+    def _find_side_effect(*, directory_id: str, resource_type: str | None = None, **kwargs: Any) -> list[ResourceMap]:
+        if resource_type is None:
+            return all_maps
+        return [m for m in all_maps if m.resource_type == resource_type]
+    resource_map_service.find.side_effect = _find_side_effect
+
+    update_client_service._UpdateClientService__update_delete_bundle = MagicMock(return_value=[])  # type: ignore[attr-defined]
+
     update_client_service.cleanup(directory_id)
-    assert mock_cleanup_resource_type.call_count == len(McsdResources)
-    mock_cleanup_resource_type.assert_any_call(update_client_service, directory_id, ANY)
+
+    assert update_client_service._UpdateClientService__update_delete_bundle.call_count == len(McsdResources)  # type: ignore[attr-defined]
+    assert resource_map_service.delete_one.call_count == len(McsdResources)
 
 
 @patch("app.services.api.api_service.HttpService.do_request", autospec=True)
@@ -285,7 +304,7 @@ def test_update_creates_and_clears_cache(
 ) -> None:
     memory_cache_service = MagicMock()
     cache_provider = MagicMock()
-    mock_update_resource.return_value = None
+    mock_update_resource.return_value = 0
     update_client_service._UpdateClientService__cache_provider = cache_provider  # type: ignore[attr-defined]
     cache_provider.create.return_value = memory_cache_service
 
@@ -310,12 +329,12 @@ def test_update_resource_calls_build_history_params(
     mock_directory_fhir_api = MagicMock()
     mock_fhir_api.return_value = mock_directory_fhir_api
     mock_directory_fhir_api.build_history_params.return_value = None
-    since = datetime.now() - timedelta(days=30)
+    since = datetime.now(tz=timezone.utc) - timedelta(days=30)
     update_client_service.update_resource(
-        directory_dto, McsdResources.ENDPOINT.value, in_memory_cache_service, since
+        directory_dto, McsdResources.ENDPOINT.value, in_memory_cache_service, since, {}
     )
 
-    mock_directory_fhir_api.build_history_params.assert_called_once_with(since=since)
+    mock_directory_fhir_api.build_history_params.assert_called_once_with(since)
 
 
 @patch("app.services.api.api_service.HttpService.do_request", autospec=True)
@@ -329,7 +348,7 @@ def test_update_resource_requests_history_batch(
     update_client_service._UpdateClientService__cache = mock_cache  # type: ignore[attr-defined]
     mock_cache.key_exists.return_value = False
 
-    since = datetime.now() - timedelta(days=30)
+    since = datetime.now(tz=timezone.utc) - timedelta(days=30)
 
     mock_do_request.return_value = MagicMock(
         status_code=200,
@@ -340,7 +359,7 @@ def test_update_resource_requests_history_batch(
         ),
     )
     update_client_service.update_resource(
-        directory_dto, McsdResources.ENDPOINT.value, in_memory_cache_service, since
+        directory_dto, McsdResources.ENDPOINT.value, in_memory_cache_service, since, {}
     )
     mock_do_request.assert_any_call(
         ANY,
@@ -353,19 +372,30 @@ def test_update_resource_requests_history_batch(
     )
 
 
-@patch("app.services.api.api_service.request", autospec=True)
+@patch("app.services.update.adjacency_map_service.AdjacencyMapService.create_update_data", return_value=None)
+@patch("app.services.api.api_service.HttpService.do_request", autospec=True)
 def test_update_requests_resources(
-    mock_request: MagicMock,
+    mock_do_request: MagicMock,
+    _mock_create_update_data: MagicMock,
     update_client_service: UpdateClientService,
     directory_dto: DirectoryDto,
     mock_org_history_bundle: Dict[str, Any],
     mock_ep: Dict[str, Any],
 ) -> None:
+    # This is a request/flow test; patch update creation so we don't post transaction bundles.
     fhir_service = FhirService(fill_required_fields=True)
-    since = datetime.now() - timedelta(days=30)
+    since = datetime.now(tz=timezone.utc) - timedelta(days=30)
+    sig = signature(mock_do_request)
 
     def mock_request_side_effect(*args: Any, **kwargs: Any) -> MagicMock:
-        if f"{McsdResources.ORGANIZATION.value}/_history" in kwargs.get("url", ""):
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        method = bound.arguments["method"]
+        sub_route = bound.arguments["sub_route"]
+        json_body = bound.arguments["json"] or {}
+
+        # Strict: we only return the org history bundle for the exact sub_route.
+        if method == "GET" and sub_route == f"{McsdResources.ORGANIZATION.value}/_history":
             return MagicMock(
                 status_code=200,
                 json=MagicMock(
@@ -374,7 +404,8 @@ def test_update_requests_resources(
                     ).model_dump()
                 ),
             )
-        if kwargs.get("method") == "GET":
+
+        if method == "GET":
             return MagicMock(
                 status_code=200,
                 json=MagicMock(
@@ -385,29 +416,8 @@ def test_update_requests_resources(
                     }
                 ),
             )
-        if (
-            kwargs.get("method") == "POST"
-            and kwargs.get("url") == "https://example.com"
-        ):
-            return MagicMock(
-                status_code=200,
-                json=MagicMock(
-                    return_value={
-                        "resourceType": "Bundle",
-                        "type": "batch",
-                        "entry": [],
-                    }
-                ),
-            )
-        if (
-            kwargs.get("method") == "POST"
-            and kwargs.get("url") == "https://example.com/directory"
-            and kwargs.get("json", {})
-            .get("entry", [{}])[0]
-            .get("request", {})
-            .get("url")
-            == "/Endpoint/ep-id/_history"
-        ):
+
+        if method == "POST" and isinstance(json_body, dict) and json_body.get("entry", [{}])[0].get("request", {}).get("url") == "/Endpoint/ep-id/_history":
             return MagicMock(
                 status_code=200,
                 json=MagicMock(
@@ -434,61 +444,81 @@ def test_update_requests_resources(
                     }
                 ),
             )
+        if method == "POST":
+            return MagicMock(
+                status_code=200,
+                json=MagicMock(
+                    return_value={
+                        "resourceType": "Bundle",
+                        "type": "batch",
+                        "entry": [],
+                    }
+                ),
+            )
         assert False, f"Should not reach here: {args}, {kwargs}"
 
-    mock_request.side_effect = mock_request_side_effect
+    mock_do_request.side_effect = mock_request_side_effect
     update_client_service.update(directory_dto, since)
 
-    for res_type in McsdResources:
-        mock_request.assert_any_call(
-            method="GET",
-            url=f"https://example.com/directory/{res_type.value}/_history?_count=3&_since={since.isoformat()}",
-            headers=ANY,
-            timeout=ANY,
-            json=ANY,
-            cert=ANY,
-            verify=ANY,
-            auth=ANY,
-        )
+    # Debug: dump mock_do_request calls for inspection
+    print("DEBUG mock_do_request.call_args_list:")
+    for idx, c in enumerate(mock_do_request.call_args_list):
+        bound = sig.bind(*c.args, **c.kwargs)
+        bound.apply_defaults()
+        method = bound.arguments["method"]
+        sub_route = bound.arguments.get("sub_route")
+        params = bound.arguments.get("params")
+        json_body = bound.arguments.get("json")
+        base_url = bound.arguments.get("self").base_url if "self" in bound.arguments else None
+        print(idx, method, "sub_route=", sub_route, "params=", params, "base_url=", base_url)
+        if json_body:
+            print("  json:", json_body)
+    # End debug
 
-    mock_request.assert_any_call(
-        method="POST",
-        url="https://example.com",
-        headers=ANY,
-        timeout=ANY,
-        json={
-            "resourceType": "Bundle",
-            "type": "batch",
-            "entry": [
-                {
-                    "request": {
-                        "method": "GET",
-                        "url": "/Organization/1-org-id/_history",
-                    }
-                },
-                {"request": {"method": "GET", "url": "/Endpoint/1-ep-id/_history"}},
-            ],
-        },
-        cert=ANY,
-        verify=ANY,
-        auth=ANY,
-    )
-    mock_request.assert_any_call(
-        method="POST",
-        url="https://example.com/directory",
-        headers=ANY,
-        timeout=ANY,
-        json={
-            "resourceType": "Bundle",
-            "type": "batch",
-            "entry": [
-                {"request": {"method": "GET", "url": "/Endpoint/ep-id/_history"}}
-            ],
-        },
-        cert=ANY,
-        verify=ANY,
-        auth=ANY,
-    )
+    for res_type in McsdResources:
+        mock_do_request.assert_any_call(
+            ANY,
+            "GET",
+            sub_route=f"{res_type.value}/_history",
+            params={"_count": "3", "_since": since.isoformat()},
+        )
+    expected_history_batch = {
+        "resourceType": "Bundle",
+        "type": "batch",
+        "entry": [
+            {"request": {"method": "GET", "url": "/Organization/1-org-id/_history"}},
+            {"request": {"method": "GET", "url": "/Endpoint/1-ep-id/_history"}},
+        ],
+    }
+
+    expected_ep_batch = {
+        "resourceType": "Bundle",
+        "type": "batch",
+        "entry": [{"request": {"method": "GET", "url": "/Endpoint/ep-id/_history"}}],
+    }
+
+    def _assert_post_call(expected_json: Dict[str, Any], expected_base_url: str) -> None:
+        matches: list[dict[str, Any]] = []
+        for c in mock_do_request.call_args_list:
+            bound = sig.bind(*c.args, **c.kwargs)
+            bound.apply_defaults()
+            if bound.arguments["method"] == "POST" and bound.arguments["json"] == expected_json:
+                matches.append(bound.arguments)
+
+        assert len(matches) == 1, (
+            f"Expected exactly 1 POST call with expected json, got {len(matches)}"
+        )
+        post_call = matches[0]
+
+        # Explicit sub_route assertion (default is None if not provided).
+        assert post_call["sub_route"] is None
+        assert post_call["params"] is None
+
+        # Tighten further: ensure we posted to the correct API base_url
+        assert post_call["self"].base_url == expected_base_url
+
+    _assert_post_call(expected_history_batch, "https://example.com")
+    _assert_post_call(expected_ep_batch, "https://example.com/directory")
 
 
 def test_flush_delete_bundle_noop_when_total_zero(
@@ -563,8 +593,10 @@ def test_update_with_bundle_posts_bundle_handles_dtos_and_marks_updated(
     assert len(posted[0].entry or []) == 1
     assert posted[0].entry[0].request.url.endswith("Organization/A")  # type: ignore[index]
 
-    resource_map_service.add_one.assert_called_once_with(add_dto)
-    resource_map_service.update_one.assert_called_once_with(upd_dto)
+    resource_map_service.apply_dtos.assert_called_once()
+    dtos = resource_map_service.apply_dtos.call_args[0][0]
+    assert add_dto in dtos
+    assert upd_dto in dtos
 
     assert all(n.updated for n in out)
 
@@ -601,7 +633,7 @@ def test_clear_and_add_nodes_skips_existing_adds_new(
     )
 
     in_memory_cache_service.add_node(mock_node_org)
-    assert in_memory_cache_service.key_exists(mock_node_org.resource_id)
+    assert in_memory_cache_service.key_exists(mock_node_org.cache_key())
     assert not in_memory_cache_service.key_exists(mock_node_ep.resource_id)
     clear_add([mock_node_org, mock_node_ep], in_memory_cache_service)
 
@@ -638,7 +670,19 @@ def test_update_page_builds_groups_and_skips_updated(
         update_client_service, "update_with_bundle", fake_update_with_bundle
     )
 
-    updated_nodes = update_client_service.update_page(entries, fake_adjsvc)
+    monkeypatch.setattr(
+        "app.services.update.update_client_service.AdjacencyMapService",
+        MagicMock(return_value=fake_adjsvc),
+    )
+
+    updated_nodes = update_client_service.update_page(
+        directory_id="D1",
+        resource_type="Organization",
+        targets=entries,
+        cache_service=MagicMock(),
+        directory_fhir_api=MagicMock(),
+        ura_whitelist={},
+    )
 
     assert called["args"] == [n_fresh]
     assert updated_nodes == [n_fresh]
@@ -672,5 +716,5 @@ def test_update_invokes_update_resource_for_all_resource_types(
             res.value,
             fake_cache,
             None,
-            None,
+            {},
         )

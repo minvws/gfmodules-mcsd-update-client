@@ -1,5 +1,6 @@
 from typing import Dict, Any
 from unittest.mock import MagicMock, patch
+from unittest.mock import ANY
 
 import pytest
 from requests.exceptions import Timeout, ConnectionError
@@ -76,7 +77,9 @@ def test_do_request_with_authenticator_should_succeed(
     http_service.authenticator = mock_authenticator
     mock_request = MagicMock()
     mock_request.status_code = 200
-    mock_request.headers = mock_authentication_headers
+    expected_headers = dict(mock_authentication_headers)
+    expected_headers["Accept"] = "application/fhir+json"
+    mock_request.headers = expected_headers
     mock_request.auth = mock_auth
 
     mock_get.return_value = mock_request
@@ -84,13 +87,15 @@ def test_do_request_with_authenticator_should_succeed(
     actual = http_service.do_request("GET")
 
     assert actual.status_code == 200
-    assert actual.headers == mock_authentication_headers
+    assert actual.headers == expected_headers
     mock_get.assert_called_with(
         method="GET",
         url=http_service.base_url,
-        headers=mock_authentication_headers,
+        session=ANY,
+        headers=expected_headers,
         timeout=1,
         json=None,
+        params=None,
         cert=None,
         verify=True,
         auth=mock_auth,
@@ -104,10 +109,8 @@ def test_do_request_should_fail_on_timeout(
 ) -> None:
     mock_request.side_effect = Timeout("Timeout Error")
 
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Timeout):
         http_service.do_request("GET")
-
-    assert "Failed " in str(e)
 
 
 @patch(PATCHED_MODULE)
@@ -116,10 +119,8 @@ def test_do_request_should_fail_on_connection_error(
 ) -> None:
     mock_request.side_effect = ConnectionError("Connection Error")
 
-    with pytest.raises(Exception) as e:
+    with pytest.raises(ConnectionError):
         http_service.do_request(method="DELETE", sub_route=mock_sub_route)
-
-    assert "Failed " in str(e)
 
 
 @patch(PATCHED_MODULE)
@@ -138,8 +139,9 @@ def test_make_header_should_succeed(
     http_service.authenticator = mock_authenticator
 
     actual = http_service.make_headers()
-
-    assert actual == mock_authentication_headers
+    expected = dict(mock_authentication_headers)
+    expected["Accept"] = "application/fhir+json"
+    assert actual == expected
 
 
 def test_make_header_should_succeed_without_authenticator(
@@ -148,13 +150,13 @@ def test_make_header_should_succeed_without_authenticator(
     actual = http_service.make_headers()
 
     assert isinstance(actual, dict)
-    assert actual == {"Content-Type": "application/json"}
+    assert actual == {"Content-Type": "application/json", "Accept": "application/fhir+json"}
 
 
 def test_make_target_url_should_succeed_with_sub_route(
     http_service: HttpService, base_url: str, mock_sub_route: str
 ) -> None:
-    expected = URL(f"{base_url}/{mock_sub_route}")
+    expected = URL(f"{base_url}{mock_sub_route}")
 
     actual = http_service.make_target_url(sub_route=mock_sub_route)
 
@@ -178,7 +180,7 @@ def test_make_target_url_should_work_with_params(
     mock_sub_route: str,
     mock_params: Dict[str, Any],
 ) -> None:
-    expected = URL(f"{base_url}/{mock_sub_route}").with_query(mock_params)
+    expected = URL(f"{base_url}{mock_sub_route}").with_query(mock_params)
 
     actual = http_service.make_target_url(sub_route=mock_sub_route, params=mock_params)
 

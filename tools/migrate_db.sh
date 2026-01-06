@@ -9,7 +9,7 @@ NC="\033[0m"
 
 echo -e "${GREEN}👀 Checking migrations ${NC}"
 
-source <(grep dsn app.conf | sed -r 's/\+psycopg//' | sed 's/=/="/; s/$/"/')
+source <(grep dsn app.conf | tr -d '\r' | sed -r 's/\+psycopg//' | sed 's/=/="/; s/$/"/')
 
 # check if the migration table exists
 if
@@ -18,7 +18,7 @@ if
 then
   echo -e "${YELLOW}⚠️ Migration table does not exists. Creating migrations table.${NC}"
 
-  # create the migration table
+  # create the migration table
   echo "CREATE TABLE migrations (id serial PRIMARY KEY, name VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);" | psql $dsn -q -o /dev/null
 fi
 
