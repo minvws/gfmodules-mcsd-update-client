@@ -6,6 +6,15 @@ from app.models.fhir.types import McsdResources
 
 # Constants
 REQUIRED_INTERACTIONS = {"read", "search-type", "history-type"}
+REQUIRED_MCSD_PROFILES = {
+    "Organization": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.Organization"},
+    "Practitioner": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.Practitioner"},
+    "PractitionerRole": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.PractitionerRole"},
+    "Location": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.Location"},
+    "HealthcareService": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.HealthcareService"},
+    "OrganizationAffiliation": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.OrganizationAffiliation"},
+    "Endpoint": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.Endpoint"},
+}
 def is_capability_statement_valid(data: Dict[str, Any]) -> bool:
     """
     Check if CapabilityStatement supports mCSD requirements.
@@ -54,6 +63,36 @@ def _validate_mcsd_resources(server_rest: CapabilityStatementRest) -> bool:
         # Check if all required interactions are supported
         resource_interactions = supported_resources[required_resource]
         if not REQUIRED_INTERACTIONS.issubset(resource_interactions):
+            return False
+
+    return _validate_mcsd_profiles(server_rest)
+
+
+def _validate_mcsd_profiles(server_rest: CapabilityStatementRest) -> bool:
+    """Check if required mCSD profiles are declared for each supported resource."""
+    if not getattr(server_rest, 'resource', None):
+        return False
+
+    resource_by_type: Dict[str, Any] = {
+        resource.type: resource
+        for resource in server_rest.resource  # type: ignore
+        if resource and hasattr(resource, "type")
+    }
+
+    for resource_type, required_profiles in REQUIRED_MCSD_PROFILES.items():
+        resource = resource_by_type.get(resource_type)
+        if resource is None:
+            return False
+        declared_profiles = set()
+        profile = getattr(resource, "profile", None)
+        if profile:
+            declared_profiles.add(str(profile))
+        supported_profiles = getattr(resource, "supportedProfile", None)
+        if supported_profiles:
+            declared_profiles.update(str(p) for p in supported_profiles)
+        if not declared_profiles:
+            return False
+        if not declared_profiles.intersection(required_profiles):
             return False
 
     return True

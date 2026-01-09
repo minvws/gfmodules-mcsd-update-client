@@ -143,8 +143,47 @@ class FhirApi(HttpService):
         if page_bundle.link:
             for link in page_bundle.link:
                 if link.relation == "next":  # type: ignore[attr-defined]
-                    next_url = URL(link.url)  # type: ignore[attr-defined]
+                    next_url = self._resolve_next_url(link.url)  # type: ignore[attr-defined]
         return next_url, entries
+
+    def search_resource_page(
+        self, next_url: URL
+    ) -> tuple[URL | None, List[BundleEntry]]:
+        """Fetch the next page from a search bundle's 'next' link."""
+        response = self.do_request_url(method="GET", url=next_url)
+        if response.status_code >= 400:
+            logger.error(
+                "FHIR search next page error. status=%s url=%s body=%s",
+                response.status_code,
+                next_url,
+                self._safe_json(response),
+            )
+            raise HTTPException(status_code=response.status_code, detail=HTTP_ERR_MSG)
+
+        page_bundle = self.__fhir_service.create_bundle(response.json())
+        next_url_out: URL | None = None
+        entries = page_bundle.entry if page_bundle.entry else []
+        if page_bundle.link:
+            for link in page_bundle.link:
+                if link.relation == "next":  # type: ignore[attr-defined]
+                    next_url_out = self._resolve_next_url(link.url)  # type: ignore[attr-defined]
+        return next_url_out, entries
+
+    def _resolve_next_url(self, link_url: str) -> URL:
+        candidate = URL(link_url)
+        if candidate.is_absolute():
+            return candidate
+
+        base = URL(self.base_url.rstrip("/"))
+        if link_url.startswith("?"):
+            return base.with_query(candidate.query)
+
+        if candidate.path.startswith("/"):
+            return base.with_path(candidate.path).with_query(candidate.query)
+
+        return base.with_path(
+            f"{base.path.rstrip('/')}/{candidate.path.lstrip('/')}"
+        ).with_query(candidate.query)
 
     def get_resource_by_id(self, resource_type: str, resource_id: str) -> DomainResource:
         response = self.do_request(method="GET", sub_route=f"{resource_type}/{resource_id}")

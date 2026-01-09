@@ -114,6 +114,30 @@ class HttpService(ABC):
         """
         headers = self.make_headers()
         url = self.make_target_url(sub_route, params)
+        return self.__perform_request(method=method, url=url, headers=headers, json=json)
+
+    def do_request_url(
+        self,
+        method: str,
+        url: URL,
+        json: Dict[str, Any] | None = None,
+    ) -> Response:
+        """
+        Perform an HTTP request with retry logic against an absolute URL.
+        """
+        headers = self.make_headers()
+        return self.__perform_request(method=method, url=url, headers=headers, json=json)
+
+    def __perform_request(
+        self,
+        method: str,
+        url: URL,
+        headers: Dict[str, Any],
+        json: Dict[str, Any] | None = None,
+    ) -> Response:
+        """
+        Internal request runner that applies retries and connection pooling.
+        """
 
         # Correct `verify` handling:
         # - bool: enable/disable verification

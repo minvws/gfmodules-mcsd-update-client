@@ -29,17 +29,15 @@ class DirectoryApiService:
 
     def fetch_directories(self) -> List[DirectoryDto]:
         directories: List[DirectoryDto] = []
-        next_url: URL | None = URL("")
+        params = {"_include": "Organization:endpoint"}
+        next_url, entries = self.__fhir_api.search_resource(
+            resource_type="Organization",
+            params=params,
+        )
+        directories.extend(self.__parse_bundle(entries))
         while next_url is not None:
-            params = {"_include": "Organization:endpoint"}
-            next_url, entries = self.__fhir_api.search_resource(
-                resource_type="Organization",
-                params=params,
-            )
-            page_directories = self.__parse_bundle(
-                entries
-            )
-            directories.extend(page_directories)
+            next_url, entries = self.__fhir_api.search_resource_page(next_url)
+            directories.extend(self.__parse_bundle(entries))
         return directories
 
     def fetch_one_directory(self, directory_id: str) -> DirectoryDto:
