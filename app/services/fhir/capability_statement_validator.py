@@ -6,14 +6,14 @@ from app.models.fhir.types import McsdResources
 
 # Constants
 REQUIRED_INTERACTIONS = {"read", "search-type", "history-type"}
-REQUIRED_MCSD_PROFILES = {
-    "Organization": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.Organization"},
-    "Practitioner": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.Practitioner"},
-    "PractitionerRole": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.PractitionerRole"},
-    "Location": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.Location"},
-    "HealthcareService": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.HealthcareService"},
-    "OrganizationAffiliation": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.OrganizationAffiliation"},
-    "Endpoint": {"http://ihe.net/fhir/StructureDefinition/IHE.mCSD.Endpoint"},
+REQUIRED_MCSD_PROFILE_SUFFIXES = {
+    "Organization": {"IHE.mCSD.Organization"},
+    "Practitioner": {"IHE.mCSD.Practitioner"},
+    "PractitionerRole": {"IHE.mCSD.PractitionerRole"},
+    "Location": {"IHE.mCSD.Location"},
+    "HealthcareService": {"IHE.mCSD.HealthcareService"},
+    "OrganizationAffiliation": {"IHE.mCSD.OrganizationAffiliation"},
+    "Endpoint": {"IHE.mCSD.Endpoint"},
 }
 def is_capability_statement_valid(data: Dict[str, Any]) -> bool:
     """
@@ -79,7 +79,7 @@ def _validate_mcsd_profiles(server_rest: CapabilityStatementRest) -> bool:
         if resource and hasattr(resource, "type")
     }
 
-    for resource_type, required_profiles in REQUIRED_MCSD_PROFILES.items():
+    for resource_type, required_profiles in REQUIRED_MCSD_PROFILE_SUFFIXES.items():
         resource = resource_by_type.get(resource_type)
         if resource is None:
             return False
@@ -92,10 +92,19 @@ def _validate_mcsd_profiles(server_rest: CapabilityStatementRest) -> bool:
             declared_profiles.update(str(p) for p in supported_profiles)
         if not declared_profiles:
             return False
-        if not declared_profiles.intersection(required_profiles):
+        if not _matches_required_profile(declared_profiles, required_profiles):
             return False
 
     return True
+
+
+def _matches_required_profile(
+    declared_profiles: set[str], required_suffixes: set[str]
+) -> bool:
+    for profile in declared_profiles:
+        if any(profile.endswith(suffix) for suffix in required_suffixes):
+            return True
+    return False
 
 
 def _create_supported_resources_map(server_rest: CapabilityStatementRest) -> Dict[str, set[Any | None]]:

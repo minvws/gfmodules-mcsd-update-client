@@ -183,3 +183,15 @@ def test_missing_required_profile_fails(
     )
     del org_resource["profile"]
     assert is_capability_statement_valid(valid_capability_statement) is False
+
+
+def test_profile_with_different_base_url_passes(
+    valid_capability_statement: Dict[str, Any]
+) -> None:
+    """Test that profile suffix matching allows alternative base URLs."""
+    org_resource = next(
+        resource for resource in valid_capability_statement["rest"][0]["resource"]
+        if resource["type"] == "Organization"
+    )
+    org_resource["profile"] = "https://example.org/fhir/StructureDefinition/IHE.mCSD.Organization"
+    assert is_capability_statement_valid(valid_capability_statement) is True
