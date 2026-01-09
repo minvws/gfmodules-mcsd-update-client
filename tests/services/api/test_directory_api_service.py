@@ -260,13 +260,17 @@ def test_get_all_directories_should_handle_pagination(
     api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     # Mock both page responses using side_effect
-    mock_fhir_api.search_resource.side_effect = [
-        (URL("http://example.com/fhir/Organization/?page=2"),[]),
-        (URL("http://example.com/fhir/Organization/?page=3"),[]),
-        (None,[]),
+    mock_fhir_api.search_resource.return_value = (
+        URL("http://example.com/fhir/Organization/?page=2"),
+        [],
+    )
+    mock_fhir_api.search_resource_page.side_effect = [
+        (URL("http://example.com/fhir/Organization/?page=3"), []),
+        (None, []),
     ]
     api_service.fetch_directories()
-    assert mock_fhir_api.search_resource.call_count == 3
+    assert mock_fhir_api.search_resource.call_count == 1
+    assert mock_fhir_api.search_resource_page.call_count == 2
 
 
 def test_get_one_directory_should_return_directory(
@@ -319,4 +323,3 @@ def test_absolute_endpoint_with_same_origin(
     assert result is not None
     assert len(result) == 1
     assert result[0].endpoint_address == "http://example.com/foo/bar"
-

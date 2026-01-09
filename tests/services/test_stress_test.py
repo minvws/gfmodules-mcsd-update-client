@@ -49,13 +49,19 @@ def monitor_resources(interval: float = 0.1) -> None:
     while monitoring:
         mem = process.memory_info().rss / 1024**2
         cpu = process.cpu_percent(interval=None)
-        io = process.io_counters()
+        try:
+            io = process.io_counters()
+            read_bytes = io.read_bytes
+            write_bytes = io.write_bytes
+        except AttributeError:
+            read_bytes = 0
+            write_bytes = 0
         monitor_data.append(
             {
                 "memory_mb": mem,
                 "cpu_percent": cpu,
-                "read_bytes": io.read_bytes,
-                "write_bytes": io.write_bytes,
+                "read_bytes": read_bytes,
+                "write_bytes": write_bytes,
             }
         )
         time.sleep(interval)
