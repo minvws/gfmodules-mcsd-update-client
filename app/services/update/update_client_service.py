@@ -342,14 +342,14 @@ class UpdateClientService:
             if not targets:
                 continue
 
-            updated_nodes = self.update_page(directory.id, resource_type, targets, cache_service, directory_fhir_api, ura_whitelist)
+            updated_nodes = self.update_page(directory, resource_type, targets, cache_service, directory_fhir_api, ura_whitelist)
             processed_count += self.__clear_and_add_nodes(updated_nodes, cache_service)
 
         return processed_count
 
     def update_page(
         self,
-        directory_id: str,
+        directory: DirectoryDto,
         resource_type: str,
         targets: List[BundleEntry],
         cache_service: CachingService,
@@ -357,9 +357,9 @@ class UpdateClientService:
         ura_whitelist: dict[str, list[str]],
     ):
         """Process a page of history entries for one resource type."""
-        uras_allowed = ura_whitelist.get(directory_id) or []
+        uras_allowed = ura_whitelist.get(directory.endpoint_address) or []
         adjacency_map_service = AdjacencyMapService(
-            directory_id=directory_id,
+            directory_id=directory.id,
             directory_api=directory_fhir_api,
             update_client_api=self.__update_client_fhir_api,
             resource_map_service=self.__resource_map_service,
