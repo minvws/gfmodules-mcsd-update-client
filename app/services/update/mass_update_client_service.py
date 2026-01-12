@@ -123,7 +123,7 @@ class MassUpdateClientService:
                 "error": str(e),
             }
         except Exception as e:
-            logger.exception("Failed to update directory %s", directory.id)
+            logger.error("Failed to update directory %s: %s", directory.id, str(e))
             info.failed_attempts += 1
             info.failed_sync_count += 1
             self.__directory_info_service.update(
