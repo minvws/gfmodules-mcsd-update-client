@@ -21,6 +21,21 @@ hapi:
         server_address: 'http://localhost:8080/fhir'
         refuse_to_fetch_third_party_urls: false
         fhir_version: R4
+    implementationguides:
+      mcsd:
+        packageUrl: https://build.fhir.org/ig/IHE/ITI.mCSD/branches/main/package.tgz
+        name: ihe.iti.mcsd
+        version: 4.0.1-current
+        installMode: STORE_AND_INSTALL
+      nl_gf:
+        packageUrl: https://build.fhir.org/ig/nuts-foundation/nl-generic-functions-ig/package.tgz
+        name: fhir.nl.gf
+        version: 0.3.0
+        installMode: STORE_AND_INSTALL
+    validation:
+      requests_enabled: true
+    data:
+      profile_mode: ENFORCED
     allow_multiple_delete: true
     allow_expunge: true
     delete_expunge_enabled: true
