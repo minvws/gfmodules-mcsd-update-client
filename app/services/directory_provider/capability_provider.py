@@ -17,9 +17,11 @@ class CapabilityProvider(DirectoryProvider):
         self,
         inner: DirectoryProvider,
         validate_capability_statement: bool = True,
+        require_mcsd_profiles: bool = True,
     ) -> None:
         self.__inner = inner
         self.__validate_capability_statement = validate_capability_statement
+        self.__require_mcsd_profiles = require_mcsd_profiles
 
 
     def get_all_directories(self, include_ignored: bool = False) -> List[DirectoryDto]:
@@ -54,8 +56,7 @@ class CapabilityProvider(DirectoryProvider):
 
         return dirs
 
-    @staticmethod
-    def check_capability_statement(dir_dto: DirectoryDto) -> bool:
+    def check_capability_statement(self, dir_dto: DirectoryDto) -> bool:
         """
         Validates the capability statement of a directory to ensure it meets mCSD requirements.
         Logs the process and returns True if valid, False otherwise.
@@ -74,6 +75,7 @@ class CapabilityProvider(DirectoryProvider):
                 mtls_cert=None,
                 mtls_key=None,
                 verify_ca=True,
+                require_mcsd_profiles=self.__require_mcsd_profiles,
             )
             fhir_api=FhirApi(config)
             if not fhir_api.validate_capability_statement():

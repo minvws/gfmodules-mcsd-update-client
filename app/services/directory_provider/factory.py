@@ -34,25 +34,27 @@ class DirectoryProviderFactory:
                 directory_info_service=self.__directory_info_service,
             )
 
-        elif self.__directory_config.directories_provider_url is not None:
-            # Use API-based provider if directories_provider_url is provided
+        elif self.__directory_config.directories_provider_urls:
+            # Use API-based provider if directories_provider_urls is provided
 
             # Api service to interact with the FHIR server
+            provider_url = self.__directory_config.directories_provider_urls[0]
             config = FhirApiConfig(
                 timeout=self.__directory_config.timeout,
                 backoff=self.__directory_config.backoff,
                 auth=self.__auth,
-                base_url=self.__directory_config.directories_provider_url,
+                base_url=provider_url,
                 request_count=5,
                 fill_required_fields=False,
                 retries=3,
                 mtls_cert=self.__mcsd_config.mtls_client_cert_path,
                 mtls_key=self.__mcsd_config.mtls_client_key_path,
                 verify_ca=self.__mcsd_config.verify_ca,
+                require_mcsd_profiles=self.__mcsd_config.require_mcsd_profiles,
             )
             api_service = DirectoryApiService(
                 fhir_api=FhirApi(config),
-                provider_url=self.__directory_config.directories_provider_url,
+                provider_url=provider_url,
             )
 
             provider = FhirDirectoryProvider(
@@ -62,15 +64,16 @@ class DirectoryProviderFactory:
 
         else:
             raise ValueError(
-                "Configuration error: Either 'directories_file_path' or 'directories_provider_url' must be provided. "
+                "Configuration error: Either 'directories_file_path' or 'directories_provider_urls' must be provided. "
                 f"Provided values - directories_file_path: {self.__directory_config.directories_file_path}, "
-                f"directories_provider_url: {self.__directory_config.directories_provider_url}."
+                f"directories_provider_urls: {self.__directory_config.directories_provider_urls}."
             )
 
         # Wrap with capability filter provider
         capability_provider = CapabilityProvider(
             inner=provider,
             validate_capability_statement=self.__mcsd_config.check_capability_statement,
+            require_mcsd_profiles=self.__mcsd_config.require_mcsd_profiles,
         )
 
         db_provider = DbProvider(

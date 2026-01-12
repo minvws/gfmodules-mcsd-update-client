@@ -3,6 +3,16 @@ from typing import Any, Dict
 
 from app.services.fhir.capability_statement_validator import is_capability_statement_valid
 
+NL_GF_PROFILE_URLS = {
+    "Organization": "http://nuts-foundation.github.io/nl-generic-functions-ig/StructureDefinition/nl-gf-organization",
+    "OrganizationAffiliation": "http://nuts-foundation.github.io/nl-generic-functions-ig/StructureDefinition/nl-gf-organizationaffiliation",
+    "Location": "http://nuts-foundation.github.io/nl-generic-functions-ig/StructureDefinition/nl-gf-location",
+    "Practitioner": "http://nuts-foundation.github.io/nl-generic-functions-ig/StructureDefinition/nl-gf-practitioner",
+    "PractitionerRole": "http://nuts-foundation.github.io/nl-generic-functions-ig/StructureDefinition/nl-gf-practitionerrole",
+    "HealthcareService": "http://nuts-foundation.github.io/nl-generic-functions-ig/StructureDefinition/nl-gf-healthcareservice",
+    "Endpoint": "http://nuts-foundation.github.io/nl-generic-functions-ig/StructureDefinition/nl-gf-endpoint",
+}
+
 @pytest.fixture
 def valid_capability_statement() -> Dict[str, Any]:
     """Valid mCSD CapabilityStatement for testing"""
@@ -194,4 +204,15 @@ def test_profile_with_different_base_url_passes(
         if resource["type"] == "Organization"
     )
     org_resource["profile"] = "https://example.org/fhir/StructureDefinition/IHE.mCSD.Organization"
+    assert is_capability_statement_valid(valid_capability_statement) is True
+
+def test_nl_gf_profiles_pass(
+    valid_capability_statement: Dict[str, Any]
+) -> None:
+    """Test that NL-GF profile URLs are accepted for all required resources."""
+    for resource in valid_capability_statement["rest"][0]["resource"]:
+        resource_type = resource["type"]
+        if resource_type in NL_GF_PROFILE_URLS:
+            resource["profile"] = NL_GF_PROFILE_URLS[resource_type]
+
     assert is_capability_statement_valid(valid_capability_statement) is True

@@ -55,6 +55,7 @@ def container_config(binder: inject.Binder) -> None:
         mtls_cert=config.mcsd.mtls_client_cert_path,
         mtls_key=config.mcsd.mtls_client_key_path,
         verify_ca=config.mcsd.verify_ca,
+        require_mcsd_profiles=config.mcsd.require_mcsd_profiles,
     )
     cache_provider = CacheProvider(config=config.external_cache)
     update_service = UpdateClientService(
@@ -81,6 +82,7 @@ def container_config(binder: inject.Binder) -> None:
         directory_provider = CapabilityProvider(
             inner=base_provider,
             validate_capability_statement=config.mcsd.check_capability_statement,
+            require_mcsd_profiles=config.mcsd.require_mcsd_profiles,
         )
     else:
         directory_provider_factory = DirectoryProviderFactory(

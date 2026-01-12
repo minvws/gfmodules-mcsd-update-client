@@ -81,12 +81,8 @@ class DirectoryRegistryService:
         return dto
 
     def ensure_config_providers(self) -> None:
-        urls: list[str] = []
         cfg = self.__config.client_directory
-        if getattr(cfg, "directories_provider_urls", None):
-            urls.extend(cfg.directories_provider_urls)  # type: ignore[attr-defined]
-        if cfg.directories_provider_url is not None and cfg.directories_provider_url.strip() != "":
-            urls.append(cfg.directories_provider_url)
+        urls = list(cfg.directories_provider_urls)
         urls = [u.strip() for u in urls if u and u.strip()]
         if not urls:
             return

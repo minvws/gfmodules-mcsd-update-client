@@ -36,6 +36,7 @@ class FhirApiConfig:
     verify_ca: str | bool
     request_count: int
     fill_required_fields: bool
+    require_mcsd_profiles: bool = True
     # Optional HTTP client tuning (connection pooling).
     pool_connections: int = 10
     pool_maxsize: int = 10
@@ -57,6 +58,7 @@ class FhirApi(HttpService):
         )
         self.request_count = config.request_count
         self.__fhir_service = FhirService(config.fill_required_fields)
+        self.__require_mcsd_profiles = config.require_mcsd_profiles
 
     @staticmethod
     def _safe_json(response: Response) -> Any:
@@ -228,7 +230,7 @@ class FhirApi(HttpService):
             logger.error("Failed to decode CapabilityStatement JSON: %s", response.text)
             raise HTTPException(status_code=response.status_code, detail=HTTP_ERR_MSG)
 
-        return is_capability_statement_valid(data)
+        return is_capability_statement_valid(data, require_mcsd_profiles=self.__require_mcsd_profiles)
 
     @staticmethod
     def get_next_params(url: URL) -> Dict[str, Any]:

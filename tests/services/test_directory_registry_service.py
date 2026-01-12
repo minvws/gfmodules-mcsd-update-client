@@ -99,6 +99,7 @@ def test_add_manual_directory_defaults_id_and_origin(service: DirectoryRegistryS
 def test_ensure_config_providers_seeds_from_list_and_single(service: DirectoryRegistryService, config) -> None:
     config.client_directory.directories_provider_urls = ["http://p1", " "]
     config.client_directory.directories_provider_url = "http://p2"
+    config.client_directory.merge_directories_provider_url()
 
     service.ensure_config_providers()
     urls = {p["url"] for p in service.list_providers(include_disabled=True)}

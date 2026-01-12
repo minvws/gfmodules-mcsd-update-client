@@ -110,8 +110,8 @@ profile =
 region = eu-west-2
 
 [client_directory]
-# Directories provider url to fetch directory endpoints from
-directories_provider_url=
+# Directories provider url(s) to fetch directory endpoints from (comma-separated)
+directories_provider_urls=
 # OR use a relative path that points to file that specifies which directories to use. See example file directory_urls.example.json
 directories_file_path = directory_urls.example.json
 # Timeout for the directory api
@@ -139,3 +139,4 @@ cleanup_delay_after_client_directory_marked_deleted=30d
 
 # Whether to validate the capability statement when retrieving them from the directory provider
 check_capability_statement = False
+require_mcsd_profiles = True

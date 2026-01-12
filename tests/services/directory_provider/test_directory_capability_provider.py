@@ -110,9 +110,10 @@ def test_check_capability_statement_success(monkeypatch: pytest.MonkeyPatch, cap
     import app.services.directory_provider.capability_provider as mod
     monkeypatch.setattr(mod, "FhirApi", FakeFhirApi)
 
+    provider = CapabilityProvider(inner=MagicMock(spec=DirectoryProvider))
     dto = _dto("ok", "https://example.org/fhir")
     with caplog.at_level(logging.INFO):
-        assert CapabilityProvider.check_capability_statement(dto) is True
+        assert provider.check_capability_statement(dto) is True
 
     # optional: ensure we logged the INFO line
     assert any("Checking capability statement for ok" in r.message for r in caplog.records)
@@ -127,9 +128,10 @@ def test_check_capability_statement_failure_logs_warning(monkeypatch: pytest.Mon
     import app.services.directory_provider.capability_provider as mod
     monkeypatch.setattr(mod, "FhirApi", FakeFhirApi)
 
+    provider = CapabilityProvider(inner=MagicMock(spec=DirectoryProvider))
     dto = _dto("bad", "https://bad.example.org/fhir")
     with caplog.at_level(logging.WARNING):
-        assert CapabilityProvider.check_capability_statement(dto) is False
+        assert provider.check_capability_statement(dto) is False
 
     assert any(
         "does not support mCSD requirements" in r.message and "bad" in r.message
@@ -145,8 +147,9 @@ def test_check_capability_statement_exception_logs_error(monkeypatch: pytest.Mon
     import app.services.directory_provider.capability_provider as mod
     monkeypatch.setattr(mod, "FhirApi", FakeFhirApi)
 
+    provider = CapabilityProvider(inner=MagicMock(spec=DirectoryProvider))
     dto = _dto("err", "https://err.example.org/fhir")
     with caplog.at_level(logging.ERROR):
-        assert CapabilityProvider.check_capability_statement(dto) is False
+        assert provider.check_capability_statement(dto) is False
 
     assert any("Error checking capability statement for err" in r.message for r in caplog.records)

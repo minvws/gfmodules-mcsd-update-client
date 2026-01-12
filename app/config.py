@@ -6,7 +6,7 @@ from os.path import exists
 from typing import Any, Optional
 import logging
 
-from pydantic import BaseModel, Field, ValidationError, computed_field, field_validator
+from pydantic import BaseModel, Field, ValidationError, computed_field, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -107,9 +107,12 @@ class ConfigDatabase(BaseModel):
 
 
 class ConfigClientDirectory(BaseModel):
-    # either provider_url or urls_path should be set from config
-    directories_provider_url: str | None = Field(default=None)
+    # Either provider_urls or urls_path should be set from config
     directories_provider_urls: list[str] = Field(default_factory=list)
+    directories_provider_url: str | None = Field(
+        default=None,
+        description="Deprecated; use directories_provider_urls instead.",
+    )
     directories_file_path: str | None = Field(default=None)
     use_directory_registry_db: bool = Field(default=False)
     timeout: int = Field(default=1)
@@ -170,6 +173,14 @@ class ConfigClientDirectory(BaseModel):
         if isinstance(v, str):
             return [p.strip() for p in v.split(",") if p.strip()]
         return v  # type: ignore
+
+    @model_validator(mode="after")
+    def merge_directories_provider_url(self) -> "ConfigClientDirectory":
+        if self.directories_provider_url:
+            url = self.directories_provider_url.strip()
+            if url and url not in self.directories_provider_urls:
+                self.directories_provider_urls.append(url)
+        return self
 
     @field_validator("use_directory_registry_db", mode="before")
     def validate_use_directory_registry_db(cls, v: Any) -> Any:
@@ -317,6 +328,12 @@ class ConfigMcsd(BaseModel):
         default=False,
         description="Whether to check the CapabilityStatement of client directories",
     )
+    require_mcsd_profiles: bool = Field(
+        default=True,
+        description=(
+            "Whether to require mCSD profiles or IG declarations in the CapabilityStatement."
+        ),
+    )
 
     allow_missing_resources: bool = Field(
         default=False,
@@ -344,6 +361,14 @@ class ConfigMcsd(BaseModel):
     def validate_fill_required_fields(cls, v: Any) -> bool:
         if v in (None, "", " "):
             return False
+        if isinstance(v, str):
+            return v.lower() in ("yes", "true", "t", "1")
+        return bool(v)
+
+    @field_validator("require_mcsd_profiles", mode="before")
+    def validate_require_mcsd_profiles(cls, v: Any) -> bool:
+        if v in (None, "", " "):
+            return True
         if isinstance(v, str):
             return v.lower() in ("yes", "true", "t", "1")
         return bool(v)
