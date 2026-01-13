@@ -41,6 +41,7 @@ services:
     stop_signal: SIGKILL
     networks:
       - mcsd_update_client_net
+    restart: unless-stopped
 
   hapi-update-client:
     image: "hapiproject/hapi:latest"
@@ -53,11 +54,10 @@ services:
       - postgres
     networks:
       - mcsd_update_client_net
+    restart: unless-stopped
 
   hapi-directory:
     image: "hapiproject/hapi:latest"
-    ports:
-      - "8080:8080"
     configs:
       - source: hapi_directory_config
         target: /app/config/application.yaml
@@ -70,6 +70,31 @@ services:
       retries: 3
     networks:
       - mcsd_update_client_net
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: .
+      dockerfile: caddy/Dockerfile
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    secrets:
+      - cloudflare_api_token
+    command:
+      [
+        "sh",
+        "-c",
+        "export CLOUDFLARE_API_TOKEN=$$(cat /run/secrets/cloudflare_api_token) && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile",
+      ]
+    depends_on:
+      - hapi-directory
+    networks:
+      - mcsd_update_client_net
+    restart: unless-stopped
 
   hapi-update-client-health:
     image: curlimages/curl
@@ -135,6 +160,7 @@ services:
       - ./create-dbs.sql:/docker-entrypoint-initdb.d/create-db.sql
     networks:
       - mcsd_update_client_net
+    restart: unless-stopped
 
 configs:
   hapi_directory_config:
@@ -145,6 +171,14 @@ configs:
     file: directory_urls.json
   hapi_update_client_config:
     file: client.application.yaml
+
+secrets:
+  cloudflare_api_token:
+    file: ../secrets/cloudflare_api_token
+
+volumes:
+  caddy_data:
+  caddy_config:
 
 networks:
   mcsd_update_client_net:

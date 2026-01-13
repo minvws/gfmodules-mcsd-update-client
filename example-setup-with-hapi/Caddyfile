@@ -1,0 +1,8 @@
+mach2.disyepd.com {
+  handle {
+    reverse_proxy hapi-directory:8080
+  }
+  tls {
+    dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+  }
+}
