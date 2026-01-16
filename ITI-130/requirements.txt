@@ -1,0 +1,12 @@
+requests>=2.31.0
+SQLAlchemy>=2.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+
+# Optional: only needed when SQL_CONN uses an ODBC connection string or mssql+pyodbc
+# pyodbc>=5.0.0
+
+# Optional: only needed when SQL_CONN uses mssql+pytds
+python-tds>=1.16.0
+sqlalchemy-pytds>=0.3.0

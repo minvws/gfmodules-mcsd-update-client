@@ -114,6 +114,17 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
+  iti-130-publisher:
+    build:
+      context: ../ITI-130
+      dockerfile: Dockerfile
+    depends_on:
+      hapi-directory-health:
+        condition: service_healthy
+    networks:
+      - mcsd_update_client_net
+    restart: "no"
+
   caddy:
     build:
       context: .
