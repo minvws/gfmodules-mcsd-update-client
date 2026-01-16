@@ -1,4 +1,7 @@
 mach2.disyepd.com {
+  handle_path /notifiedpull/* {
+    reverse_proxy hapi-notifiedpull-stu3:8082
+  }
   handle {
     reverse_proxy hapi-directory:8080
   }

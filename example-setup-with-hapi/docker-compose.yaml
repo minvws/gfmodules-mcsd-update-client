@@ -56,6 +56,24 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
+  hapi-notifiedpull-stu3:
+    image: "hapiproject/hapi:latest"
+    ports:
+      - "8082:8082"
+    configs:
+      - source: hapi_notifiedpull_stu3_config
+        target: /app/config/application.yaml
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    networks:
+      - mcsd_update_client_net
+    restart: unless-stopped
+
   hapi-directory:
     image: "hapiproject/hapi:latest"
     configs:
@@ -115,6 +133,25 @@ services:
       - mcsd_update_client_net
     command: sleep infinity
 
+  hapi-notifiedpull-stu3-health:
+    image: curlimages/curl
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://hapi-notifiedpull-stu3:8082/actuator/health",
+        ]
+      start_period: 100s
+      start_interval: 5s
+    depends_on:
+      - hapi-notifiedpull-stu3
+    stop_signal: SIGKILL
+    networks:
+      - mcsd_update_client_net
+    command: sleep infinity
+
   hapi-directory-health:
     image: curlimages/curl
     healthcheck:
@@ -163,14 +200,16 @@ services:
     restart: unless-stopped
 
 configs:
-  hapi_directory_config:
-    file: directory.application.yaml
   mcsd_update_client_conf:
     file: app.conf
   directory_urls_json:
     file: directory_urls.json
   hapi_update_client_config:
     file: client.application.yaml
+  hapi_notifiedpull_stu3_config:
+    file: notifiedpull-stu3.application.yaml
+  hapi_directory_config:
+    file: directory.application.yaml
 
 secrets:
   cloudflare_api_token:
