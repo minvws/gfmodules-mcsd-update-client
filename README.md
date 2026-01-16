@@ -59,7 +59,7 @@ Follow the instructions to get the app running:
 - if you want to run the application by itself, open this folder in a terminal and execute these commands:
 
 ```bash
-cd example-setup-with-hapi
+cd poc9-start-stack
 docker compose up
 ```
 
@@ -69,7 +69,7 @@ API right away at <http://localhost:8509/docs>.
 ## Seeding directory
 
 There is a mock data seeder available in case you want to seed a mock directory with fake data.
-In a terminal in the same `example-setup-with-hapi` folder run the following command to add fake test data to the mock directory,
+In a terminal in the same `poc9-start-stack` folder run the following command to add fake test data to the mock directory,
 with a url parameter you can specify the base url of the directory you want to seed:
 
 ```bash

@@ -56,6 +56,8 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
+  # Can be tested with on the host machine with:
+  # curl -k --resolve mach2.disyepd.com:443:127.0.0.1 https://mach2.disyepd.com/notifiedpull/fhir
   hapi-notifiedpull-stu3:
     image: "hapiproject/hapi:latest"
     ports:
@@ -74,6 +76,8 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
+  # Can be tested with on the host machine with:
+  # curl -k --resolve mach2.disyepd.com:443:127.0.0.1 https://mach2.disyepd.com/fhir
   hapi-directory:
     image: "hapiproject/hapi:latest"
     configs:
