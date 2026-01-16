@@ -1,10 +1,11 @@
 [app]
 # Loglevel can be one of: debug, info, warning, error, critical
 loglevel=debug
+override_authentication_ura=
 
 [database]
 # Dsn for database connection
-dsn=postgresql+psycopg://postgres:postgres@postgres:5432/postgres
+dsn=postgresql+psycopg://postgres:postgres@postgres:5432/mcsd_update_client
 create_tables=false
 retry_backoff=0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 4.8, 6.4, 10.0
 pool_size=5
@@ -28,9 +29,9 @@ enabled = False
 # Endpoint to GRPC server for telemetry
 endpoint = http://tracing:4317
 # Service name to use
-service_name = mcsd_update_client
+service_name = Mcsd Update service
 # Tracer name to use
-tracer_name = service.mcsd_update_client
+tracer_name = service.mscd_update
 
 [external_cache]
 # external cache host
@@ -55,11 +56,11 @@ default_cache_namespace = mcsd
 # Statsd is enabled or not
 enabled = False
 # Host for statsd server
-host = 127.0.0.1
+host = graphite
 # Port for statsd server
 port = 8125
 # Module name to use
-module_name = mcsd_update_client
+module_name = mcsd_update
 
 [uvicorn]
 swagger_enabled = True
@@ -75,23 +76,28 @@ ssl_cert_file = server.cert
 ssl_key_file = server.key
 
 [mcsd]
-update_client_url = http://addressing-app:8502
+update_client_url = http://hapi-update-client:8081/fhir
 # authentication can be either "off", or "azure_oauth2" in case of azure oauth2 authentication
 authentication = off
 # When configured, all connections to the supplier register and mCSD FHIR directories will use mTLS
 # Path to client certificate file for mTLS authentication
-mtls_client_cert_path = client.crt
+mtls_client_cert_path =
 # Path to client private key file for mTLS authentication
-mtls_client_key_path = client.key
+mtls_client_key_path =
 # Path to CA certificate file for server verification
-mtls_server_ca_path = ca.crt
+mtls_server_ca_path_path =
 
 # query parameter for the number of entries in Bundle per request (limit)
 # This is usually used in the directory request service and not directory API (LRZa)
 request_count = 20
-# choose whether to fill required mCSD fields with placeholders or
-# let the app handle the validations.
+# All required fields are filled with placeholder data to bypass ValidationErrors
 fill_required_fields = False
+
+# Check if /metadata contains required resources and interactions
+check_capability_statement = False
+require_mcsd_profiles = False
+# Proceeding even if some required resources or interactions are missing in the endpoint found in the LRZa
+allow_missing_resources = True
 
 [azure_oauth2]
 # Token url is the url of the oauth2 endpoint of the microsoft services
@@ -111,9 +117,11 @@ region = eu-west-2
 
 [client_directory]
 # Directories provider url(s) to fetch directory endpoints from (comma-separated)
-directories_provider_urls=
+directories_provider_urls = https://knooppunt-test.nuts-services.nl/lrza/mcsd
 # OR use a relative path that points to file that specifies which directories to use. See example file directory_urls.example.json
-directories_file_path = directory_urls.example.json
+directories_file_path =
+# directories_file_path = directory_urls.json
+use_directory_registry_db = True
 # Timeout for the directory api
 timeout = 10
 # Backoff time for the directory api
@@ -136,7 +144,3 @@ mark_client_directory_as_deleted_after_lrza_delete=True
 
 # Delay after directory marked as to be deleted before permanent cleanup
 cleanup_delay_after_client_directory_marked_deleted=30d
-
-# Whether to validate the capability statement when retrieving them from the directory provider
-check_capability_statement = False
-require_mcsd_profiles = True

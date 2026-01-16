@@ -76,6 +76,26 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
+  # fills the notifiedpull-stu3 server with seed data placed in notifiedpull-stu3.bundle.json
+  notifiedpull-seed:
+    image: curlimages/curl
+    depends_on:
+      hapi-notifiedpull-stu3-health:
+        condition: service_healthy
+    volumes:
+      - ./notifiedpull-stu3.bundle.json:/seed/bundle.json:ro
+    entrypoint:
+      - sh
+      - -c
+      - >
+          curl -f --retry 10 --retry-connrefused --retry-delay 2
+          -H 'Content-Type: application/fhir+json'
+          --data-binary @/seed/bundle.json
+          http://hapi-notifiedpull-stu3:8082/fhir
+    networks:
+      - mcsd_update_client_net
+    restart: "no"
+
   # Can be tested with on the host machine with:
   # curl -k --resolve mach2.disyepd.com:443:127.0.0.1 https://mach2.disyepd.com/fhir
   hapi-directory:
@@ -101,7 +121,7 @@ services:
     ports:
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     secrets:
@@ -145,7 +165,7 @@ services:
           "CMD",
           "curl",
           "-f",
-          "http://hapi-notifiedpull-stu3:8082/actuator/health",
+          "hapi-notifiedpull-stu3:8082/actuator/health/",
         ]
       start_period: 100s
       start_interval: 5s
@@ -164,7 +184,7 @@ services:
           "CMD",
           "curl",
           "-f",
-          "http://hapi-directory:8080/actuator/health",
+          "hapi-directory:8080/actuator/health",
         ]
       start_period: 100s
       start_interval: 5s
