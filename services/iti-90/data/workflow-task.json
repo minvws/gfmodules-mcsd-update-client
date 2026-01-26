@@ -1,0 +1,150 @@
+{
+  "resourceType": "Task",
+  "id": "workflow-task-bgz",
+  "groupIdentifier": {
+    "system": "urn:ietf:rfc:3986",
+    "value": "DYNAMIC:generated_uuid"
+  },
+  "identifier": [
+    {
+      "system": "urn:ietf:rfc:3986",
+      "value": "DYNAMIC:generated_uuid"
+    }
+  ],
+  "status": "requested",
+  "intent": "order",
+  "code": {
+    "coding": [
+      {
+        "system": "http://fhir.nl/fhir/NamingSystem/TaskCode",
+        "code": "pull-notification",
+        "display": "Pull Notification"
+      }
+    ],
+    "text": "Workflow Task (BgZ)"
+  },
+  "description": "DYNAMIC:description_from_request_or_default",
+  "restriction": {
+    "period": {
+      "end": "DYNAMIC:now_plus_365_days"
+    }
+  },
+  "for": {
+    "identifier": {
+      "system": "http://fhir.nl/fhir/NamingSystem/bsn",
+      "value": "DYNAMIC:patient_bsn"
+    },
+    "display": "DYNAMIC:patient_name"
+  },
+  "authoredOn": "DYNAMIC:current_timestamp",
+  "requester": {
+    "agent": {
+      "identifier": {
+        "system": "http://fhir.nl/fhir/NamingSystem/uzi-nr-sys",
+        "value": "DYNAMIC:env.MCSD_SENDER_UZI_SYS"
+      },
+      "display": "DYNAMIC:env.MCSD_SENDER_SYSTEM_NAME"
+    },
+    "onBehalfOf": {
+      "identifier": {
+        "system": "http://fhir.nl/fhir/NamingSystem/ura",
+        "value": "DYNAMIC:env.MCSD_SENDER_URA"
+      },
+      "display": "DYNAMIC:env.MCSD_SENDER_NAME"
+    }
+  },
+  "owner": {
+    "identifier": {
+      "system": "http://fhir.nl/fhir/NamingSystem/ura",
+      "value": "DYNAMIC:receiver_ura_from_mcsd"
+    }
+  },
+  "input": [
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "79191-3",
+            "display": "Patient demographics panel"
+          }
+        ]
+      },
+      "valueString": "Patient?_include=Patient:general-practitioner"
+    },
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "11450-4",
+            "display": "Problem list - Reported"
+          }
+        ]
+      },
+      "valueString": "Condition"
+    },
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "48765-2",
+            "display": "Allergies and adverse reactions Document"
+          }
+        ]
+      },
+      "valueString": "AllergyIntolerance"
+    },
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://snomed.info/sct",
+            "code": "422979000",
+            "display": "Known medication use"
+          }
+        ]
+      },
+      "valueString": "MedicationStatement?category=urn%3Aoid%3A2.16.840.1.113883.2.4.3.11.60.20.77.5.3%7C6&_include=MedicationStatement:medication"
+    },
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "85354-9",
+            "display": "Blood pressure"
+          }
+        ]
+      },
+      "valueString": "Observation/$lastn?code=http://loinc.org|85354-9"
+    },
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://loinc.org",
+            "code": "77599-9",
+            "display": "Additional documentation"
+          }
+        ]
+      },
+      "valueString": "DocumentReference?status=current"
+    },
+    {
+      "type": {
+        "coding": [
+          {
+            "system": "http://fhir.nl/fhir/NamingSystem/TaskParameter",
+            "code": "read-resource"
+          }
+        ]
+      },
+      "valueReference": {
+        "reference": "DocumentReference/docref-verwijsbrief",
+        "display": "Verwijsbrief cardiologie"
+      }
+    }
+  ]
+}

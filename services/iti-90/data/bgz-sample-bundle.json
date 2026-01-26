@@ -1,0 +1,565 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "patient-bgz-test",
+        "meta": {
+          "profile": ["http://fhir.nl/fhir/StructureDefinition/nl-core-patient"]
+        },
+        "identifier": [
+          {
+            "system": "http://fhir.nl/fhir/NamingSystem/bsn",
+            "value": "172642863"
+          }
+        ],
+        "active": true,
+        "name": [
+          {
+            "use": "official",
+            "family": "van der Berg",
+            "given": ["Johannes", "Pieter"],
+            "prefix": ["van der"]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "+31612345678",
+            "use": "mobile"
+          },
+          {
+            "system": "email",
+            "value": "j.vanderberg@example.nl"
+          }
+        ],
+        "gender": "male",
+        "birthDate": "1965-03-15",
+        "address": [
+          {
+            "use": "home",
+            "line": ["Hoofdstraat 123"],
+            "city": "Amsterdam",
+            "postalCode": "1012AB",
+            "country": "NL"
+          }
+        ],
+        "maritalStatus": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/v3/MaritalStatus",
+              "code": "M",
+              "display": "Married"
+            }
+          ]
+        },
+        "contact": [
+          {
+            "relationship": [
+              {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/v3/RoleCode",
+                    "code": "WIFE",
+                    "display": "wife"
+                  }
+                ]
+              }
+            ],
+            "name": {
+              "family": "van der Berg-Jansen",
+              "given": ["Maria"]
+            },
+            "telecom": [
+              {
+                "system": "phone",
+                "value": "+31687654321"
+              }
+            ]
+          }
+        ],
+        "generalPractitioner": [
+          {
+            "reference": "Practitioner/gp-huisarts",
+            "display": "Dr. A. de Vries"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient/patient-bgz-test"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "condition-diabetes",
+        "meta": {
+          "profile": ["http://nictiz.nl/fhir/StructureDefinition/zib-Problem"]
+        },
+        "clinicalStatus": "active",
+        "verificationStatus": "confirmed",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "282291009",
+                "display": "Diagnosis"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "73211009",
+              "display": "Diabetes mellitus"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient-bgz-test",
+          "display": "J.P. van der Berg"
+        },
+        "onsetDateTime": "2018-06-15",
+        "asserter": {
+          "reference": "Practitioner/gp-huisarts",
+          "display": "Dr. A. de Vries"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Condition/condition-diabetes"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "resource": {
+        "resourceType": "Condition",
+        "id": "condition-hypertension",
+        "meta": {
+          "profile": ["http://nictiz.nl/fhir/StructureDefinition/zib-Problem"]
+        },
+        "clinicalStatus": "active",
+        "verificationStatus": "confirmed",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "282291009",
+                "display": "Diagnosis"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "38341003",
+              "display": "Hypertensive disorder"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient-bgz-test",
+          "display": "J.P. van der Berg"
+        },
+        "onsetDateTime": "2015-02-20",
+        "asserter": {
+          "reference": "Practitioner/gp-huisarts",
+          "display": "Dr. A. de Vries"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Condition/condition-hypertension"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:d4e5f6a7-b8c9-0123-defa-234567890123",
+      "resource": {
+        "resourceType": "AllergyIntolerance",
+        "id": "allergy-penicillin",
+        "meta": {
+          "profile": ["http://nictiz.nl/fhir/StructureDefinition/zib-AllergyIntolerance"]
+        },
+        "clinicalStatus": "active",
+        "verificationStatus": "confirmed",
+        "type": "allergy",
+        "category": ["medication"],
+        "criticality": "high",
+        "code": {
+          "coding": [
+            {
+              "system": "http://snomed.info/sct",
+              "code": "764146007",
+              "display": "Penicillin"
+            }
+          ]
+        },
+        "patient": {
+          "reference": "Patient/patient-bgz-test",
+          "display": "J.P. van der Berg"
+        },
+        "onsetDateTime": "2010-04-01",
+        "reaction": [
+          {
+            "manifestation": [
+              {
+                "coding": [
+                  {
+                    "system": "http://snomed.info/sct",
+                    "code": "271807003",
+                    "display": "Eruption of skin"
+                  }
+                ]
+              }
+            ],
+            "severity": "moderate"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "AllergyIntolerance/allergy-penicillin"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:e5f6a7b8-c9d0-1234-efab-345678901234",
+      "resource": {
+        "resourceType": "Medication",
+        "id": "medication-metformin",
+        "code": {
+          "coding": [
+            {
+              "system": "urn:oid:2.16.840.1.113883.2.4.4.10",
+              "code": "6947",
+              "display": "Metformine tablet 500mg"
+            }
+          ],
+          "text": "Metformine 500mg"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Medication/medication-metformin"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:f6a7b8c9-d0e1-2345-fabc-456789012345",
+      "resource": {
+        "resourceType": "MedicationStatement",
+        "id": "medstatement-metformin",
+        "meta": {
+          "profile": ["http://nictiz.nl/fhir/StructureDefinition/zib-MedicationUse"]
+        },
+        "status": "active",
+        "category": {
+          "coding": [
+            {
+              "system": "urn:oid:2.16.840.1.113883.2.4.3.11.60.20.77.5.3",
+              "code": "6",
+              "display": "Medicatiegebruik"
+            }
+          ]
+        },
+        "medicationReference": {
+          "reference": "Medication/medication-metformin",
+          "display": "Metformine 500mg"
+        },
+        "effectivePeriod": {
+          "start": "2018-07-01"
+        },
+        "dateAsserted": "2018-07-01",
+        "subject": {
+          "reference": "Patient/patient-bgz-test",
+          "display": "J.P. van der Berg"
+        },
+        "taken": "y",
+        "dosage": [
+          {
+            "text": "2x daags 500mg bij de maaltijd",
+            "timing": {
+              "repeat": {
+                "frequency": 2,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "doseQuantity": {
+              "value": 1,
+              "unit": "Stuk",
+              "system": "urn:oid:2.16.840.1.113883.2.4.4.1.900.2",
+              "code": "245"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationStatement/medstatement-metformin"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:a7b8c9d0-e1f2-3456-abcd-567890123456",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "observation-bloodpressure",
+        "meta": {
+          "profile": ["http://nictiz.nl/fhir/StructureDefinition/zib-BloodPressure"]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/observation-category",
+                "code": "vital-signs",
+                "display": "Vital Signs"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "85354-9",
+              "display": "Blood pressure panel with all children optional"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient-bgz-test",
+          "display": "J.P. van der Berg"
+        },
+        "effectiveDateTime": "2025-12-01T10:30:00+01:00",
+        "performer": [
+          {
+            "reference": "Practitioner/gp-huisarts",
+            "display": "Dr. A. de Vries"
+          }
+        ],
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "http://loinc.org",
+                  "code": "8480-6",
+                  "display": "Systolic blood pressure"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 145,
+              "unit": "mmHg",
+              "system": "http://unitsofmeasure.org",
+              "code": "mm[Hg]"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "http://loinc.org",
+                  "code": "8462-4",
+                  "display": "Diastolic blood pressure"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 92,
+              "unit": "mmHg",
+              "system": "http://unitsofmeasure.org",
+              "code": "mm[Hg]"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Observation/observation-bloodpressure"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:b8c9d0e1-f2a3-4567-bcde-678901234567",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "observation-bodyweight",
+        "meta": {
+          "profile": ["http://nictiz.nl/fhir/StructureDefinition/zib-BodyWeight"]
+        },
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/observation-category",
+                "code": "vital-signs",
+                "display": "Vital Signs"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "29463-7",
+              "display": "Body weight"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient-bgz-test",
+          "display": "J.P. van der Berg"
+        },
+        "effectiveDateTime": "2025-12-01T10:30:00+01:00",
+        "performer": [
+          {
+            "reference": "Practitioner/gp-huisarts",
+            "display": "Dr. A. de Vries"
+          }
+        ],
+        "valueQuantity": {
+          "value": 82,
+          "unit": "kg",
+          "system": "http://unitsofmeasure.org",
+          "code": "kg"
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Observation/observation-bodyweight"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:c9d0e1f2-a3b4-5678-cdef-789012345678",
+      "resource": {
+        "resourceType": "DocumentReference",
+        "id": "docref-verwijsbrief",
+        "meta": {
+          "profile": ["http://nictiz.nl/fhir/StructureDefinition/IHE.MHD.Minimal.DocumentReference"]
+        },
+        "masterIdentifier": {
+          "system": "urn:ietf:rfc:3986",
+          "value": "urn:uuid:c9d0e1f2-a3b4-5678-cdef-789012345678"
+        },
+        "status": "current",
+        "type": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "57133-1",
+              "display": "Referral note"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/patient-bgz-test",
+          "display": "J.P. van der Berg"
+        },
+        "indexed": "2025-12-19T14:35:00+01:00",
+        "description": "Verwijsbrief naar cardioloog i.v.m. verhoogde bloeddruk ondanks medicatie",
+        "content": [
+          {
+            "attachment": {
+              "contentType": "application/pdf",
+              "language": "nl-NL",
+              "url": "http://localhost:8080/fhir/Binary/verwijsbrief-pdf",
+              "title": "Verwijsbrief cardiologie"
+            }
+          }
+        ],
+        "context": {
+          "encounter": {
+            "display": "Consult huisarts 19-12-2025"
+          },
+          "practiceSetting": {
+            "coding": [
+              {
+                "system": "http://snomed.info/sct",
+                "code": "394802001",
+                "display": "General medicine"
+              }
+            ]
+          }
+        }
+      },
+      "request": {
+        "method": "PUT",
+        "url": "DocumentReference/docref-verwijsbrief"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:d0e1f2a3-b4c5-6789-defa-890123456789",
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "gp-huisarts",
+        "identifier": [
+          {
+            "system": "http://fhir.nl/fhir/NamingSystem/uzi-nr-pers",
+            "value": "12345678"
+          }
+        ],
+        "name": [
+          {
+            "family": "de Vries",
+            "given": ["Anna"],
+            "prefix": ["Dr."]
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "+31201234567"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Practitioner/gp-huisarts"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:e1f2a3b4-c5d6-7890-efab-901234567890",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "organization-sender",
+        "identifier": [
+          {
+            "system": "http://fhir.nl/fhir/NamingSystem/ura",
+            "value": "DYNAMIC:sender_ura_query_param"
+          }
+        ],
+        "name": "Huisartsenpraktijk De Vries",
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "+31201234567"
+          }
+        ],
+        "address": [
+          {
+            "line": ["Dorpsstraat 1"],
+            "city": "Amsterdam",
+            "postalCode": "1000AA"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Organization/organization-sender"
+      }
+    }
+  ]
+}

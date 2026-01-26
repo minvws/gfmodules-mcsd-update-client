@@ -1,5 +1,5 @@
 services:
-  mcsd-update-client:
+  iti-91-mcsd-update-client:
     build:
       context: ../services/iti-91
       dockerfile: docker/Dockerfile
@@ -32,6 +32,33 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
+  iti-130-publisher:
+    build:
+      context: ../services/iti-130
+      dockerfile: Dockerfile
+    depends_on:
+      hapi-directory-health:
+        condition: service_healthy
+    networks:
+      - mcsd_update_client_net
+    restart: "no"
+
+  iti-90-address-book-proxy:
+    build:
+      context: ../services/iti-90
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../services/iti-90:/app
+    depends_on:
+      hapi-directory-health:
+        condition: service_healthy
+    networks:
+      - mcsd_update_client_net
+    restart: unless-stopped
+
+## HAPI FHIR SERVERS
   hapi-update-client:
     image: "hapiproject/hapi:latest"
     ports:
@@ -60,26 +87,6 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
-  # fills the notifiedpull-stu3 server with seed data placed in notifiedpull-stu3.bundle.json
-  notifiedpull-seed:
-    image: curlimages/curl
-    depends_on:
-      hapi-notifiedpull-stu3-health:
-        condition: service_healthy
-    volumes:
-      - ./notifiedpull-stu3.bundle.json:/seed/bundle.json:ro
-    entrypoint:
-      - sh
-      - -c
-      - >
-          curl -f --retry 10 --retry-connrefused --retry-delay 2
-          -H 'Content-Type: application/fhir+json'
-          --data-binary @/seed/bundle.json
-          http://hapi-notifiedpull-stu3:8082/fhir
-    networks:
-      - mcsd_update_client_net
-    restart: "no"
-
   # Can be tested with on the host machine with:
   # curl -k --resolve mach2.disyepd.com:443:127.0.0.1 https://mach2.disyepd.com/fhir
   hapi-directory:
@@ -95,43 +102,10 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
-  iti-130-publisher:
-    build:
-      context: ../services/iti-130
-      dockerfile: Dockerfile
-    depends_on:
-      hapi-directory-health:
-        condition: service_healthy
-    networks:
-      - mcsd_update_client_net
-    restart: "no"
 
-  caddy:
-    build:
-      context: .
-      dockerfile: caddy/Dockerfile
-    profiles:
-      - caddy
-    ports:
-      - "443:443"
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    secrets:
-      - cloudflare_api_token
-    command:
-      [
-        "sh",
-        "-c",
-        "export CLOUDFLARE_API_TOKEN=$$(cat /run/secrets/cloudflare_api_token) && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile",
-      ]
-    depends_on:
-      - hapi-directory
-    networks:
-      - mcsd_update_client_net
-    restart: unless-stopped
 
+
+## HEALTHCHECK SERVICES FOR HAPI SERVERS
   hapi-update-client-health:
     image: curlimages/curl
     healthcheck:
@@ -188,6 +162,53 @@ services:
     networks:
       - mcsd_update_client_net
     command: sleep infinity
+
+## SUPPORTING SERVICES
+  # fills the notifiedpull-stu3 server with seed data placed in notifiedpull-stu3.bundle.json
+  notifiedpull-seed:
+    image: curlimages/curl
+    depends_on:
+      hapi-notifiedpull-stu3-health:
+        condition: service_healthy
+    volumes:
+      - ./notifiedpull-stu3.bundle.json:/seed/bundle.json:ro
+    entrypoint:
+      - sh
+      - -c
+      - >
+          curl -f --retry 10 --retry-connrefused --retry-delay 2
+          -H 'Content-Type: application/fhir+json'
+          --data-binary @/seed/bundle.json
+          http://hapi-notifiedpull-stu3:8082/fhir
+    networks:
+      - mcsd_update_client_net
+    restart: "no"
+
+  caddy:
+    build:
+      context: .
+      dockerfile: caddy/Dockerfile
+    profiles:
+      - caddy
+    ports:
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    secrets:
+      - cloudflare_api_token
+    command:
+      [
+        "sh",
+        "-c",
+        "export CLOUDFLARE_API_TOKEN=$$(cat /run/secrets/cloudflare_api_token) && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile",
+      ]
+    depends_on:
+      - hapi-directory
+    networks:
+      - mcsd_update_client_net
+    restart: unless-stopped
 
   redis:
     image: redis:latest

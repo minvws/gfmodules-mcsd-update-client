@@ -1,0 +1,2031 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>BgZ-verwijzing verzenden</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        :root {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         Roboto, sans-serif;
+            line-height: 1.4;
+            color: #1f2933;
+            background-color: #f5f7fa;
+        }
+
+        body {
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 1280px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+            padding: 1.75rem 2rem 2rem;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin: 0 0 0.75rem;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            flex: 1 1 260px;
+            min-width: 0;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1.25rem;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .radio-group input {
+            margin-right: 0.35rem;
+        }
+
+        input[type="text"], select {
+            padding: 0.45rem 0.6rem;
+            border-radius: 8px;
+            border: 1px solid #cbd2e1;
+            font-size: 0.95rem;
+            outline: none;
+            box-sizing: border-box;
+            background: #ffffff;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+        }
+
+        input[disabled], select[disabled] {
+            background: #f1f5f9;
+            color: #6b7785;
+        }
+
+        input[readonly] {
+            background: #f1f5f9;
+            color: #111827;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: #6b7785;
+            margin-bottom: 0.5rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 0.45rem 1.4rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #ffffff;
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.35);
+            transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, opacity 0.15s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 12px rgba(37, 99, 235, 0.35);
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.55;
+            cursor: default;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .secondary {
+            background: #e2e8f0;
+            color: #111827;
+            box-shadow: none;
+        }
+
+        .secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(15, 23, 42, 0.08);
+        }
+
+        .status-line {
+            font-size: 0.85rem;
+            color: #6b7785;
+            display: block;
+        }
+
+        .status-line strong {
+            color: #111827;
+        }
+
+        .status-line.error {
+            color: #b91c1c;
+        }
+
+        .status-line.ok {
+            color: #047857;
+        }
+
+        .status-line.warning {
+            color: #b45309;
+        }
+
+        .table-wrapper {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            border: 1px solid #d0d7e3;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+            font-size: 0.9rem;
+        }
+
+        thead {
+            background: #f1f5f9;
+        }
+
+        th, td {
+            padding: 0.45rem 0.6rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #4b5563;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        tbody tr:hover {
+            background: #e0ecff;
+        }
+
+        tbody tr {
+            cursor: pointer;
+        }
+
+        .table-scroll {
+            max-height: 360px;
+            overflow: auto;
+        }
+
+        .small-text {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
+        .results-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4b5563;
+            margin-top: 0.75rem;
+            margin-bottom: 0.35rem;
+        }
+        tbody tr.selected {
+            background: #e5e7eb;
+        }
+
+        .patient-box {
+            margin-bottom: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid #d0d7e3;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .patient-box-inner {
+            padding: 0.85rem 0.9rem 0.95rem;
+        }
+
+        .patient-box-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #4b5563;
+            margin: 0 0 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .patient-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .patient-item {
+            flex: 1 1 260px;
+            min-width: 0;
+            background: #f9fafb;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.55rem 0.7rem;
+        }
+
+        .patient-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6b7785;
+            margin-bottom: 0.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .patient-value {
+            font-size: 1rem;
+            font-weight: 650;
+            color: #111827;
+            word-break: break-word;
+        }
+
+        @media (max-width: 720px) {
+            .app {
+                padding: 1.25rem 1.25rem 1.5rem;
+            }
+
+            .table-wrapper {
+                border-radius: 8px;
+            }
+        }
+
+        /* --- Toast meldingen (rechtsboven) -------------------------------- */
+        #toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: min(420px, calc(100vw - 2rem));
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            background: #ffffff;
+            border: 1px solid #d0d7e3;
+            border-left: 6px solid #2563eb;
+            border-radius: 12px;
+            padding: 0.6rem 0.75rem;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.ok {
+            border-left-color: #047857;
+        }
+
+        .toast.error {
+            border-left-color: #b91c1c;
+        }
+
+        .toast.warning {
+            border-left-color: #b45309;
+        }
+
+        .toast-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #4b5563;
+            margin-bottom: 0.15rem;
+        }
+
+        .toast-msg {
+            font-size: 0.92rem;
+            color: #111827;
+            word-break: break-word;
+        }
+
+    </style>
+</head>
+<body>
+<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+<div class="app">
+    <h1>BgZ-verwijzing verzenden</h1>
+
+
+    <div class="patient-box">
+        <div class="patient-box-inner">
+            <div class="patient-box-title">Verwijzing voor patiënt</div>
+            <div class="patient-row">
+                <div class="patient-item">
+                    <div class="patient-label">Naam</div>
+                    <div class="patient-value" id="patient-name-display"></div>
+                </div>
+                <div class="patient-item">
+                    <div class="patient-label">BSN</div>
+                    <div class="patient-value" id="patient-bsn-display"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="search-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="org-q">Zoek organisatie</label>
+                <input type="text" id="org-q" name="org-q" autocomplete="off" maxlength="64"
+                       placeholder="bijv. amc, umc, verpleeghuis">
+            </div>
+        </div>
+
+        <div class="actions">
+            <button type="button" id="btn-search-org">Zoek organisatie</button>
+            <button type="button" id="btn-more-org" class="secondary" disabled>Meer laden</button>
+            <button type="button" id="btn-reset" class="secondary">Reset</button>
+        </div>
+
+        <span class="status-line" id="status"></span>
+
+    </form>
+
+    <div class="results-title" id="results-title">Resultaten: organisaties</div>
+    <div class="table-wrapper">
+        <div class="table-scroll">
+            <table>
+                <thead>
+                <tr>
+                    <th>naam</th>
+                </tr>
+                </thead>
+                <tbody id="results-body">
+                <!-- rijen worden via JavaScript gevuld -->
+                </tbody>
+            </table>
+        </div>
+        <div class="small-text" id="footer-info" style="padding: 0.35rem 0.6rem 0.5rem;">
+            0 resultaten.
+        </div>
+    </div>
+
+    <div class="results-title" id="units-title">Resultaten: onderdelen</div>
+    <div class="table-wrapper">
+        <div class="table-scroll">
+            <table>
+                <thead>
+                <tr>
+                    <th>naam</th>
+                    <th>type</th>
+                </tr>
+                </thead>
+                <tbody id="units-body">
+                <!-- rijen worden via JavaScript gevuld -->
+                </tbody>
+            </table>
+        </div>
+        <div class="small-text" id="units-footer-info" style="padding: 0.35rem 0.6rem 0.5rem;">
+            0 resultaten.
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="unit-q">Zoek onderdeel binnen organisatie (optioneel)</label>
+            <input type="text" id="unit-q" name="unit-q" autocomplete="off" maxlength="64" disabled
+                   placeholder="selecteer eerst een organisatie">
+        </div>
+
+        <div class="form-group">
+            <label>Type onderdeel</label>
+            <div class="radio-group">
+                <label><input type="radio" name="unit-kind" value="all" checked> alle types</label>
+                <label><input type="radio" name="unit-kind" value="location"> locatie</label>
+                <label><input type="radio" name="unit-kind" value="service"> zorgdienst</label>
+                <label><input type="radio" name="unit-kind" value="suborg"> suborganisatie</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <button type="button" id="btn-search-unit" disabled>Zoek onderdeel</button>
+        <button type="button" id="btn-more-units" class="secondary" disabled>Meer laden</button>
+</div>
+
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="bgz-chosen-endpoint">Notification endpoint (Twiin TA)</label>
+            <input type="text" id="bgz-chosen-endpoint" name="bgz-chosen-endpoint" autocomplete="off" maxlength="256" readonly>
+            <div class="small-text" id="bgz-endpoint-hint" style="padding-top:0.25rem;"></div>
+</div>
+    </div>
+
+<div class="form-row">
+        <div class="form-group">
+            <label for="bgz-receiver-base">Receiver notification base</label>
+            <input type="text" id="bgz-receiver-base" name="bgz-receiver-base" autocomplete="off" maxlength="256" readonly>
+        </div>
+        <div class="form-group">
+            <label for="bgz-receiver-ura">Receiver URA</label>
+            <input type="text" id="bgz-receiver-ura" name="bgz-receiver-ura" autocomplete="off" maxlength="64" readonly>
+        </div>
+        <div class="form-group">
+            <label for="bgz-receiver-name">Receiver naam</label>
+            <input type="text" id="bgz-receiver-name" name="bgz-receiver-name" autocomplete="off" maxlength="128" readonly>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="bgz-task-owner">Task.owner</label>
+            <input type="text" id="bgz-task-owner" name="bgz-task-owner" autocomplete="off" maxlength="128" readonly>
+            <div class="small-text" style="padding-top:0.25rem;">Wordt gebruikt door de ontvanger om intern te routeren naar het juiste organisatieonderdeel.</div>
+        </div>
+        <div class="form-group">
+            <label for="bgz-task-location">Task.location</label>
+            <input type="text" id="bgz-task-location" name="bgz-task-location" autocomplete="off" maxlength="128" readonly>
+            <div class="small-text" style="padding-top:0.25rem;">Optioneel. Alleen gevuld als er expliciet op locatie wordt geadresseerd.</div>
+        </div>
+    </div>
+    <div class="actions">
+        <button type="button" id="btn-bgz-notify" disabled>Verzend verwijzing</button>
+        <span class="status-line" id="bgz-status"></span>
+    </div>
+
+    <details id="debug-panel" style="margin-top:0.6rem; display:none;">
+        <summary>Debug: capability mapping / endpoint-keuze</summary>
+        <div class="small-text" style="padding:0.4rem 0;">Alleen zichtbaar bij <code>?debug=1</code> in de URL.</div>
+        <pre id="debug-mapping" style="white-space:pre-wrap; word-break:break-word; max-height:260px; overflow:auto; border:1px solid #ddd; border-radius:8px; padding:0.6rem;"></pre>
+    </details>
+</div>
+
+<script>
+    // === instellingen =======================================================
+    // Pas deze waarden aan je omgeving aan:
+    // - Zet BASE_URL_CONFIG op "AUTO" om dezelfde origin te gebruiken (handig als je de HTML via FastAPI serveert).
+    // - Zet debug=1 in de URL querystring om extra logging en debug-panel te tonen.
+    const BASE_URL_CONFIG = "http://10.10.10.199:8000"; // bv. "http://hostname:8000" of "AUTO"
+    const API_KEY = "";                                  // laat leeg als geen API key vereist is
+    const MCS_LIMIT = 50;
+
+    const DEBUG_INFO = (function () {
+        try {
+            const q = new URLSearchParams(window.location.search);
+            return q.get("debug") === "1";
+        } catch (e) {
+            return false;
+        }
+    })();
+
+    const BASE_URL = (function () {
+        const configured = (BASE_URL_CONFIG || "").trim();
+        if (configured && configured.toUpperCase() !== "AUTO") return configured;
+        try {
+            const origin = (window.location && window.location.origin) ? String(window.location.origin) : "";
+            if (origin && origin !== "null") return origin;
+        } catch (e) { /* ignore */ }
+        // fallback
+        return configured || "http://localhost:8000";
+    })();
+
+    // Demo-context (PoC 9)
+    const PATIENT_BSN = "172642863";
+    const PATIENT_NAME = "Johannes Pieter van der Berg";
+
+    // === state ==============================================================
+    let selectedOrg = null;      // { id, name, ura }
+    let selectedUnit = null;     // { resourceType, id, name }
+    let selectedEndpoint = null; // { address, base, endpoint_id, source, decision, decision_explanation, ready_to_send, receiver_probe }
+    let lastPreflight = null;    // debug/demo: volledige preflight response
+
+    // Pagination ('meer laden')
+    let orgNextCursor = null;
+    let orgTotal = null;
+    let orgSeenIds = new Set();
+
+    let unitsNextCursor = null;
+    let unitsTotal = null;
+    let unitsSeenKeys = new Set();
+
+    // Protect against race conditions (ignore stale responses)
+    let orgSearchSeq = 0;
+    let unitSearchSeq = 0;
+    let orgSearchController = null;
+    let unitSearchController = null;
+
+    // Protect against race conditions when resolving endpoints
+    let resolveSeq = 0;
+
+    // === hulpfuncties =======================================================
+    function sanitize(text) {
+        if (text === undefined || text === null) return "";
+        return String(text).trim();
+    }
+
+    // Extract a FHIR Reference string from either a plain string or a {reference:"..."} object.
+    function extractReferenceString(value) {
+        if (value === undefined || value === null) return "";
+        if (typeof value === "string") return value.trim();
+        if (typeof value === "object") {
+            if (typeof value.reference === "string") return value.reference.trim();
+            if (typeof value.ref === "string") return value.ref.trim();
+            if (typeof value.value === "string") return value.value.trim();
+        }
+        return "";
+    }
+
+    function looksLikeRefOfType(reference, resourceType) {
+        const ref = sanitize(reference);
+        const rt = sanitize(resourceType);
+        if (!ref || !rt) return false;
+        if (ref.startsWith(rt + "/")) return true;
+        // allow absolute references (best-effort)
+        if (ref.startsWith("http://") || ref.startsWith("https://")) {
+            return ref.indexOf("/" + rt + "/") !== -1;
+        }
+        return false;
+    }
+
+    function getByPath(obj, path) {
+        if (!obj || typeof obj !== "object") return undefined;
+        const parts = String(path || "").split(".").filter(Boolean);
+        let cur = obj;
+        for (let i = 0; i < parts.length; i++) {
+            const key = parts[i];
+            if (!cur || typeof cur !== "object" || !(key in cur)) return undefined;
+            cur = cur[key];
+        }
+        return cur;
+    }
+
+    // Best-effort: find a reference to a resourceType somewhere in the lastPreflight response.
+    // (We prefer explicit fields if available; otherwise we fall back to a shallow search.)
+    function extractRefFromPreflight(preflight, resourceType) {
+        if (!preflight || typeof preflight !== "object") return "";
+
+        const rt = sanitize(resourceType);
+        const candidatePaths = (rt === "Organization") ? [
+            "task_owner_ref", "taskOwnerRef", "owner_ref", "ownerRef",
+            "receiver_owner_ref", "receiverOwnerRef",
+            "resolved_owner_ref", "resolvedOwnerRef",
+            "routing.task_owner_ref", "routing.owner_ref", "routing.ownerRef",
+            "notification.task_owner_ref", "notification.taskOwnerRef",
+            "notification.owner_ref", "notification.ownerRef", "notification.owner",
+            "task.owner", "task.owner.reference",
+            "notification_task.owner", "notification_task.owner.reference",
+            "notificationTask.owner", "notificationTask.owner.reference",
+            "receiver_org_ref", "receiverOrgRef"
+        ] : [
+            "task_location_ref", "taskLocationRef", "location_ref", "locationRef",
+            "receiver_location_ref", "receiverLocationRef",
+            "resolved_location_ref", "resolvedLocationRef",
+            "routing.task_location_ref", "routing.location_ref", "routing.locationRef",
+            "notification.task_location_ref", "notification.taskLocationRef",
+            "notification.location_ref", "notification.locationRef", "notification.location",
+            "task.location", "task.location.reference",
+            "notification_task.location", "notification_task.location.reference",
+            "notificationTask.location", "notificationTask.location.reference",
+            "receiver_location", "receiverLocation"
+        ];
+
+        for (let i = 0; i < candidatePaths.length; i++) {
+            const raw = getByPath(preflight, candidatePaths[i]);
+            const ref = extractReferenceString(raw);
+            if (looksLikeRefOfType(ref, rt)) return ref;
+        }
+
+        // fallback: shallow recursive search (depth-limited)
+        const visited = new Set();
+        function walk(node, depth) {
+            if (depth > 6) return "";
+            if (node === null || node === undefined) return "";
+            if (typeof node === "string") {
+                return looksLikeRefOfType(node, rt) ? sanitize(node) : "";
+            }
+            if (typeof node !== "object") return "";
+            if (visited.has(node)) return "";
+            visited.add(node);
+
+            // common FHIR Reference object
+            const maybe = extractReferenceString(node);
+            if (looksLikeRefOfType(maybe, rt)) return maybe;
+
+            const keys = Object.keys(node);
+            for (let k = 0; k < keys.length; k++) {
+                const val = node[keys[k]];
+                const found = walk(val, depth + 1);
+                if (found) return found;
+            }
+            return "";
+        }
+
+        return walk(preflight, 0);
+    }
+
+    function deriveTaskOwnerAndLocationRefs() {
+        // Task.owner / Task.location worden door de backend bepaald.
+        // De backend geeft in bgz/preflight expliciet terug welke refs gebruikt gaan worden.
+        let ownerRef = "";
+        let locationRef = "";
+
+        try {
+            const tr = (lastPreflight && lastPreflight.task_routing) ? lastPreflight.task_routing : null;
+            if (tr && tr.owner_ref !== undefined && tr.owner_ref !== null) {
+                ownerRef = String(tr.owner_ref);
+            }
+            if (tr && tr.location_ref !== undefined && tr.location_ref !== null) {
+                locationRef = String(tr.location_ref);
+            }
+        } catch (e) { /* ignore */ }
+
+        return {
+            ownerRef: sanitize(ownerRef || ""),
+            locationRef: sanitize(locationRef || "")
+        };
+    }
+    function translateResourceType(resourceType) {
+        const rt = sanitize(resourceType);
+        switch (rt) {
+            case "HealthcareService": return "zorgdienst";
+            case "Location": return "locatie";
+            case "Organization": return "suborganisatie";
+            default: return rt;
+        }
+    }
+
+
+    function isActiveEntry(entry) {
+        if (!entry || typeof entry !== "object") return true;
+        if (entry.status !== undefined && entry.status !== null) {
+            const s = String(entry.status || "").trim().toLowerCase();
+            if (!s) return true;
+            return s === "active";
+        }
+        if (entry.active !== undefined && entry.active !== null) {
+            if (typeof entry.active === "boolean") return entry.active === true;
+            const a = String(entry.active || "").trim().toLowerCase();
+            if (!a) return true;
+            return a === "true" || a === "1" || a === "yes";
+        }
+        return true;
+    }
+
+    function makeHeaders() {
+        const headers = {};
+        if (API_KEY && API_KEY.trim().length > 0) {
+            headers["X-API-Key"] = API_KEY.trim();
+        }
+        return headers;
+    }
+
+    function showToast(message, type, durationMs) {
+        const container = document.getElementById("toast-container");
+        if (!container) return;
+
+        const msg = sanitize(message);
+        if (!msg) return;
+
+        const toast = document.createElement("div");
+        toast.className = "toast" + (type ? (" " + type) : "");
+
+        const title = document.createElement("div");
+        title.className = "toast-title";
+        title.textContent = type === "error" ? "Fout" : (type === "warning" ? "Waarschuwing" : (type === "ok" ? "OK" : "Info"));
+
+        const body = document.createElement("div");
+        body.className = "toast-msg";
+        body.textContent = msg;
+
+        toast.appendChild(title);
+        toast.appendChild(body);
+
+        container.appendChild(toast);
+
+        // trigger CSS transition
+        requestAnimationFrame(function () {
+            toast.classList.add("show");
+        });
+
+        const ttl = (typeof durationMs === "number" && durationMs > 0)
+            ? durationMs
+            : ((type === "error" || type === "warning") ? 7000 : 3500);
+
+        window.setTimeout(function () {
+            toast.classList.remove("show");
+            window.setTimeout(function () {
+                try { toast.remove(); } catch (e) { /* ignore */ }
+            }, 250);
+        }, ttl);
+    }
+
+    function setStatus(text, type, alsoToast) {
+        const el = document.getElementById("status");
+        const msg = sanitize(text);
+        if (el) {
+            el.textContent = msg || "";
+            el.className = "status-line";
+            if (type === "error") {
+                el.classList.add("error");
+            } else if (type === "warning") {
+                el.classList.add("warning");
+            } else if (type === "ok") {
+                el.classList.add("ok");
+            }
+        }
+        if (alsoToast) {
+            showToast(msg, type || "info");
+        } else if (type === "error") {
+            // errors always toast
+            showToast(msg, "error");
+        } else if (type === "warning") {
+            // warnings always toast
+            showToast(msg, "warning");
+        }
+    }
+
+
+
+    function clearResolvedEndpoint() {
+        selectedEndpoint = null;
+        lastPreflight = null;
+        const chosenEl = document.getElementById("bgz-chosen-endpoint");
+        if (chosenEl) chosenEl.value = "";
+        const hintEl = document.getElementById("bgz-endpoint-hint");
+        if (hintEl) hintEl.textContent = "";
+        const debugPre = document.getElementById("debug-mapping");
+        if (debugPre) debugPre.textContent = "";
+        const bgzStatusEl = document.getElementById("bgz-status");
+        if (bgzStatusEl) {
+            bgzStatusEl.textContent = "";
+            bgzStatusEl.className = "status-line";
+        }
+        updateBgzActionUI();
+    }
+
+    function getUraFromIdentifiers(identifiers, context) {
+        if (!identifiers || !Array.isArray(identifiers)) return "";
+        // URA = UZI-register abonneenummer (OID: 2.16.528.1.1007.3.3)
+        const URA_OID = "2.16.528.1.1007.3.3";
+
+        let ura = "";
+        let matchMeta = null; // { strategy, is_fallback, system, value }
+        const ctx = (context !== undefined) ? context : null;
+
+        function rememberMatch(strategy, isFallback, system, value) {
+            if (matchMeta) return;
+            matchMeta = {
+                strategy: sanitize(strategy),
+                is_fallback: !!isFallback,
+                system: sanitize(system),
+                value: sanitize(value)
+            };
+        }
+
+        identifiers.forEach(function (ident) {
+            if (ura) return;
+
+            const sysRaw = ident && ident.system ? String(ident.system).trim() : "";
+            const sys = sysRaw.replace(/\/+$/g, ""); // strip trailing slashes
+            const sysLower = sys.toLowerCase();
+            const val = ident && ident.value ? String(ident.value).trim() : "";
+            if (!val) return;
+
+            // Canonical NL NamingSystem
+            if (sysLower === "http://fhir.nl/fhir/namingsystem/ura") {
+                ura = val;
+                rememberMatch("system:http://fhir.nl/fhir/namingsystem/ura", false, sysRaw, val);
+                return;
+            }
+
+            // OID form (often used in HL7v3 interop): urn:oid:2.16.528.1.1007.3.3
+            if (sysLower === ("urn:oid:" + URA_OID)) {
+                ura = val;
+                rememberMatch("system:urn:oid:" + URA_OID, true, sysRaw, val);
+                return;
+            }
+
+            // Some servers return a bare OID in Identifier.system (not a URI, but seen in the wild)
+            if (sys === URA_OID) {
+                ura = val;
+                rememberMatch("system:" + URA_OID, true, sysRaw, val);
+                return;
+            }
+
+            // Tolerant fallbacks (last resort)
+            if (/NamingSystem\/ura/i.test(sys)) {
+                ura = val;
+                rememberMatch("system-regex:NamingSystem/ura", true, sysRaw, val);
+                return;
+            }
+            if (/\/ura$/i.test(sys)) {
+                ura = val;
+                rememberMatch("system-regex:/ura$", true, sysRaw, val);
+            }
+        });
+
+        // Last-resort fallback: match on Identifier.type (some servers don't use a URA system URL)
+        if (!ura) {
+            identifiers.forEach(function (ident) {
+                if (ura) return;
+
+                const sysRaw = ident && ident.system ? String(ident.system).trim() : "";
+                const val = ident && ident.value ? String(ident.value).trim() : "";
+                if (!val) return;
+
+                const t = ident && ident.type ? ident.type : {};
+                const tText = t && t.text ? String(t.text).toLowerCase() : "";
+                if (tText && /\bura\b/.test(tText)) {
+                    ura = val;
+                    rememberMatch("type.text contains 'ura'", true, sysRaw, val);
+                    return;
+                }
+
+                const codings = (t && Array.isArray(t.coding)) ? t.coding : [];
+                codings.forEach(function (coding) {
+                    if (ura) return;
+                    const code = coding && coding.code ? String(coding.code).toLowerCase() : "";
+                    const disp = coding && coding.display ? String(coding.display).toLowerCase() : "";
+                    if (code === "ura") {
+                        ura = val;
+                        rememberMatch("type.coding.code === 'ura'", true, sysRaw, val);
+                        return;
+                    }
+                    if (disp && /\bura\b/.test(disp)) {
+                        ura = val;
+                        rememberMatch("type.coding.display contains 'ura'", true, sysRaw, val);
+                    }
+                });
+            });
+        }
+
+        const normalized = sanitize(ura);
+
+        // Debug logging: only when we had to use a fallback strategy (or couldn't find a URA at all).
+        if (DEBUG_INFO) {
+            if (normalized && matchMeta && matchMeta.is_fallback) {
+                console.warn("getUraFromIdentifiers: fallback used", {
+                    ura: normalized,
+                    strategy: matchMeta.strategy,
+                    system: matchMeta.system,
+                    context: ctx || undefined
+                });
+            } else if (!normalized) {
+                console.warn("getUraFromIdentifiers: no URA found", {
+                    context: ctx || undefined,
+                    identifiers: identifiers
+                });
+            }
+        }
+
+        return normalized;
+    }
+
+    function normalizeFhirBaseFromAddress(address) {
+        let a = sanitize(address);
+        if (!a) return "";
+        while (a.endsWith("/")) a = a.slice(0, -1);
+        if (a.toLowerCase().endsWith("/task")) {
+            a = a.slice(0, -5);
+            while (a.endsWith("/")) a = a.slice(0, -1);
+        }
+        return a;
+    }
+
+    function markSelectedRow(row) {
+        const tbody = document.getElementById("results-body");
+        if (!tbody) return;
+        tbody.querySelectorAll("tr.selected").forEach(function (el) {
+            el.classList.remove("selected");
+        });
+        if (row) row.classList.add("selected");
+    }
+
+    function markSelectedUnitRow(row) {
+        const tbody = document.getElementById("units-body");
+        if (!tbody) return;
+        tbody.querySelectorAll("tr.selected").forEach(function (el) {
+            el.classList.remove("selected");
+        });
+        if (row) row.classList.add("selected");
+    }
+
+    function setButtons() {
+        const btnMoreOrg = document.getElementById("btn-more-org");
+        const btnMoreUnits = document.getElementById("btn-more-units");
+        const btnUnit = document.getElementById("btn-search-unit");
+        const unitQ = document.getElementById("unit-q");
+        const unitKindEls = document.querySelectorAll('input[name="unit-kind"]');
+
+        const orgSelected = !!(selectedOrg && selectedOrg.id);
+
+        if (btnMoreOrg) btnMoreOrg.disabled = !orgNextCursor;
+        if (btnMoreUnits) btnMoreUnits.disabled = !orgSelected || !unitsNextCursor;
+
+        if (btnUnit) btnUnit.disabled = !orgSelected;
+
+        unitKindEls.forEach(function (el) {
+            el.disabled = !orgSelected;
+        });
+
+        if (unitQ) {
+            unitQ.disabled = !orgSelected;
+            if (!orgSelected) {
+                unitQ.value = "";
+                unitQ.placeholder = "selecteer eerst een organisatie";
+            } else {
+                unitQ.placeholder = "bijv. cardiologie, poli, kliniek";
+            }
+        }
+
+        updateBgzActionUI();
+    }
+
+    function updateBgzActionUI() {
+        const chosenEl = document.getElementById("bgz-chosen-endpoint");
+        const hintEl = document.getElementById("bgz-endpoint-hint");
+        const receiverBaseEl = document.getElementById("bgz-receiver-base");
+        const receiverUraEl = document.getElementById("bgz-receiver-ura");
+        const receiverNameEl = document.getElementById("bgz-receiver-name");
+        const taskOwnerEl = document.getElementById("bgz-task-owner");
+        const taskLocationEl = document.getElementById("bgz-task-location");
+        const btnNotify = document.getElementById("btn-bgz-notify");
+
+        if (receiverNameEl) {
+            receiverNameEl.value = selectedUnit
+                ? sanitize(selectedUnit.name)
+                : (selectedOrg ? sanitize(selectedOrg.name) : "");
+        }
+
+        // Toon welke routeringsvelden (Task.owner/Task.location) we verwachten te gebruiken.
+        // Dit is informatief; de backend blijft leidend.
+        const taskRefs = deriveTaskOwnerAndLocationRefs();
+        if (taskOwnerEl) taskOwnerEl.value = taskRefs.ownerRef || "";
+        if (taskLocationEl) taskLocationEl.value = taskRefs.locationRef || "";
+
+        if (chosenEl) {
+            chosenEl.value = (selectedEndpoint && selectedEndpoint.address) ? sanitize(selectedEndpoint.address) : "";
+        }
+
+        if (hintEl) {
+            if (!selectedEndpoint) {
+                hintEl.textContent = "";
+            } else {
+                const parts = [];
+                if (selectedEndpoint.source === "organization") {
+                    parts.push(selectedUnit ? "Fallback: onderdeel → organisatie (endpoint via organisatie)." : "Endpoint via organisatie.");
+                } else if (selectedEndpoint.source === "target") {
+                    parts.push(selectedUnit ? "Endpoint op onderdeel/target." : "Endpoint op organisatie.");
+                }
+                if (DEBUG_INFO && selectedEndpoint.decision) {
+                    parts.push("Beslisboom: " + String(selectedEndpoint.decision).trim());
+                }
+                if (DEBUG_INFO && selectedEndpoint.decision_explanation) {
+                    parts.push(String(selectedEndpoint.decision_explanation).trim());
+                }
+                hintEl.textContent = parts.join(" • ");
+            }
+        }
+
+        if (receiverBaseEl) {
+            const base = (selectedEndpoint && selectedEndpoint.base)
+                ? sanitize(selectedEndpoint.base)
+                : ((selectedEndpoint && selectedEndpoint.address) ? normalizeFhirBaseFromAddress(selectedEndpoint.address) : "");
+            receiverBaseEl.value = base || "";
+        }
+
+        if (receiverUraEl) {
+            const candidate = (selectedOrg && selectedOrg.ura) ? String(selectedOrg.ura).trim() : "";
+            receiverUraEl.value = candidate || "";
+        }
+
+        const receiverBase = receiverBaseEl ? String(receiverBaseEl.value || "").trim() : "";
+        const receiverUra = receiverUraEl ? String(receiverUraEl.value || "").trim() : "";
+        const receiverName = receiverNameEl ? String(receiverNameEl.value || "").trim() : "";
+
+        const preflightOk = (selectedEndpoint && (typeof selectedEndpoint.ready_to_send === "boolean"))
+            ? !!selectedEndpoint.ready_to_send
+            : true;
+
+        const requiredOk = !!(receiverUra && receiverName && receiverBase && preflightOk);
+        if (btnNotify) btnNotify.disabled = !requiredOk;
+        if (DEBUG_INFO) {
+            console.log("BgZ velden", { endpoint: chosenEl ? String(chosenEl.value || "").trim() : "", receiverBase: receiverBase, receiverUra: receiverUra, receiverName: receiverName, notifyDisabled: btnNotify ? btnNotify.disabled : null, decision: selectedEndpoint && selectedEndpoint.decision ? String(selectedEndpoint.decision).trim() : "", decision_explanation: selectedEndpoint && selectedEndpoint.decision_explanation ? String(selectedEndpoint.decision_explanation).trim() : "", source: selectedEndpoint ? selectedEndpoint.source : null });
+        }
+
+        updateDebugPanel();
+
+    }
+
+    function updateDebugPanel() {
+        const panel = document.getElementById("debug-panel");
+        const pre = document.getElementById("debug-mapping");
+        if (!panel || !pre) return;
+
+        if (!DEBUG_INFO) {
+            panel.style.display = "none";
+            return;
+        }
+
+        panel.style.display = "block";
+        if (!lastPreflight) {
+            pre.textContent = "";
+            return;
+        }
+        try {
+            pre.textContent = JSON.stringify(lastPreflight, null, 2);
+        } catch (e) {
+            pre.textContent = String(lastPreflight);
+        }
+    }
+
+    function clearOrgResults() {
+        const tbody = document.getElementById("results-body");
+        const footer = document.getElementById("footer-info");
+        if (tbody) tbody.innerHTML = "";
+        if (footer) footer.textContent = "0 resultaten.";
+
+        orgNextCursor = null;
+        orgTotal = null;
+        orgSeenIds = new Set();
+
+        const btnMoreOrg = document.getElementById("btn-more-org");
+        if (btnMoreOrg) btnMoreOrg.disabled = true;
+    }
+
+    function clearUnitsResults() {
+        const tbody = document.getElementById("units-body");
+        const footer = document.getElementById("units-footer-info");
+        if (tbody) tbody.innerHTML = "";
+        if (footer) footer.textContent = "0 resultaten.";
+
+        unitsNextCursor = null;
+        unitsTotal = null;
+        unitsSeenKeys = new Set();
+
+        const btnMoreUnits = document.getElementById("btn-more-units");
+        if (btnMoreUnits) btnMoreUnits.disabled = true;
+    }
+
+    function setOrgFooter(text) {
+        const footer = document.getElementById("footer-info");
+        if (footer) footer.textContent = sanitize(text);
+    }
+
+    function setUnitsFooter(text) {
+        const footer = document.getElementById("units-footer-info");
+        if (footer) footer.textContent = sanitize(text);
+    }
+
+    // === Frontend ↔ Backend contract checks (PoC9) =========================
+    function assertPagedResponseContract(data, contextLabel) {
+        if (!data || typeof data !== "object") {
+            throw new Error("Backend contract mismatch (" + contextLabel + "): response is geen object.");
+        }
+        if (!Array.isArray(data.items)) {
+            throw new Error("Backend contract mismatch (" + contextLabel + "): 'items' ontbreekt of is geen array.");
+        }
+        if (!("next" in data)) {
+            throw new Error("Backend contract mismatch (" + contextLabel + "): 'next' ontbreekt.");
+        }
+        const n = data.next;
+        if (!(n === null || n === undefined || typeof n === "string")) {
+            throw new Error("Backend contract mismatch (" + contextLabel + "): 'next' moet string of null zijn.");
+        }
+        if (!("total" in data)) {
+            throw new Error("Backend contract mismatch (" + contextLabel + "): 'total' ontbreekt.");
+        }
+        const t = data.total;
+        if (!(t === null || t === undefined || typeof t === "number")) {
+            throw new Error("Backend contract mismatch (" + contextLabel + "): 'total' moet number of null zijn.");
+        }
+    }
+
+    function assertPreflightContract(data) {
+        if (!data || typeof data !== "object") {
+            throw new Error("Backend contract mismatch (preflight): response is geen object.");
+        }
+        if (typeof data.supported !== "boolean") {
+            throw new Error("Backend contract mismatch (preflight): 'supported' ontbreekt of is geen boolean.");
+        }
+        if (!data.notification || typeof data.notification !== "object") {
+            throw new Error("Backend contract mismatch (preflight): 'notification' ontbreekt.");
+        }
+        if (!("base" in data.notification)) {
+            throw new Error("Backend contract mismatch (preflight): 'notification.base' ontbreekt.");
+        }
+        const b = data.notification.base;
+        if (!(b === null || b === undefined || typeof b === "string")) {
+            throw new Error("Backend contract mismatch (preflight): 'notification.base' moet string of null zijn.");
+        }
+
+        // Nieuw (PoC9): backend is leidend voor Task.owner / Task.location routing.
+        if (!data.task_routing || typeof data.task_routing !== "object") {
+            throw new Error("Backend contract mismatch (preflight): 'task_routing' ontbreekt.");
+        }
+        if (!("owner_ref" in data.task_routing)) {
+            throw new Error("Backend contract mismatch (preflight): 'task_routing.owner_ref' ontbreekt.");
+        }
+        if (!("location_ref" in data.task_routing)) {
+            throw new Error("Backend contract mismatch (preflight): 'task_routing.location_ref' ontbreekt.");
+        }
+    }
+
+    function safeJsonParse(text) {
+        try { return text ? JSON.parse(text) : null; } catch (e) { return null; }
+    }
+
+    function extractRequestId(parsed, response) {
+        let rid = "";
+        try {
+            if (parsed && typeof parsed.request_id === "string") rid = parsed.request_id;
+        } catch (e) { /* ignore */ }
+        if (!rid) {
+            try {
+                rid = response && response.headers ? (response.headers.get("X-Request-ID") || "") : "";
+            } catch (e) { rid = ""; }
+        }
+        return rid;
+    }
+
+    function formatApiErrorMessage(parsed, response, requestUrl) {
+        let msg = "";
+        if (parsed) {
+            if (typeof parsed.message === "string" && parsed.message) {
+                msg = parsed.message;
+            } else if (typeof parsed.detail === "string" && parsed.detail) {
+                msg = parsed.detail;
+            } else if (parsed.detail && typeof parsed.detail === "object") {
+                msg = JSON.stringify(parsed.detail);
+            }
+        }
+        if (!msg) {
+            msg = "HTTP " + response.status + " " + response.statusText;
+        }
+        const rid = extractRequestId(parsed, response);
+        if (rid) {
+            msg += " (request_id: " + rid + ")";
+        }
+        return msg;
+    }
+
+    function handleJsonResponse(response, requestUrl, contractFn) {
+        return response.text().then(function (bodyText) {
+            const parsed = safeJsonParse(bodyText);
+            if (!response.ok) {
+                throw new Error(formatApiErrorMessage(parsed, response, requestUrl));
+            }
+            if (contractFn) {
+                contractFn(parsed);
+            }
+            return parsed;
+        });
+    }
+
+    function formatFetchError(err, requestUrl) {
+        const msg = (err && err.message) ? String(err.message) : "";
+        const isNetworkish = /NetworkError/i.test(msg) || /Failed to fetch/i.test(msg) || /CORS/i.test(msg);
+        if (isNetworkish) {
+            return "FastAPI server niet bereikbaar. URL: " + sanitize(BASE_URL) + " (request: " + sanitize(requestUrl) + ").";
+        }
+        return "Fout: " + (msg || "onbekende fout") + " (request: " + sanitize(requestUrl) + ").";
+    }
+
+    // === API calls ==========================================================
+    function doSearchOrganizations() {
+        const inputOrg = document.getElementById("org-q");
+        const btnOrg = document.getElementById("btn-search-org");
+        const query = sanitize(inputOrg.value);
+
+        if (!query) {
+            setStatus("Voer een zoekterm in voor organisatie.", "error", true);
+            inputOrg.focus();
+            return;
+        }
+        if (query.length > 64) {
+            setStatus("Zoekterm is te lang (max. 64 tekens).", "error", true);
+            inputOrg.focus();
+            return;
+        }
+
+        const mySeq = ++orgSearchSeq;
+        if (orgSearchController) {
+            try { orgSearchController.abort(); } catch (e) { /* ignore */ }
+        }
+        orgSearchController = new AbortController();
+
+        if (btnOrg) btnOrg.disabled = true;
+
+        setStatus("Zoeken (organisaties)...", null, false);
+
+        clearOrgResults();
+        clearUnitsResults();
+        clearResolvedEndpoint();
+
+        selectedOrg = null;
+        selectedUnit = null;
+        updateBgzActionUI();
+        setButtons();
+
+        setOrgFooter("Bezig met zoeken...");
+
+        const params = new URLSearchParams();
+        params.set("limit", String(MCS_LIMIT));
+        params.set("name:contains", query);
+
+        const url = `${BASE_URL}/poc9/msz/organizations?${params.toString()}`;
+
+        fetch(url, { method: "GET", headers: makeHeaders(), signal: orgSearchController.signal })
+            .then(function (response) {
+                return handleJsonResponse(response, url, function (d) {
+                    assertPagedResponseContract(d, "organizations");
+                });
+            })
+            .then(function (data) {
+                if (mySeq !== orgSearchSeq) return;
+                const items = Array.isArray(data.items) ? data.items : [];
+                orgNextCursor = (typeof data.next === "string" && data.next.length > 0) ? data.next : null;
+                orgTotal = (typeof data.total === "number") ? data.total : null;
+                orgSeenIds = new Set();
+
+                const tbody = document.getElementById("results-body");
+                let count = 0;
+                let firstRow = null;
+
+                items.forEach(function (entry) {
+                    if (!isActiveEntry(entry)) return;
+
+                    const name = sanitize(entry.name || "");
+                    const id = sanitize(entry.id || "");
+                    if (!id) return;
+                    if (orgSeenIds.has(id)) return;
+                    orgSeenIds.add(id);
+
+                    const orgUra = getUraFromIdentifiers(entry.identifier || [], { org_id: id, org_name: name });
+                    if (DEBUG_INFO) console.log("URA check", { org: name, id: id, ura: orgUra, identifiers: entry.identifier || [] });
+
+                    const tr = document.createElement("tr");
+
+                    const tdName = document.createElement("td");
+                    tdName.textContent = name;
+                    tr.appendChild(tdName);
+
+                    if (!firstRow) firstRow = tr;
+
+                    tr.addEventListener("click", function () {
+                        markSelectedRow(tr);
+                        selectedOrg = { id: id, name: name, ura: orgUra };
+                        const uraEl = document.getElementById("bgz-receiver-ura");
+                        if (uraEl) uraEl.value = orgUra || "";
+                        selectedUnit = null;
+                        clearUnitsResults();
+                        clearResolvedEndpoint();
+                        setButtons();
+                        setStatus("Organisatie geselecteerd. Laden van onderdelen...", "ok", false);
+                        doSearchOrgUnits(true);
+                    });
+
+                    tbody.appendChild(tr);
+                    count += 1;
+                });
+
+                const footer = (orgTotal !== null)
+                    ? (count + " van " + orgTotal + " " + (orgTotal === 1 ? "resultaat" : "resultaten") + ".")
+                    : (count + " " + (count === 1 ? "resultaat" : "resultaten") + ".");
+                setOrgFooter(footer + (orgNextCursor ? " Meer beschikbaar: klik 'Meer laden'." : ""));
+
+                if (count === 0) {
+                    setStatus("Geen organisaties gevonden.", null, false);
+                } else if (count === 1 && firstRow && !orgNextCursor) {
+                    firstRow.click();
+                } else {
+                    setStatus("Klik op een organisatie om te selecteren.", "ok", false);
+                }
+
+                setButtons();
+            })
+            .catch(function (err) {
+                if (err && err.name === "AbortError") return;
+                if (mySeq !== orgSearchSeq) return;
+                console.error(err);
+                setStatus(formatFetchError(err, url), "error", true);
+                setOrgFooter("0 resultaten (fout).");
+                orgNextCursor = null;
+                orgTotal = null;
+                setButtons();
+            })
+            .finally(function () {
+                if (mySeq !== orgSearchSeq) return;
+                if (btnOrg) btnOrg.disabled = false;
+                setButtons();
+            });
+    }
+
+    function doLoadMoreOrganizations() {
+        const btnMoreOrg = document.getElementById("btn-more-org");
+        if (!orgNextCursor) {
+            if (btnMoreOrg) btnMoreOrg.disabled = true;
+            return;
+        }
+        if (btnMoreOrg) btnMoreOrg.disabled = true;
+
+        const mySeq = orgSearchSeq;
+        const controller = orgSearchController || new AbortController();
+        orgSearchController = controller;
+
+        setStatus("Meer laden (organisaties)...", null, false);
+        setOrgFooter("Bezig met meer laden...");
+
+        const params = new URLSearchParams();
+        params.set("cursor", orgNextCursor);
+        const url = `${BASE_URL}/poc9/msz/organizations?${params.toString()}`;
+
+        fetch(url, { method: "GET", headers: makeHeaders(), signal: controller.signal })
+            .then(function (response) {
+                return handleJsonResponse(response, url, function (d) {
+                    assertPagedResponseContract(d, "organizations");
+                });
+            })
+            .then(function (data) {
+                if (mySeq !== orgSearchSeq) return;
+                const items = Array.isArray(data.items) ? data.items : [];
+                orgNextCursor = (typeof data.next === "string" && data.next.length > 0) ? data.next : null;
+                orgTotal = (typeof data.total === "number") ? data.total : orgTotal;
+
+                const tbody = document.getElementById("results-body");
+                let added = 0;
+
+                items.forEach(function (entry) {
+                    if (!isActiveEntry(entry)) return;
+
+                    const name = sanitize(entry.name || "");
+                    const id = sanitize(entry.id || "");
+                    if (!id) return;
+                    if (orgSeenIds.has(id)) return;
+                    orgSeenIds.add(id);
+
+                    const orgUra = getUraFromIdentifiers(entry.identifier || [], { org_id: id, org_name: name });
+
+                    const tr = document.createElement("tr");
+
+                    const tdName = document.createElement("td");
+                    tdName.textContent = name;
+                    tr.appendChild(tdName);
+
+                    tr.addEventListener("click", function () {
+                        markSelectedRow(tr);
+                        selectedOrg = { id: id, name: name, ura: orgUra };
+                        const uraEl = document.getElementById("bgz-receiver-ura");
+                        if (uraEl) uraEl.value = orgUra || "";
+                        selectedUnit = null;
+                        clearUnitsResults();
+                        clearResolvedEndpoint();
+                        setButtons();
+                        setStatus("Organisatie geselecteerd. Laden van onderdelen...", "ok", false);
+                        doSearchOrgUnits(true);
+                    });
+
+                    tbody.appendChild(tr);
+                    added += 1;
+                });
+
+                const totalShown = tbody.querySelectorAll("tr").length;
+                const footer = (orgTotal !== null)
+                    ? (totalShown + " van " + orgTotal + " " + (orgTotal === 1 ? "resultaat" : "resultaten") + ".")
+                    : (totalShown + " " + (totalShown === 1 ? "resultaat" : "resultaten") + ".");
+                setOrgFooter(footer + (orgNextCursor ? " Meer beschikbaar: klik 'Meer laden'." : ""));
+
+                setButtons();
+                setStatus("Meer geladen (" + added + " toegevoegd).", "ok", false);
+            })
+            .catch(function (err) {
+                if (err && err.name === "AbortError") return;
+                if (mySeq !== orgSearchSeq) return;
+                console.error(err);
+                setStatus(formatFetchError(err, url), "error", true);
+                if (btnMoreOrg) btnMoreOrg.disabled = false;
+                setButtons();
+            });
+    }
+
+    function doSearchOrgUnits(isAutoLoad) {
+        const btnUnit = document.getElementById("btn-search-unit");
+        const unitQ = document.getElementById("unit-q");
+        const query = sanitize(unitQ.value);
+        const kindEl = document.querySelector('input[name="unit-kind"]:checked');
+        const kind = kindEl ? kindEl.value : "all";
+
+        if (!selectedOrg || !selectedOrg.id) {
+            setStatus("Selecteer eerst een organisatie.", "error", true);
+            return;
+        }
+        if (query.length > 64) {
+            setStatus("Zoekterm is te lang (max. 64 tekens).", "error", true);
+            unitQ.focus();
+            return;
+        }
+
+        const mySeq = ++unitSearchSeq;
+        if (unitSearchController) {
+            try { unitSearchController.abort(); } catch (e) { /* ignore */ }
+        }
+        unitSearchController = new AbortController();
+
+        if (btnUnit) btnUnit.disabled = true;
+
+        setStatus((isAutoLoad && !query) ? "Laden (onderdelen)..." : "Zoeken (onderdelen)...", null, false);
+
+        clearUnitsResults();
+        clearResolvedEndpoint();
+
+        selectedUnit = null;
+        setButtons();
+
+        setUnitsFooter("Bezig met zoeken...");
+
+        const params = new URLSearchParams();
+        params.set("limit", String(MCS_LIMIT));
+        params.set("organization", "Organization/" + sanitize(selectedOrg.id));
+        if (kind && kind !== "all") params.set("kind", kind);
+        if (query) params.set("name:contains", query);
+
+        const url = `${BASE_URL}/poc9/msz/orgunits?${params.toString()}`;
+
+        fetch(url, { method: "GET", headers: makeHeaders(), signal: unitSearchController.signal })
+            .then(function (response) {
+                return handleJsonResponse(response, url, function (d) {
+                    assertPagedResponseContract(d, "orgunits");
+                });
+            })
+            .then(function (data) {
+                if (mySeq !== unitSearchSeq) return;
+                const items = Array.isArray(data.items) ? data.items : [];
+                unitsNextCursor = (typeof data.next === "string" && data.next.length > 0) ? data.next : null;
+                unitsTotal = (typeof data.total === "number") ? data.total : null;
+                unitsSeenKeys = new Set();
+
+                const tbody = document.getElementById("units-body");
+                let count = 0;
+                let firstRow = null;
+
+                items.forEach(function (entry) {
+                    const rt = sanitize(entry.resourceType || "");
+                    const id = sanitize(entry.id || "");
+                    const name = sanitize(entry.name || "");
+
+                    if (!rt || !id) return;
+                    const key = rt + "/" + id;
+                    if (unitsSeenKeys.has(key)) return;
+                    unitsSeenKeys.add(key);
+
+                    const tr = document.createElement("tr");
+
+                    const tdName = document.createElement("td");
+                    tdName.textContent = name;
+                    tr.appendChild(tdName);
+
+                    const tdType = document.createElement("td");
+                    tdType.textContent = translateResourceType(rt);
+                    tr.appendChild(tdType);
+
+                    if (!firstRow) firstRow = tr;
+
+                    tr.addEventListener("click", function () {
+                        markSelectedUnitRow(tr);
+                        selectedUnit = { resourceType: rt, id: id, name: name };
+                        clearResolvedEndpoint();
+                        setButtons();
+                        setStatus("Onderdeel geselecteerd. Endpoint bepalen...", "ok", false);
+                        resolveNotificationEndpoint();
+                    });
+
+                    tbody.appendChild(tr);
+                    count += 1;
+                });
+
+                const footer = (unitsTotal !== null)
+                    ? (count + " van " + unitsTotal + " " + (unitsTotal === 1 ? "resultaat" : "resultaten") + ".")
+                    : (count + " " + (count === 1 ? "resultaat" : "resultaten") + ".");
+                setUnitsFooter(footer + (unitsNextCursor ? " Meer beschikbaar: klik 'Meer laden'." : ""));
+
+                if (count === 0) {
+                    setStatus("Geen onderdelen gevonden. Organisatiegegevens worden gebruikt.", "ok", false);
+                    resolveNotificationEndpoint();
+                } else if (count === 1 && firstRow) {
+                    firstRow.click();
+                } else {
+                    setStatus(query ? "Klik op een onderdeel om te selecteren." : "Onderdelen geladen.", "ok", false);
+                    resolveNotificationEndpoint();
+                }
+
+                setButtons();
+            })
+            .catch(function (err) {
+                if (err && err.name === "AbortError") return;
+                if (mySeq !== unitSearchSeq) return;
+                console.error(err);
+                setStatus(formatFetchError(err, url), "error", true);
+                setUnitsFooter("0 resultaten (fout).");
+                unitsNextCursor = null;
+                unitsTotal = null;
+                setButtons();
+            })
+            .finally(function () {
+                if (mySeq !== unitSearchSeq) return;
+                if (btnUnit) btnUnit.disabled = false;
+                setButtons();
+            });
+    }
+
+    function doLoadMoreUnits() {
+        const btnMoreUnits = document.getElementById("btn-more-units");
+        if (!unitsNextCursor || !selectedOrg || !selectedOrg.id) {
+            if (btnMoreUnits) btnMoreUnits.disabled = true;
+            return;
+        }
+
+        if (btnMoreUnits) btnMoreUnits.disabled = true;
+
+        const mySeq = unitSearchSeq;
+        const controller = unitSearchController || new AbortController();
+        unitSearchController = controller;
+
+        setStatus("Meer laden (onderdelen)...", null, false);
+        setUnitsFooter("Bezig met meer laden...");
+
+        const params = new URLSearchParams();
+        params.set("cursor", unitsNextCursor);
+        const url = `${BASE_URL}/poc9/msz/orgunits?${params.toString()}`;
+
+        fetch(url, { method: "GET", headers: makeHeaders(), signal: controller.signal })
+            .then(function (response) {
+                return handleJsonResponse(response, url, function (d) {
+                    assertPagedResponseContract(d, "orgunits");
+                });
+            })
+            .then(function (data) {
+                if (mySeq !== unitSearchSeq) return;
+                const items = Array.isArray(data.items) ? data.items : [];
+                unitsNextCursor = (typeof data.next === "string" && data.next.length > 0) ? data.next : null;
+                unitsTotal = (typeof data.total === "number") ? data.total : unitsTotal;
+
+                const tbody = document.getElementById("units-body");
+                let added = 0;
+
+                items.forEach(function (entry) {
+                    const rt = sanitize(entry.resourceType || "");
+                    const id = sanitize(entry.id || "");
+                    const name = sanitize(entry.name || "");
+                    if (!rt || !id) return;
+
+                    const key = rt + "/" + id;
+                    if (unitsSeenKeys.has(key)) return;
+                    unitsSeenKeys.add(key);
+
+                    const tr = document.createElement("tr");
+
+                    const tdName = document.createElement("td");
+                    tdName.textContent = name;
+                    tr.appendChild(tdName);
+
+                    const tdType = document.createElement("td");
+                    tdType.textContent = translateResourceType(rt);
+                    tr.appendChild(tdType);
+
+                    tr.addEventListener("click", function () {
+                        markSelectedUnitRow(tr);
+                        selectedUnit = { resourceType: rt, id: id, name: name };
+                        clearResolvedEndpoint();
+                        setButtons();
+                        setStatus("Onderdeel geselecteerd. Endpoint bepalen...", "ok", false);
+                        resolveNotificationEndpoint();
+                    });
+
+                    tbody.appendChild(tr);
+                    added += 1;
+                });
+
+                const totalShown = tbody.querySelectorAll("tr").length;
+                const footer = (unitsTotal !== null)
+                    ? (totalShown + " van " + unitsTotal + " " + (unitsTotal === 1 ? "resultaat" : "resultaten") + ".")
+                    : (totalShown + " " + (totalShown === 1 ? "resultaat" : "resultaten") + ".");
+                setUnitsFooter(footer + (unitsNextCursor ? " Meer beschikbaar: klik 'Meer laden'." : ""));
+
+                setButtons();
+                setStatus("Meer geladen (" + added + " toegevoegd).", "ok", false);
+            })
+            .catch(function (err) {
+                if (err && err.name === "AbortError") return;
+                if (mySeq !== unitSearchSeq) return;
+                console.error(err);
+                setStatus(formatFetchError(err, url), "error", true);
+                if (btnMoreUnits) btnMoreUnits.disabled = false;
+                setButtons();
+            });
+    }
+
+    function resolveNotificationEndpoint() {
+        if ((!selectedUnit || !selectedUnit.resourceType || !selectedUnit.id) && (!selectedOrg || !selectedOrg.id)) {
+            clearResolvedEndpoint();
+            return;
+        }
+
+        const mySeq = ++resolveSeq;
+
+        let targetRef = "";
+        if (selectedUnit && selectedUnit.resourceType && selectedUnit.id) {
+            targetRef = sanitize(selectedUnit.resourceType) + "/" + sanitize(selectedUnit.id);
+        } else {
+            targetRef = "Organization/" + sanitize(selectedOrg.id);
+        }
+
+        // Geef de gekozen organisatie expliciet mee: dit helpt o.a. bij suborganisaties (partOf).
+        const orgRef = (selectedOrg && selectedOrg.id) ? ("Organization/" + sanitize(selectedOrg.id)) : "";
+
+        const url = `${BASE_URL}/bgz/preflight`;
+
+        setStatus("Notification endpoint bepalen (preflight)...", null, false);
+
+        // UX: maak meteen leeg zodat duidelijk is dat er opnieuw bepaald wordt
+        clearResolvedEndpoint();
+
+        const headers = makeHeaders();
+        headers["Content-Type"] = "application/json";
+
+        const payload = {
+            receiver_target_ref: targetRef,
+            receiver_org_ref: orgRef || null,
+            receiver_notification_endpoint_id: null,
+            check_receiver: true,
+            // Optioneel (debug/demo): laat de backend ook OAuth endpoints meenemen
+            include_oauth: !!DEBUG_INFO
+        };
+
+        fetch(url, { method: "POST", headers: headers, body: JSON.stringify(payload) })
+            .then(function (response) {
+                return handleJsonResponse(response, url, function (d) {
+                    assertPreflightContract(d);
+                });
+            })
+            .then(function (data) {
+                // Als de gebruiker intussen iets anders heeft geselecteerd: negeer.
+                if (mySeq !== resolveSeq) return;
+
+                lastPreflight = data || null;
+
+                const notification = data && data.notification ? data.notification : null;
+                const address = notification && notification.address ? String(notification.address) : "";
+                const base = notification && notification.base ? String(notification.base) : "";
+                const endpointId = notification && notification.endpoint_id ? String(notification.endpoint_id) : "";
+                const supported = !!(data && data.supported);
+                const ready = !!(data && data.ready_to_send);
+
+                if (!supported || !(base || address)) {
+                    selectedEndpoint = null;
+                    const missing = (data && Array.isArray(data.missing)) ? data.missing.join(", ") : "";
+                    const msg = missing
+                        ? ("Geen passend Twiin-TA notification endpoint gevonden. Missing: " + missing + ".")
+                        : "Geen passend Twiin-TA notification endpoint gevonden.";
+                    setStatus(msg, "warning", true);
+                    updateBgzActionUI();
+                    return;
+                }
+
+                selectedEndpoint = {
+                    address: sanitize(address) || sanitize(base),
+                    base: sanitize(base) || normalizeFhirBaseFromAddress(address),
+                    endpoint_id: sanitize(endpointId),
+                    source: (notification && notification.source) ? notification.source : null,
+                    decision: sanitize(data && data.decision ? data.decision : ""),
+                    decision_explanation: sanitize(data && data.decision_explanation ? data.decision_explanation : ""),
+                    ready_to_send: ready,
+                    receiver_probe: (data && data.receiver_probe) ? data.receiver_probe : null
+                };
+
+                if (!ready) {
+                    const probe = selectedEndpoint.receiver_probe || {};
+                    const reason = probe && probe.reason ? String(probe.reason) : "";
+                    setStatus(
+                        "Endpoint gevonden, maar preflight niet OK (receiver onbereikbaar of endpoint gewijzigd)." + (reason ? (" (" + reason + ")") : ""),
+                        "warning",
+                        true
+                    );
+                } else {
+                    setStatus("Notification endpoint gevonden (preflight OK).", "ok", false);
+                }
+
+                updateBgzActionUI();
+            })
+            .catch(function (err) {
+                console.error(err);
+                if (mySeq !== resolveSeq) return;
+                selectedEndpoint = null;
+                setStatus(formatFetchError(err, url), "error", true);
+                updateBgzActionUI();
+            });
+    }
+
+    function doBgzNotify() {
+        const btnNotify = document.getElementById("btn-bgz-notify");
+        const bgzStatusEl = document.getElementById("bgz-status");
+
+        const receiverUra = (document.getElementById("bgz-receiver-ura").value || "").trim();
+        const receiverName = (document.getElementById("bgz-receiver-name").value || "").trim();
+        const receiverBase = normalizeFhirBaseFromAddress((document.getElementById("bgz-receiver-base").value || "").trim());
+
+        // Voor SSRF-mitigatie: stuur GEEN receiver_base meer naar de backend.
+        // De backend resolveert de notification endpoint base opnieuw o.b.v. receiver_target_ref (+ optioneel receiver_org_ref).
+        let orgRef = "";
+        let orgName = "";
+        let targetRef = "";
+        try {
+            orgRef = (selectedOrg && selectedOrg.id) ? ("Organization/" + sanitize(selectedOrg.id)) : "";
+            orgName = (selectedOrg && selectedOrg.name) ? sanitize(selectedOrg.name) : "";
+            if (selectedUnit && selectedUnit.resourceType && selectedUnit.id) {
+                targetRef = sanitize(selectedUnit.resourceType) + "/" + sanitize(selectedUnit.id);
+            } else if (orgRef) {
+                targetRef = orgRef;
+            }
+        } catch (e) { /* ignore */ }
+
+        if (DEBUG_INFO) {
+            console.log("BgZ notify (waarden gebruikt)", {
+                receiverBase: receiverBase,
+                receiverUra: receiverUra,
+                receiverName: receiverName,
+                receiverTargetRef: targetRef,
+                receiverOrgRef: orgRef,
+                endpointId: (selectedEndpoint && selectedEndpoint.endpoint_id) ? String(selectedEndpoint.endpoint_id).trim() : ""
+            });
+        }
+
+        // UI-check: als we geen endpoint konden bepalen, kan de backend ook niet routen.
+        if (!receiverBase) {
+            if (bgzStatusEl) {
+                bgzStatusEl.textContent = "Kan niet starten: notification endpoint ontbreekt.";
+                bgzStatusEl.className = "status-line error";
+            }
+            showToast("Notification endpoint ontbreekt.", "error");
+            return;
+        }
+        if (!receiverUra || !receiverName) {
+            if (bgzStatusEl) {
+                bgzStatusEl.textContent = "Vul alle verplichte velden in (receiver).";
+                bgzStatusEl.className = "status-line error";
+            }
+            showToast("Receiver URA of naam ontbreekt.", "error");
+            return;
+        }
+        if (!targetRef) {
+            if (bgzStatusEl) {
+                bgzStatusEl.textContent = "Kan niet starten: receiver_target_ref ontbreekt.";
+                bgzStatusEl.className = "status-line error";
+            }
+            showToast("Geen organisatie(onderdeel) geselecteerd.", "error");
+            return;
+        }
+
+        // Extra guard: als preflight eerder niet OK was, niet versturen.
+        if (selectedEndpoint && (typeof selectedEndpoint.ready_to_send === "boolean") && !selectedEndpoint.ready_to_send) {
+            if (bgzStatusEl) {
+                bgzStatusEl.textContent = "Kan niet starten: preflight niet OK (receiver onbereikbaar of endpoint gewijzigd).";
+                bgzStatusEl.className = "status-line error";
+            }
+            showToast("Preflight niet OK.", "error");
+            return;
+        }
+
+        const endpointId = (selectedEndpoint && selectedEndpoint.endpoint_id) ? String(selectedEndpoint.endpoint_id).trim() : "";
+
+        const notifyPayload = {
+            receiver_ura: receiverUra,
+            receiver_name: receiverName,
+            receiver_org_ref: orgRef || null,
+            receiver_org_name: orgName || null,
+            receiver_target_ref: targetRef,
+            receiver_notification_endpoint_id: endpointId || null,
+            patient_bsn: PATIENT_BSN,
+            patient_name: PATIENT_NAME
+        };
+
+        const preflightUrl = `${BASE_URL}/bgz/preflight`;
+        const notifyUrl = `${BASE_URL}/bgz/notify`;
+
+        if (btnNotify) btnNotify.disabled = true;
+        if (bgzStatusEl) {
+            bgzStatusEl.textContent = "Preflight uitvoeren...";
+            bgzStatusEl.className = "status-line";
+        }
+
+        const headers = makeHeaders();
+        headers["Content-Type"] = "application/json";
+
+        const preflightPayload = {
+            receiver_target_ref: targetRef,
+            receiver_org_ref: orgRef || null,
+            receiver_notification_endpoint_id: endpointId || null,
+            check_receiver: true,
+            include_oauth: !!DEBUG_INFO
+        };
+
+        fetch(preflightUrl, { method: "POST", headers: headers, body: JSON.stringify(preflightPayload) })
+            .then(function (response) {
+                return handleJsonResponse(response, preflightUrl, function (d) {
+                    assertPreflightContract(d);
+                });
+            })
+            .then(function (preflight) {
+                lastPreflight = preflight || null;
+                const ready = !!(preflight && preflight.ready_to_send);
+
+                if (!ready) {
+                    const probe = preflight && preflight.receiver_probe ? preflight.receiver_probe : null;
+                    const reason = probe && probe.reason ? String(probe.reason) : "";
+                    const msg = "Preflight niet OK: kan niet met zekerheid versturen." + (reason ? (" (" + reason + ")") : "");
+                    throw new Error(msg);
+                }
+
+                // Werk UI-state bij met de laatste resolutie uit preflight.
+                const notif = (preflight && preflight.notification) ? preflight.notification : {};
+                selectedEndpoint = selectedEndpoint || {};
+                selectedEndpoint.address = sanitize(notif.address || selectedEndpoint.address || "");
+                selectedEndpoint.base = sanitize(notif.base || selectedEndpoint.base || "");
+                selectedEndpoint.endpoint_id = sanitize(notif.endpoint_id || selectedEndpoint.endpoint_id || "");
+                selectedEndpoint.ready_to_send = true;
+                selectedEndpoint.receiver_probe = preflight.receiver_probe || null;
+
+                updateBgzActionUI();
+
+                if (bgzStatusEl) {
+                    bgzStatusEl.textContent = "Notificatie versturen...";
+                    bgzStatusEl.className = "status-line";
+                }
+
+                return fetch(notifyUrl, { method: "POST", headers: headers, body: JSON.stringify(notifyPayload) });
+            })
+            .then(function (response) {
+                return handleJsonResponse(response, notifyUrl);
+            })
+            .then(function (result) {
+                const taskId = result && result.task_id ? String(result.task_id) : "";
+                const taskStatus = result && result.task_status ? String(result.task_status) : "";
+                const groupId = result && result.group_identifier ? String(result.group_identifier) : "";
+                if (bgzStatusEl) {
+                    bgzStatusEl.textContent =
+                        "Notificatie verstuurd. Task=" + taskId + " status=" + taskStatus + (groupId ? (" group=" + groupId) : "") + ".";
+                    bgzStatusEl.className = "status-line ok";
+                }
+                setStatus("Verzenden verwijzing gestart (Notified Pull Task verstuurd).", "ok", true);
+            })
+            .catch(function (err) {
+                console.error(err);
+                if (bgzStatusEl) {
+                    bgzStatusEl.textContent = "Fout: " + sanitize(err && err.message ? err.message : err) + ".";
+                    bgzStatusEl.className = "status-line error";
+                }
+                setStatus("Verzenden verwijzing mislukt.", "error", true);
+            })
+            .finally(function () {
+                updateBgzActionUI();
+            });
+    }
+
+    function doReset() {
+        selectedOrg = null;
+        selectedUnit = null;
+        selectedEndpoint = null;
+        orgNextCursor = null;
+        orgTotal = null;
+        orgSeenIds = new Set();
+        unitsNextCursor = null;
+        unitsTotal = null;
+        unitsSeenKeys = new Set();
+
+        document.getElementById("org-q").value = "";
+        document.getElementById("unit-q").value = "";
+
+        clearOrgResults();
+        clearUnitsResults();
+        clearResolvedEndpoint();
+
+        setButtons();
+        setStatus("Reset uitgevoerd.", "ok", true);
+    }
+
+    // === init ===============================================================
+    document.addEventListener("DOMContentLoaded", function () {
+        // patient info
+        const patientBsnEl = document.getElementById("patient-bsn-display");
+        const patientNameEl = document.getElementById("patient-name-display");
+        if (patientBsnEl) patientBsnEl.textContent = sanitize(PATIENT_BSN);
+        if (patientNameEl) patientNameEl.textContent = sanitize(PATIENT_NAME);
+
+        setStatus("Stap 1: zoek een organisatie.", null, false);
+        setButtons();
+        clearResolvedEndpoint();
+
+        document.getElementById("btn-search-org").addEventListener("click", function () {
+            doSearchOrganizations();
+        });
+
+        document.getElementById("btn-more-org").addEventListener("click", function () {
+            doLoadMoreOrganizations();
+        });
+
+        document.getElementById("btn-search-unit").addEventListener("click", function () {
+            doSearchOrgUnits(false);
+        });
+
+        document.getElementById("btn-more-units").addEventListener("click", function () {
+            doLoadMoreUnits();
+        });
+
+
+        document.getElementById("btn-reset").addEventListener("click", function () {
+            doReset();
+        });
+
+        document.getElementById("btn-bgz-notify").addEventListener("click", function () {
+            doBgzNotify();
+        });
+
+        // wijzigen type onderdeel -> automatisch herladen
+        document.querySelectorAll('input[name="unit-kind"]').forEach(function (el) {
+            el.addEventListener("change", function () {
+                if (!selectedOrg || !selectedOrg.id) return;
+                const unitQ = document.getElementById("unit-q");
+                const q = (unitQ && unitQ.value) ? String(unitQ.value).trim() : "";
+                doSearchOrgUnits(!q);
+            });
+        });
+
+        // enter in input -> zoek organisatie / onderdeel
+        document.getElementById("org-q").addEventListener("keydown", function (evt) {
+            if (evt.key === "Enter") {
+                evt.preventDefault();
+                doSearchOrganizations();
+            }
+        });
+
+        document.getElementById("unit-q").addEventListener("keydown", function (evt) {
+            if (evt.key === "Enter") {
+                evt.preventDefault();
+                doSearchOrgUnits(false);
+            }
+        });
+    });
+</script>
+</body>
+</html>
