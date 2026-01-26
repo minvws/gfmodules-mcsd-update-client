@@ -3,6 +3,7 @@ import logging
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from app.container import get_cleanup_scheduler, get_update_scheduler, setup_container
@@ -108,6 +109,16 @@ def setup_fastapi() -> FastAPI:
     ]
     for router in routers:
         fastapi.include_router(router)
+
+    if config.uvicorn.reload:
+        # Dev-only CORS so local demo pages can access the API.
+        fastapi.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     stats_conf = get_config().stats
     keep_in_memory = not (stats_conf.enabled and stats_conf.host is not None and stats_conf.port is not None) or False

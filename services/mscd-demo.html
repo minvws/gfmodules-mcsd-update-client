@@ -1,0 +1,2387 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mCSD Demo Console</title>
+    <style>
+      :root {
+        --ink: #1b1c1f;
+        --muted: #5a5f6a;
+        --panel: #ffffff;
+        --accent: #0b4f6c;
+        --accent-2: #f4a261;
+        --accent-3: #1f8a70;
+        --edge: #e6e3da;
+        --shadow: 0 18px 40px rgba(10, 16, 27, 0.12);
+        --radius: 18px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", "Alegreya Sans", "Trebuchet MS", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1200px 600px at 10% -10%, #fdebd0 0%, transparent 60%),
+          radial-gradient(1000px 500px at 90% 10%, #d8f3dc 0%, transparent 55%),
+          linear-gradient(180deg, #f7f4ec 0%, #f2efe6 100%);
+        min-height: 100vh;
+      }
+
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 20px 60px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 12px;
+        padding: 26px 28px;
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, #0b4f6c 0%, #1f8a70 100%);
+        color: #f7f4ec;
+        box-shadow: var(--shadow);
+        animation: rise 0.6s ease both;
+      }
+
+      .hero h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 40px);
+        letter-spacing: 0.2px;
+      }
+
+      .hero p {
+        margin: 0;
+        color: rgba(247, 244, 236, 0.85);
+        font-size: 16px;
+        line-height: 1.5;
+      }
+
+      .panel {
+        background: var(--panel);
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--edge);
+        animation: rise 0.6s ease both;
+      }
+
+      .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .panel-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .panel > h2 {
+        margin-bottom: 16px;
+      }
+
+      .panel:nth-of-type(2) {
+        animation-delay: 0.08s;
+      }
+
+      .panel:nth-of-type(3) {
+        animation-delay: 0.16s;
+      }
+
+      .panel:nth-of-type(4) {
+        animation-delay: 0.24s;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 0.2px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      input[type="text"] {
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid var(--edge);
+        font-size: 14px;
+        background: #fff;
+        color: var(--ink);
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .grid.two {
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+
+      .grid.resources {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
+      .resource-matrix {
+        display: grid;
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .resource-matrix-header,
+      .resource-row {
+        display: grid;
+        grid-template-columns: 160px minmax(0, 1fr) minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+      }
+
+      .resource-matrix-header {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .resource-label {
+        font-weight: 600;
+        padding-top: 10px;
+        font-size: 14px;
+      }
+
+      .resource-cell {
+        min-height: 48px;
+      }
+
+      .resource-placeholder {
+        border: 1px dashed var(--edge);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 12px;
+        color: var(--muted);
+        background: #fbfaf6;
+      }
+
+      .resource-card {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid var(--edge);
+        background: #fffdf8;
+        display: grid;
+        gap: 6px;
+      }
+
+      .resource-card[data-state="error"] {
+        border-color: #f4a261;
+        background: #fff5e8;
+      }
+
+      .resource-card h4 {
+        margin: 0;
+        font-size: 15px;
+      }
+
+      .resource-meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .resource-links {
+        display: flex;
+        gap: 10px;
+        font-size: 12px;
+      }
+
+      .resource-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .resource-item {
+        border: 1px solid var(--edge);
+        border-radius: 14px;
+        background: #fffdf8;
+        overflow: hidden;
+      }
+
+      .resource-item[data-state="error"] summary {
+        background: #fff5e8;
+      }
+
+      .resource-item summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 12px 14px;
+        display: block;
+      }
+
+      .resource-item summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .resource-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .resource-type {
+        font-weight: 600;
+        font-size: 15px;
+      }
+
+      .resource-count {
+        background: var(--accent-2);
+        color: #1b1c1f;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+
+      .resource-entries {
+        padding: 12px 14px 14px;
+        border-top: 1px solid var(--edge);
+        display: grid;
+        gap: 10px;
+        background: #fff;
+      }
+
+      .resource-entry {
+        border: 1px solid var(--edge);
+        border-radius: 12px;
+        padding: 10px;
+        display: grid;
+        gap: 4px;
+        background: #fff;
+      }
+
+      .resource-entry-title {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .resource-entry-meta {
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .resource-entry-sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .resource-actions {
+        display: flex;
+        gap: 10px;
+        font-size: 12px;
+        margin-top: 6px;
+      }
+
+      .resource-note {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      button {
+        border: none;
+        background: var(--accent);
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 10px 20px rgba(11, 79, 108, 0.25);
+      }
+
+      button.secondary {
+        background: #f1efe6;
+        color: var(--ink);
+        box-shadow: none;
+        border: 1px solid var(--edge);
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      .pill-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pill-group button {
+        background: #fef2d8;
+        color: #6b4f1d;
+        border: 1px solid #f4d39b;
+        box-shadow: none;
+        padding: 8px 12px;
+      }
+
+      .pill-group button[data-kind="primary"] {
+        background: #d9f2ec;
+        color: #1c584b;
+        border-color: #bce7dc;
+      }
+
+      .note {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 10px;
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+
+      pre {
+        background: #0f1720;
+        color: #f8f2e4;
+        padding: 14px;
+        border-radius: 14px;
+        overflow-x: auto;
+        font-size: 12px;
+        margin: 12px 0 0;
+      }
+
+      code {
+        font-family: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
+      }
+
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          padding: 28px 16px 48px;
+        }
+
+        .resource-matrix-header,
+        .resource-row {
+          grid-template-columns: 1fr;
+        }
+
+        .resource-label {
+          padding-top: 0;
+        }
+
+        button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body>
+<main class="page">
+      <section class="hero">
+        <h1>mCSD Demo Console</h1>
+        <p>
+          Inspect directory resources and trigger update syncs from a single
+          page. Admin reads are limited to local or Mach2. Select an endpoint
+          from the update client registry to sync it.
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Directory Resources</h2>
+          <div class="panel-actions">
+            <div class="pill-group" id="admin-presets">
+              
+              <button data-kind="primary" data-admin-base="http://localhost:8080/fhir">
+                Local AdminDir
+              </button><button data-admin-base="https://mach2.disyepd.com/fhir">
+                Mach2 AdminDir
+              </button>
+            </div><button id="demo-apply" class="secondary">Set demo name</button>
+            <button id="demo-reset" class="secondary">Reset demo name</button>
+          </div>
+        </div>
+        <div class="status" id="demo-status">Organization updated to "ZBC Demo Kliniek".</div>
+        <div class="grid two">
+          <div>
+            <div class="row">
+              <label>
+                Client directory base URL
+                <input id="client-base" type="text" value="http://localhost:8081/fhir">
+              </label>
+              <button id="client-load">Load mCSD resources</button>
+            </div>
+            <div class="status" id="client-status">Loaded 7 resource types.</div>
+          </div>
+
+          <div>
+            <div class="row">
+              <label>
+                Admin directory base URL
+                <input id="admin-base" type="text" value="http://localhost:8080/fhir">
+              </label>
+              <button id="admin-load">Load mCSD resources</button>
+            </div>
+            
+            <div class="status" id="admin-status">Loaded 7 resource types.</div>
+          </div>
+        </div>
+        <div class="resource-matrix">
+          <div class="resource-matrix-header">
+            <div>Type</div>
+            <div>Client directory</div>
+            <div>Admin directory</div>
+          </div>
+          <div id="resource-matrix-body"><div class="resource-row"><div class="resource-label">Organization</div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">Organization</div>
+              <div class="resource-meta">Last updated: 1/22/2026, 1:59:35 PM</div>
+            </div>
+            <div class="resource-count">20</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">NLcom test</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: b73309690de3e4aa462bdef6f689f470c19dda09e24fafe73fc7e638aac824e4</span>
+                <span>Updated: 1/22/2026, 1:59:35 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Medicom Test Organization GF</div>
+              <div class="resource-entry-sub">00000023</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-ad9e9289-9879-4532-a173-bb4b5fa28b76</span>
+                <span>Updated: 1/22/2026, 12:58:37 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">HINQ eOverdracht Organisatie</div>
+              <div class="resource-entry-sub">00000023</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-e95a62f4-5983-4b80-a6a4-02b535b6490f</span>
+                <span>Updated: 1/22/2026, 12:58:36 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">HINQ ZNO</div>
+              <div class="resource-entry-sub">00000023</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-9a2ad1f4-a326-461a-a039-41362e922595</span>
+                <span>Updated: 1/22/2026, 12:58:36 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vallee des fleurs clinique</div>
+              <div class="resource-entry-sub">vallee-des-fleurs-clinique</div>
+              <div class="resource-entry-meta">
+                <span>ID: 587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</span>
+                <span>Updated: 1/22/2026, 12:58:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Beweegpoli</div>
+              <div class="resource-entry-sub">org-afdeling-100</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-100</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Dermatologie (huidziekten)</div>
+              <div class="resource-entry-sub">org-afdeling-101</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-101</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Interne geneeskunde</div>
+              <div class="resource-entry-sub">org-afdeling-102</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-102</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Leefstijl coaching</div>
+              <div class="resource-entry-sub">org-afdeling-103</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-103</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Orthopedie</div>
+              <div class="resource-entry-sub">org-afdeling-104</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-104</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Penispoli</div>
+              <div class="resource-entry-sub">org-afdeling-105</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-105</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Plastische chirurgie</div>
+              <div class="resource-entry-sub">org-afdeling-106</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-106</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Proctologie (anus problemen)</div>
+              <div class="resource-entry-sub">org-afdeling-107</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-107</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Reumatologie (ontstekingen gewrichten)</div>
+              <div class="resource-entry-sub">org-afdeling-108</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-108</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Spatader- &amp; wondzorg (vaatchirurgie en dermatologie)</div>
+              <div class="resource-entry-sub">org-afdeling-109</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-109</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vasectomie/sterilisatie</div>
+              <div class="resource-entry-sub">org-afdeling-110</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-110</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vulvapoli (derma en gynaecologie)</div>
+              <div class="resource-entry-sub">org-afdeling-111</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-afdeling-111</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">ZBC Demo Kliniek</div>
+              <div class="resource-entry-sub">org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</span>
+                <span>Updated: 1/19/2026, 4:35:27 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Source Test</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-541c9ea7-5927-4e06-a294-1a6b5bbab4c6</span>
+                <span>Updated: 1/19/2026, 4:25:57 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Test Org</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-aa1ccbb4-049f-4819-9986-bf13cff8269e</span>
+                <span>Updated: 1/19/2026, 4:25:57 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 20</span>
+          <a href="http://localhost:8081/fhir/Organization" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">Organization</div>
+              <div class="resource-meta">Last updated: 1/22/2026, 4:45:33 PM</div>
+            </div>
+            <div class="resource-count">13</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">ZBC Demo Kliniek</div>
+              <div class="resource-entry-sub">org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-kliniek-1</span>
+                <span>Updated: 1/22/2026, 4:45:33 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Dermatologie (huidziekten)</div>
+              <div class="resource-entry-sub">org-afdeling-101</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-101</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Interne geneeskunde</div>
+              <div class="resource-entry-sub">org-afdeling-102</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-102</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Leefstijl coaching</div>
+              <div class="resource-entry-sub">org-afdeling-103</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-103</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Orthopedie</div>
+              <div class="resource-entry-sub">org-afdeling-104</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-104</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Penispoli</div>
+              <div class="resource-entry-sub">org-afdeling-105</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-105</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Beweegpoli</div>
+              <div class="resource-entry-sub">org-afdeling-100</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-100</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Proctologie (anus problemen)</div>
+              <div class="resource-entry-sub">org-afdeling-107</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-107</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Reumatologie (ontstekingen gewrichten)</div>
+              <div class="resource-entry-sub">org-afdeling-108</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-108</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Spatader- &amp; wondzorg (vaatchirurgie en dermatologie)</div>
+              <div class="resource-entry-sub">org-afdeling-109</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-109</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vasectomie/sterilisatie</div>
+              <div class="resource-entry-sub">org-afdeling-110</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-110</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vulvapoli (derma en gynaecologie)</div>
+              <div class="resource-entry-sub">org-afdeling-111</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-111</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Plastische chirurgie</div>
+              <div class="resource-entry-sub">org-afdeling-106</div>
+              <div class="resource-entry-meta">
+                <span>ID: org-afdeling-106</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 13</span>
+          <a href="http://localhost:8080/fhir/Organization" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div></div><div class="resource-row"><div class="resource-label">Location</div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">Location</div>
+              <div class="resource-meta">Last updated: 1/22/2026, 12:58:36 PM</div>
+            </div>
+            <div class="resource-count">5</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">VVT</div>
+              <div class="resource-entry-sub">Den Haag</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-b7a604ec-a653-4586-9c48-585601f7c38a</span>
+                <span>Updated: 1/22/2026, 12:58:36 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Verloskundige Praktijk</div>
+              <div class="resource-entry-sub">Den Haag</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-5f77b968-e1d2-47ac-b240-22fe76e5dd05</span>
+                <span>Updated: 1/22/2026, 12:58:36 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Demo Locatie</div>
+              <div class="resource-entry-sub">Locatie Straat 10, Amsterdam, 1011AA</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-loc-10</span>
+                <span>Updated: 1/19/2026, 4:35:27 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">locatie van ozoverbindzorg [gewijzigd]</div>
+              <div class="resource-entry-sub">testlaan 12, amsterdam</div>
+              <div class="resource-entry-meta">
+                <span>ID: ea2a9f0006df2579589b32a133b9ea7b694aa0769c456dae25e18186ae70a6cb</span>
+                <span>Updated: 1/19/2026, 4:25:37 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Location of 81831321</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: Org-69599084-a269f7bc-fff7-401c-bb8d-2aecd2977a03</span>
+                <span>Updated: 1/19/2026, 4:25:35 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 5</span>
+          <a href="http://localhost:8081/fhir/Location" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">Location</div>
+              <div class="resource-meta">Last updated: 1/19/2026, 4:22:50 PM</div>
+            </div>
+            <div class="resource-count">1</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">Demo Locatie</div>
+              <div class="resource-entry-sub">Locatie Straat 10, Amsterdam, 1011AA</div>
+              <div class="resource-entry-meta">
+                <span>ID: loc-10</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 1</span>
+          <a href="http://localhost:8080/fhir/Location" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div></div><div class="resource-row"><div class="resource-label">Practitioner</div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">Practitioner</div>
+              <div class="resource-meta">Last updated: 1/19/2026, 4:35:28 PM</div>
+            </div>
+            <div class="resource-count">20</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">Dr. John Smith</div>
+              <div class="resource-entry-sub">prac-1000</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-prac-1000</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Notified Pull User</div>
+              <div class="resource-entry-sub">notified-pull-user</div>
+              <div class="resource-entry-meta">
+                <span>ID: 8ee1c6ae4d7b3284d9559e5bde7a645ba7915c51559a211eab01ff59e2e3ab8c</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Arthur Boujon</div>
+              <div class="resource-entry-sub">45456gjhg6756756</div>
+              <div class="resource-entry-meta">
+                <span>ID: c838cc0b0153527458cfe884317046f4e3b3f8c75479801dd36214b987a87fd4</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Board Manager</div>
+              <div class="resource-entry-sub">87dc0417-cc99-46c5-a748-b910c9f34ba6</div>
+              <div class="resource-entry-meta">
+                <span>ID: 1da070a7497a9cec49c5d2d455d1ae136ff523876568cee522d227b0832aef09</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Sara Campbell</div>
+              <div class="resource-entry-sub">KDKDKDKDWEWEW</div>
+              <div class="resource-entry-meta">
+                <span>ID: f5153f103031667c46379deb24e64c32d4266e98e530eea0084e7777687778d2</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Platform User</div>
+              <div class="resource-entry-sub">f712206e-bfab-4889-8a24-4fbfa562bd81</div>
+              <div class="resource-entry-meta">
+                <span>ID: 617622e541f36d603e08121858ad345c2b3816282ecbb8e9e3b4ec7f952424d6</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Care Unit Admin</div>
+              <div class="resource-entry-sub">f9d72355-f3ce-4acb-9b37-0fb57a433491</div>
+              <div class="resource-entry-meta">
+                <span>ID: 31d617aed0fadf8eb413ca1647a560397784ec0be875b32de8a55eb5f16f53e2</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Katherine Thomas</div>
+              <div class="resource-entry-sub">897i97439543i945</div>
+              <div class="resource-entry-meta">
+                <span>ID: 1c4f73a2857127f584fad077002d7eb55fd3e454899108c3b9097898744bb5ce</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Margaret Waddle</div>
+              <div class="resource-entry-sub">52115552554</div>
+              <div class="resource-entry-meta">
+                <span>ID: 98ceed7a720a67f56941ce0d1e22650522422daf828c793c0126e23f3027444f</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">gerard pichette</div>
+              <div class="resource-entry-sub">d72285d8-3022-4faa-999b-191re00d27f0</div>
+              <div class="resource-entry-meta">
+                <span>ID: 2f4f4ed2bcfe8fe506bdd80130d8330acb46df4bcc70fd33543d523346863525</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Sabrina Henley</div>
+              <div class="resource-entry-sub">87dc3317-ccac-46c5-a748-b910c9f34ba6</div>
+              <div class="resource-entry-meta">
+                <span>ID: 14fbc92d1f1dbd7fdbbef9827261a24d928d3661c3dd72ca2cc2bde0eb2617aa</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">willem immerzeel</div>
+              <div class="resource-entry-sub">d79225s8-1111-4faa-999b-190de00d27f0</div>
+              <div class="resource-entry-meta">
+                <span>ID: e74920e129dc6a6e1758287b168c7794a6e890952a705221ae7c26d66f0b8489</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Dr Andrew Robinson</div>
+              <div class="resource-entry-sub">737028a9-e5b8-4c48-9031-446e83093871</div>
+              <div class="resource-entry-meta">
+                <span>ID: e9a0177b4b5b30b1991866b01275d78893ab42865d2b6b7439734fc4eb2768a5</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Sylvie Tournier</div>
+              <div class="resource-entry-sub">83894jsdh4823</div>
+              <div class="resource-entry-meta">
+                <span>ID: eb3ebded6d69be97910befff71f9aa83e054805365082369528501ff3dae7629</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">notified-pull-user</div>
+              <div class="resource-entry-sub">Notified Pull User</div>
+              <div class="resource-entry-meta">
+                <span>ID: d6d1fb2b62a2938af079ff05ab778b3f935c9f1db2b845509c8d37d5c875ffbf</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">John Samura</div>
+              <div class="resource-entry-sub">87dc0417-ccac-46e1-a748-b910c9f34ba6</div>
+              <div class="resource-entry-meta">
+                <span>ID: 9ed82239531b7e888b7422f2e0955a009d8581b4d5b2c6055728445fb20012a0</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Lauren Sinclair</div>
+              <div class="resource-entry-sub">f17d3081-1618-4620-a717-cdd389bd94a6</div>
+              <div class="resource-entry-meta">
+                <span>ID: 57e63dfe10040030cea216e4aa538656637f104a768931342a69b0019d479f53</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Mary Brown</div>
+              <div class="resource-entry-sub">tzt6tztztz</div>
+              <div class="resource-entry-meta">
+                <span>ID: 21cca6aa6fae4ce2c602154af6963b5b8480d3cc963e393312fb76673a6d3ab6</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Dr Alice Brooks</div>
+              <div class="resource-entry-sub">760adf98-5af3-4568-9ed6-6acfd359cbdc</div>
+              <div class="resource-entry-meta">
+                <span>ID: 576307d859ee537a2352226a9087a573e52e495fa8a0e963f9221905f3d65a28</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Nancy Stephens</div>
+              <div class="resource-entry-sub">4da94e81-cdc3-4ed2-b2c3-08f82afa3421</div>
+              <div class="resource-entry-meta">
+                <span>ID: fde549b21d0535e5d0e273615ed78321fad61416c66ef32380dba8f34a1ff3bf</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 20</span>
+          <a href="http://localhost:8081/fhir/Practitioner" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">Practitioner</div>
+              <div class="resource-meta">Last updated: 1/19/2026, 4:22:50 PM</div>
+            </div>
+            <div class="resource-count">1</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">Dr. John Smith</div>
+              <div class="resource-entry-sub">prac-1000</div>
+              <div class="resource-entry-meta">
+                <span>ID: prac-1000</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 1</span>
+          <a href="http://localhost:8080/fhir/Practitioner" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div></div><div class="resource-row"><div class="resource-label">PractitionerRole</div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">PractitionerRole</div>
+              <div class="resource-meta">Last updated: 1/19/2026, 9:18:55 PM</div>
+            </div>
+            <div class="resource-count">20</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">PractitionerRole</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: 07f79aeb428238a9c7743c2a6a2d27460568127ee4ba8454a3165aea3466f47f</span>
+                <span>Updated: 1/19/2026, 9:18:55 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/8ee1c6ae4d7b3284d9559e5bde7a645ba7915c51559a211eab01ff59e2e3ab8c</div>
+              <div class="resource-entry-sub">Organization/587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</div>
+              <div class="resource-entry-meta">
+                <span>ID: f7e732078ad28a7805131538825cd0b6100bad192756af56fd17c62307bb0837</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/c838cc0b0153527458cfe884317046f4e3b3f8c75479801dd36214b987a87fd4</div>
+              <div class="resource-entry-sub">Organization/587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</div>
+              <div class="resource-entry-meta">
+                <span>ID: 12a5a0b378ccc953da8b51b12f653337bee555ecfaea4fded9234ada0bb7a8d0</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/1da070a7497a9cec49c5d2d455d1ae136ff523876568cee522d227b0832aef09</div>
+              <div class="resource-entry-sub">Organization/587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</div>
+              <div class="resource-entry-meta">
+                <span>ID: 366a51a761821c5989079ef8333782400038551b375c2dbf8c2d5958c9426a2b</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">PractitionerRole</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: 4e24a229af733786c3fa243bbfa7e497d145ab7d3e73dd93195467d7297018f7</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">PractitionerRole</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: 55d5bee81e1f7c52124844c32e5b51c994e2c0027673d2d3c435a08c1b93c517</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/617622e541f36d603e08121858ad345c2b3816282ecbb8e9e3b4ec7f952424d6</div>
+              <div class="resource-entry-sub">Organization/587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</div>
+              <div class="resource-entry-meta">
+                <span>ID: 81791367f042994838f6836dd31af6af765afbe7059c69bb04847282cf59bfcc</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">PractitionerRole</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: 471b069f563f75c8902c363325476531199922785b106467193aecc1e7d485a6</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/31d617aed0fadf8eb413ca1647a560397784ec0be875b32de8a55eb5f16f53e2</div>
+              <div class="resource-entry-sub">Organization/b696cd11d13618e8c1593b2e613d9fd58be682cb68e1483fc0f1e23348bbe805</div>
+              <div class="resource-entry-meta">
+                <span>ID: 317d07b112167f237312a1e88af09a37e4ae6942af2d775157702fc79a315520</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/1c4f73a2857127f584fad077002d7eb55fd3e454899108c3b9097898744bb5ce</div>
+              <div class="resource-entry-sub">Organization/b696cd11d13618e8c1593b2e613d9fd58be682cb68e1483fc0f1e23348bbe805</div>
+              <div class="resource-entry-meta">
+                <span>ID: 2e43c2c2bde7d344b2cc92ee47b3c26cc1f477de6a63486d98fb08207e0de056</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/98ceed7a720a67f56941ce0d1e22650522422daf828c793c0126e23f3027444f</div>
+              <div class="resource-entry-sub">Organization/b696cd11d13618e8c1593b2e613d9fd58be682cb68e1483fc0f1e23348bbe805</div>
+              <div class="resource-entry-meta">
+                <span>ID: 8b2b229410a706f15e97ac4a83b732e00938e9eb635e025b5e673a93b182d952</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/2f4f4ed2bcfe8fe506bdd80130d8330acb46df4bcc70fd33543d523346863525</div>
+              <div class="resource-entry-sub">Organization/587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</div>
+              <div class="resource-entry-meta">
+                <span>ID: 923642c9e117869b9a441d8d237bc8ed1c718488fcc27aaa61a8fcf92644ade4</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/14fbc92d1f1dbd7fdbbef9827261a24d928d3661c3dd72ca2cc2bde0eb2617aa</div>
+              <div class="resource-entry-sub">Organization/587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4f6073088e9769f288c339c5b4f825e0647b340b40c6f8d51f248cf179096e99</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/e74920e129dc6a6e1758287b168c7794a6e890952a705221ae7c26d66f0b8489</div>
+              <div class="resource-entry-sub">Organization/b696cd11d13618e8c1593b2e613d9fd58be682cb68e1483fc0f1e23348bbe805</div>
+              <div class="resource-entry-meta">
+                <span>ID: e05abd0ddc477865547c48a5c40829f619fd7b6d44370c8405506999166c0cd2</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/e9a0177b4b5b30b1991866b01275d78893ab42865d2b6b7439734fc4eb2768a5</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: 18793f3165978eafa9ec48d44b470d37bc44a9f333aa426f9435d39e444ee0c7</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/eb3ebded6d69be97910befff71f9aa83e054805365082369528501ff3dae7629</div>
+              <div class="resource-entry-sub">Organization/587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</div>
+              <div class="resource-entry-meta">
+                <span>ID: c7850d2332f8c679858d460ad899029a70c34fba63fcc39a0f8f1d7e36749e2d</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/d6d1fb2b62a2938af079ff05ab778b3f935c9f1db2b845509c8d37d5c875ffbf</div>
+              <div class="resource-entry-sub">Organization/587e9e1781149750631df8de793ad37767f59f7d9334b14b89232e7dc081fd2e</div>
+              <div class="resource-entry-meta">
+                <span>ID: 1b00f237bbe2cd587f6176b0610e5b8bd358f4fb0b28905178859203b65ac862</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/9ed82239531b7e888b7422f2e0955a009d8581b4d5b2c6055728445fb20012a0</div>
+              <div class="resource-entry-sub">Organization/b696cd11d13618e8c1593b2e613d9fd58be682cb68e1483fc0f1e23348bbe805</div>
+              <div class="resource-entry-meta">
+                <span>ID: 3715be30ff60b62b9f3a65c9cdfca873b8f8b295fb963db447d5d1df6fc6d3c5</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/57e63dfe10040030cea216e4aa538656637f104a768931342a69b0019d479f53</div>
+              
+              <div class="resource-entry-meta">
+                <span>ID: eb0042ad8b227974377e6e9951acf93570099170e9b18799a58e423e3177d6d7</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Practitioner/21cca6aa6fae4ce2c602154af6963b5b8480d3cc963e393312fb76673a6d3ab6</div>
+              <div class="resource-entry-sub">Organization/b696cd11d13618e8c1593b2e613d9fd58be682cb68e1483fc0f1e23348bbe805</div>
+              <div class="resource-entry-meta">
+                <span>ID: 207f01fcfd270bae9f6e16d028ec01d2f60f3f26e1c73d48bb45979550e6a6ed</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 20</span>
+          <a href="http://localhost:8081/fhir/PractitionerRole" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">PractitionerRole</div>
+              <div class="resource-meta">Last updated: n/a</div>
+            </div>
+            <div class="resource-count">0</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-note">No entries returned.</div><div class="resource-actions">
+          <span class="resource-note">Showing 0</span>
+          <a href="http://localhost:8080/fhir/PractitionerRole" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div></div><div class="resource-row"><div class="resource-label">HealthcareService</div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">HealthcareService</div>
+              <div class="resource-meta">Last updated: 1/22/2026, 12:58:36 PM</div>
+            </div>
+            <div class="resource-count">20</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">HINQ eOverdracht Service</div>
+              <div class="resource-entry-sub">Organization/Org-00000024-e95a62f4-5983-4b80-a6a4-02b535b6490f</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-67942ff3-cb04-466a-8a1f-2b22009daade</span>
+                <span>Updated: 1/22/2026, 12:58:36 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Urology Mdb</div>
+              <div class="resource-entry-sub">Vallee des fleurs clinique</div>
+              <div class="resource-entry-meta">
+                <span>ID: 11d7d2268148481004c6853f507796fbcb0244ea842b7b4871a26dd1ecc1727f</span>
+                <span>Updated: 1/22/2026, 12:58:29 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Tavi Mdb</div>
+              <div class="resource-entry-sub">Vallee des fleurs clinique</div>
+              <div class="resource-entry-meta">
+                <span>ID: 317ac4a361adcb119b484db9207ff5f5a6a9400076e32153ebe99be06ac16ec0</span>
+                <span>Updated: 1/19/2026, 9:18:55 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Tavi Mdb</div>
+              <div class="resource-entry-sub">Vallee des fleurs clinique</div>
+              <div class="resource-entry-meta">
+                <span>ID: 8cf34230f6fb0b9b4afe57c005c171d36498b882b885f509e1e87c1be2f6c993</span>
+                <span>Updated: 1/19/2026, 9:03:26 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Beweegpoli</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-100</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Dermatologie (huidziekten)</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-101</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Interne geneeskunde</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-102</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Leefstijl coaching</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-103</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Orthopedie</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-104</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Penispoli</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-105</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Plastische chirurgie</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-106</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Proctologie (anus problemen)</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-107</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Reumatologie (ontstekingen gewrichten)</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-108</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Spatader- &amp; wondzorg (vaatchirurgie en dermatologie)</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-109</span>
+                <span>Updated: 1/19/2026, 4:35:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vasectomie/sterilisatie</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-110</span>
+                <span>Updated: 1/19/2026, 4:35:27 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vulvapoli (derma en gynaecologie)</div>
+              <div class="resource-entry-sub">Organization/4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-svc-afdeling-111</span>
+                <span>Updated: 1/19/2026, 4:35:27 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">HC ozoverbindzorg</div>
+              <div class="resource-entry-sub">OZOverbindzorg</div>
+              <div class="resource-entry-meta">
+                <span>ID: 8d2cef2d33612e73177d27d75e05c80b2d73d0f8865548b7bbf69579631066a5</span>
+                <span>Updated: 1/19/2026, 4:25:37 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">HC Service for 81831321</div>
+              <div class="resource-entry-sub">Org-81831321</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-69599084-ffd68808-96a5-4bfd-bb83-1f00dc6143ff</span>
+                <span>Updated: 1/19/2026, 4:25:35 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Gyn. Oncology Department</div>
+              <div class="resource-entry-sub">Vallee des fleurs clinique</div>
+              <div class="resource-entry-meta">
+                <span>ID: d9b173ca9d03851d65b2a42632ede1e157908854c461a38e67d0d69a60ac2690</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">HPB Oncology Department</div>
+              <div class="resource-entry-sub">Vallee des fleurs clinique</div>
+              <div class="resource-entry-meta">
+                <span>ID: 6ac50a4e4becb39c72be6f225c2de77748f3e43c27eb1f6c0a19fdb9b58e378c</span>
+                <span>Updated: 1/19/2026, 4:25:32 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 20</span>
+          <a href="http://localhost:8081/fhir/HealthcareService" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">HealthcareService</div>
+              <div class="resource-meta">Last updated: 1/19/2026, 4:22:50 PM</div>
+            </div>
+            <div class="resource-count">12</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">Beweegpoli</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-100</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Dermatologie (huidziekten)</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-101</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Interne geneeskunde</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-102</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Leefstijl coaching</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-103</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Orthopedie</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-104</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Penispoli</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-105</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Plastische chirurgie</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-106</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Proctologie (anus problemen)</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-107</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Reumatologie (ontstekingen gewrichten)</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-108</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Spatader- &amp; wondzorg (vaatchirurgie en dermatologie)</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-109</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vasectomie/sterilisatie</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-110</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Vulvapoli (derma en gynaecologie)</div>
+              <div class="resource-entry-sub">Organization/org-kliniek-1</div>
+              <div class="resource-entry-meta">
+                <span>ID: svc-afdeling-111</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 12</span>
+          <a href="http://localhost:8080/fhir/HealthcareService" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div></div><div class="resource-row"><div class="resource-label">Endpoint</div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">Endpoint</div>
+              <div class="resource-meta">Last updated: 1/22/2026, 12:58:36 PM</div>
+            </div>
+            <div class="resource-count">20</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">https://mcsd.nuts-hackathon.dev.hinq.nl/fhir/knpt-mcsd-query</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-c24134fe-6ea3-4cad-a4bf-7a42c994ea9f</span>
+                <span>Updated: 1/22/2026, 12:58:36 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/urology-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: 1c46a382b6bf87ce479d38f06813966cae6f5c0fa089af2f90eae9bfcf841927</span>
+                <span>Updated: 1/22/2026, 12:58:28 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/tavi-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: 0466863f2f75fcc16d424a0f880203858966525b1fbf777354b63de712c3300c</span>
+                <span>Updated: 1/19/2026, 9:18:55 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/tavi-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: 9927d1723cd7ecf4ca7a54ca9c90e0f3273f999e0b8e1551aeb6a673bce39c0d</span>
+                <span>Updated: 1/19/2026, 9:03:26 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://nuts.nuts-hackathon.dev.hinq.nl/oauth2/HINQ-eOverdracht-Organisatie</div>
+              <div class="resource-entry-sub">Direct Project</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-f4cb655c-4025-41ae-9c25-3ab59d2d5ed7</span>
+                <span>Updated: 1/19/2026, 6:13:37 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://fhir.mockrecord.interop.dev.hinq.nl/notification</div>
+              <div class="resource-entry-sub">Direct Project</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-cc6ee366-eecc-49c0-81a3-263a3b631488</span>
+                <span>Updated: 1/19/2026, 6:13:37 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://fhir.nuts-hackathon.dev.hinq.nl/fhir</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-515137eb-775b-41cf-8c06-24fd39243e6e</span>
+                <span>Updated: 1/19/2026, 5:58:32 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">FHIR API</div>
+              <div class="resource-entry-sub">HL7 FHIR REST</div>
+              <div class="resource-entry-meta">
+                <span>ID: 4426146f-c1f4-4213-9c6c-02f6cbdaf2ff-ep-900</span>
+                <span>Updated: 1/19/2026, 4:35:27 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://fhir.vrumun.interop.acc.hinq.nl/fhir</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-d57cfe4f-2a70-4cd3-9213-635c917a7068</span>
+                <span>Updated: 1/19/2026, 4:25:56 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://fhir.chipsoft.interop.acc.hinq.nl/fhir</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-00000024-679f6689-cc40-40d0-8b42-fb01f34c5c1f</span>
+                <span>Updated: 1/19/2026, 4:25:56 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">Endpoint 81831321</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: Org-69599084-578525ad-94d5-441b-8e84-9b5b46dde8f1</span>
+                <span>Updated: 1/19/2026, 4:25:35 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/gyn-oncology-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: ddb73f55a878cf3e41f52270516d60a01d4e980cae49418c2472723b2d7a89eb</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/mcsd/fhir/admin</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: 350d8ee74a168999099e499b662dee182d0a3935b6c5fb1fc16bad776a5d2345</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/crc-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: b5f2ba74631b6a09316615d5f94b1d86058f3f023382f169b95360cfc30eb003</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/raku-hpb-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: 15d49f9eed2fca5213cf947488025a74227677a9fa3762085d9d8acc1da4eb27</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform.alpha-06.parsek.net/cc-context-launch/patient-context</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: 3c419f9a672312be13c17bd72b35ed8a9a8c3f1830e60932db58a3a0f2c315f1</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/maternal-obstetrics-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: 59402b5355e27b330bebdb0dee66ddbbc8d752b0812429d59d419404e1351016</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/pulmonary-oncology-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: abcd285a1fdcc93557eff4177a86049955629cef59e69fc09a14b785f93f3813</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/iop/workflow/notified-pull/infective-endocarditis-mdb</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: c355658e0ffdc953802c093a82ddedfc8eb7c2f1b0c8f7197911047eaa018ad4</span>
+                <span>Updated: 1/19/2026, 4:25:31 PM</span>
+              </div>
+            </div><div class="resource-entry">
+              <div class="resource-entry-title">https://platform-md.alpha-06.parsek.net/vitaly-service/mcsd/fhir/admin</div>
+              <div class="resource-entry-sub">HL7 FHIR</div>
+              <div class="resource-entry-meta">
+                <span>ID: b17c8d793f8ebb5a794184a058f81451d8cd0ba265ca3105432fb2c90fd5aaf9</span>
+                <span>Updated: 1/19/2026, 4:25:30 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 20</span>
+          <a href="http://localhost:8081/fhir/Endpoint" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">Endpoint</div>
+              <div class="resource-meta">Last updated: 1/19/2026, 4:22:50 PM</div>
+            </div>
+            <div class="resource-count">1</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-entry">
+              <div class="resource-entry-title">FHIR API</div>
+              <div class="resource-entry-sub">HL7 FHIR REST</div>
+              <div class="resource-entry-meta">
+                <span>ID: ep-900</span>
+                <span>Updated: 1/19/2026, 4:22:50 PM</span>
+              </div>
+            </div><div class="resource-actions">
+          <span class="resource-note">Showing 1</span>
+          <a href="http://localhost:8080/fhir/Endpoint" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div></div><div class="resource-row"><div class="resource-label">OrganizationAffiliation</div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">OrganizationAffiliation</div>
+              <div class="resource-meta">Last updated: n/a</div>
+            </div>
+            <div class="resource-count">0</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-note">No entries returned.</div><div class="resource-actions">
+          <span class="resource-note">Showing 0</span>
+          <a href="http://localhost:8081/fhir/OrganizationAffiliation" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div><div class="resource-cell"><details class="resource-item"><summary>
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">OrganizationAffiliation</div>
+              <div class="resource-meta">Last updated: n/a</div>
+            </div>
+            <div class="resource-count">0</div>
+          </div>
+        </summary><div class="resource-entries"><div class="resource-note">No entries returned.</div><div class="resource-actions">
+          <span class="resource-note">Showing 0</span>
+          <a href="http://localhost:8080/fhir/OrganizationAffiliation" target="_blank" rel="noreferrer">Open list</a>
+        </div></div></details></div></div></div>
+        </div>
+        <p class="note">
+          Lists show up to 20 resources per type sorted by last update. If you
+          see CORS errors, open this file from a local web server. Admin fetch
+          is limited to localhost or mach2.
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>Trigger Sync</h2>
+        <div class="row">
+          <label>
+            Update client base URL
+            <input id="sync-base" type="text" value="http://localhost:8509">
+          </label>
+          <label>
+            Directory endpoint
+            <input id="sync-endpoint" type="text" list="directory-endpoints" placeholder="Select endpoint from registry">
+          </label>
+        </div>
+        <datalist id="directory-endpoints"></datalist>
+        <div class="status" id="sync-directory-status">Idle.</div>
+        <p class="note">Click the endpoint field to load options.</p>
+        <div class="row">
+          <label>
+            Directory ID
+            <input id="sync-directory-id" type="text" value="" placeholder="Auto-filled from endpoint selection" readonly="">
+          </label>
+          <label>
+            <span>override_ignore</span>
+            <input id="sync-override" type="checkbox">
+          </label>
+          <button id="sync-button">Send sync request</button>
+        </div>
+        <div class="status" id="sync-status">Idle.</div>
+        <pre id="sync-output"><code>// response will appear here</code></pre>
+        <pre id="sync-curl">Set a directory ID to generate the curl command.</pre>
+      </section>
+    </main>
+
+    <script>
+      const MCSD_RESOURCES = [
+        "Organization",
+        "Location",
+        "Practitioner",
+        "PractitionerRole",
+        "HealthcareService",
+        "Endpoint",
+        "OrganizationAffiliation",
+      ];
+
+      const RESOURCE_FETCH_LIMIT = 20;
+
+      const ADMIN_ALLOWED_HOSTS = new Set([
+        "localhost",
+        "127.0.0.1",
+        "mach2.disyepd.com",
+      ]);
+
+      const elements = {
+        client: {
+          base: document.getElementById("client-base"),
+          load: document.getElementById("client-load"),
+          status: document.getElementById("client-status"),
+          key: "client",
+        },
+        admin: {
+          base: document.getElementById("admin-base"),
+          load: document.getElementById("admin-load"),
+          status: document.getElementById("admin-status"),
+          allowedHosts: ADMIN_ALLOWED_HOSTS,
+          key: "admin",
+        },
+        demo: {
+          apply: document.getElementById("demo-apply"),
+          reset: document.getElementById("demo-reset"),
+          status: document.getElementById("demo-status"),
+        },
+        matrix: {
+          body: document.getElementById("resource-matrix-body"),
+        },
+        sync: {
+          base: document.getElementById("sync-base"),
+          endpoint: document.getElementById("sync-endpoint"),
+          endpointList: document.getElementById("directory-endpoints"),
+          directoryStatus: document.getElementById("sync-directory-status"),
+          directoryId: document.getElementById("sync-directory-id"),
+          override: document.getElementById("sync-override"),
+          button: document.getElementById("sync-button"),
+          status: document.getElementById("sync-status"),
+          output: document.getElementById("sync-output"),
+          curl: document.getElementById("sync-curl"),
+        },
+      };
+
+      let directoryCache = [];
+      let directoryEndpointIndex = new Map();
+      let directoryIdIndex = new Map();
+      const resourceState = {
+        client: { base: "", results: new Map() },
+        admin: { base: "", results: new Map() },
+      };
+      let syncSpinnerId = null;
+
+      const DEMO_ORG_ID = "org-kliniek-1";
+      const DEMO_ORG_ORIGINAL_NAME = "ZBC Demo Kliniek";
+      const DEMO_ORG_NEW_NAME = "ZBC DiSy SYS Kliniek";
+      const DEMO_ORG_BASE = {
+        resourceType: "Organization",
+        id: "org-kliniek-1",
+        meta: {
+          versionId: "3",
+          lastUpdated: "2026-01-22T15:40:07.543+00:00",
+        },
+        identifier: [
+          {
+            system: "https://sys.local/identifiers/organizations",
+            value: "org-kliniek-1",
+            assigner: {
+              identifier: {
+                type: {
+                  coding: [
+                    {
+                      system:
+                        "http://terminology.hl7.org/CodeSystem/provenance-participant-type",
+                      code: "author",
+                    },
+                  ],
+                },
+                system: "http://fhir.nl/fhir/NamingSystem/ura",
+                value: "00700700",
+              },
+              display: "ZBC Demo Kliniek",
+            },
+          },
+          {
+            system: "http://fhir.nl/fhir/NamingSystem/ura",
+            value: "00700700",
+          },
+          {
+            system: "http://fhir.nl/fhir/NamingSystem/agb-z",
+            value: "00000000",
+          },
+          {
+            system: "http://fhir.nl/fhir/NamingSystem/kvk",
+            value: "12345678",
+          },
+        ],
+        active: true,
+        type: [
+          {
+            coding: [
+              {
+                system: "http://terminology.hl7.org/CodeSystem/organization-type",
+                code: "prov",
+                display: "Healthcare Provider",
+              },
+            ],
+          },
+        ],
+        name: "ZBC Demo Kliniek",
+        telecom: [
+          {
+            system: "phone",
+            value: "+31-20-0000000",
+          },
+          {
+            system: "email",
+            value: "info@demo.invalid",
+          },
+          {
+            system: "url",
+            value: "https://demo.invalid",
+          },
+        ],
+        address: [
+          {
+            line: ["Demo Straat 1"],
+            city: "Amsterdam",
+            postalCode: "1011AA",
+            country: "NL",
+          },
+        ],
+        endpoint: [
+          {
+            reference: "Endpoint/ep-900",
+          },
+        ],
+      };
+
+      function normalizeBase(value) {
+        return value.trim().replace(/\/+$/, "");
+      }
+
+      function normalizeEndpoint(value) {
+        return value.trim().replace(/\/+$/, "");
+      }
+
+      function getHostname(value) {
+        try {
+          return new URL(value).hostname;
+        } catch (error) {
+          return "";
+        }
+      }
+
+      async function fetchJson(url, options = {}) {
+        try {
+          const response = await fetch(url, options);
+          const text = await response.text();
+          let data = null;
+          try {
+            data = JSON.parse(text);
+          } catch (error) {
+            data = null;
+          }
+          return { ok: response.ok, status: response.status, data, text };
+        } catch (error) {
+          return {
+            ok: false,
+            status: 0,
+            data: null,
+            text: String(error),
+          };
+        }
+      }
+
+      function setStatus(element, message) {
+        element.textContent = message;
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function getAdminBase() {
+        return normalizeBase(elements.admin.base.value);
+      }
+
+      async function putFhirResource(baseUrl, resource) {
+        const url = `${baseUrl}/${resource.resourceType}/${encodeURIComponent(
+          resource.id
+        )}`;
+        return fetchJson(url, {
+          method: "PUT",
+          headers: {
+            accept: "application/fhir+json",
+            "content-type": "application/fhir+json",
+          },
+          body: JSON.stringify(resource),
+        });
+      }
+
+      function cloneResource(resource) {
+        return JSON.parse(JSON.stringify(resource));
+      }
+
+      function buildDemoOrganizationPayload(name) {
+        const payload = cloneResource(DEMO_ORG_BASE);
+        payload.name = name;
+        if (Array.isArray(payload.identifier)) {
+          payload.identifier = payload.identifier.map((identifier) => {
+            if (identifier.assigner && identifier.assigner.display) {
+              identifier.assigner.display = name;
+            }
+            return identifier;
+          });
+        }
+        return payload;
+      }
+
+      async function updateDemoOrganization(targetName) {
+        const baseUrl = getAdminBase();
+        if (!baseUrl) {
+          setStatus(elements.demo.status, "Enter admin directory base URL.");
+          return;
+        }
+        const host = getHostname(baseUrl);
+        if (!ADMIN_ALLOWED_HOSTS.has(host)) {
+          setStatus(
+            elements.demo.status,
+            "Demo update allowed only on localhost or mach2."
+          );
+          return;
+        }
+        setStatus(elements.demo.status, `Updating ${DEMO_ORG_ID}...`);
+
+        const payload = buildDemoOrganizationPayload(targetName);
+        const updateResponse = await putFhirResource(baseUrl, payload);
+        if (!updateResponse.ok) {
+          const detail = updateResponse.status
+            ? `HTTP ${updateResponse.status}`
+            : updateResponse.text;
+          setStatus(
+            elements.demo.status,
+            `Update failed (${detail}).`
+          );
+          return;
+        }
+
+        setStatus(
+          elements.demo.status,
+          `Organization updated to "${payload.name}".`
+        );
+
+        if (resourceState.admin.base) {
+          await sleep(600);
+          loadResources(elements.admin);
+        }
+      }
+
+      function startSyncSpinner() {
+        stopSyncSpinner();
+        const baseText = "Sending request";
+        let dotCount = 3;
+        elements.sync.output.textContent = `${baseText}${".".repeat(dotCount)}`;
+        syncSpinnerId = setInterval(() => {
+          dotCount = dotCount >= 3 ? 1 : dotCount + 1;
+          elements.sync.output.textContent = `${baseText}${".".repeat(dotCount)}`;
+        }, 450);
+      }
+
+      function stopSyncSpinner() {
+        if (syncSpinnerId !== null) {
+          clearInterval(syncSpinnerId);
+          syncSpinnerId = null;
+        }
+      }
+
+      function indexDirectoryCache(directories) {
+        directoryEndpointIndex = new Map();
+        directoryIdIndex = new Map();
+        const unique = [];
+        directories.forEach((entry) => {
+          if (!entry) {
+            return;
+          }
+          const endpoint = normalizeEndpoint(entry.endpoint_address || "");
+          const id = entry.id || "";
+          if (id && !directoryIdIndex.has(id)) {
+            directoryIdIndex.set(id, entry);
+          }
+          if (endpoint && !directoryEndpointIndex.has(endpoint)) {
+            directoryEndpointIndex.set(endpoint, entry);
+            unique.push(entry);
+          }
+        });
+        return unique;
+      }
+
+      function renderDirectoryOptions(directories) {
+        elements.sync.endpointList.innerHTML = "";
+        directories.forEach((entry) => {
+          const endpoint = entry.endpoint_address || "";
+          if (!endpoint) {
+            return;
+          }
+          const option = document.createElement("option");
+          option.value = endpoint;
+          const labelParts = [];
+          if (entry.id) {
+            labelParts.push(entry.id);
+          }
+          if (entry.ura) {
+            labelParts.push(entry.ura);
+          }
+          option.label = labelParts.join(" - ");
+          elements.sync.endpointList.appendChild(option);
+        });
+      }
+
+      function applyDirectorySelection(value) {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return;
+        }
+        const normalized = normalizeEndpoint(trimmed);
+        let match = directoryEndpointIndex.get(normalized);
+        if (!match && directoryIdIndex.has(trimmed)) {
+          match = directoryIdIndex.get(trimmed);
+        }
+        if (!match) {
+          setStatus(
+            elements.sync.directoryStatus,
+            "Select an endpoint from the list."
+          );
+          return;
+        }
+        if (match.endpoint_address) {
+          elements.sync.endpoint.value = match.endpoint_address;
+        }
+        if (match.id) {
+          elements.sync.directoryId.value = match.id;
+          updateCurlPreview();
+          setStatus(
+            elements.sync.directoryStatus,
+            `Selected ${match.id}.`
+          );
+        }
+      }
+
+      async function refreshDirectoryRegistry() {
+        const baseUrl = normalizeBase(elements.sync.base.value);
+        if (!baseUrl) {
+          setStatus(
+            elements.sync.directoryStatus,
+            "Enter update client base URL."
+          );
+          return;
+        }
+        setStatus(
+          elements.sync.directoryStatus,
+          `Loading ${baseUrl}/directory/all ...`
+        );
+        const response = await fetchJson(`${baseUrl}/directory/all`, {
+          headers: { accept: "application/json" },
+        });
+        if (!response.ok) {
+          const detail = response.status
+            ? `HTTP ${response.status}`
+            : response.text;
+          setStatus(
+            elements.sync.directoryStatus,
+            `Failed to load ${baseUrl}/directory/all (${detail}).`
+          );
+          return;
+        }
+        directoryCache = Array.isArray(response.data) ? response.data : [];
+        const unique = indexDirectoryCache(directoryCache);
+        renderDirectoryOptions(unique);
+        setStatus(
+          elements.sync.directoryStatus,
+          `Loaded ${unique.length} endpoints.`
+        );
+      }
+
+      function formatHumanName(name) {
+        if (!name) {
+          return "";
+        }
+        if (name.text) {
+          return name.text;
+        }
+        const given = Array.isArray(name.given) ? name.given.join(" ") : "";
+        const family = name.family || "";
+        return `${given} ${family}`.trim();
+      }
+
+      function formatAddress(address) {
+        if (!address) {
+          return "";
+        }
+        if (address.text) {
+          return address.text;
+        }
+        const line = Array.isArray(address.line) ? address.line.join(" ") : "";
+        const city = address.city || "";
+        const postal = address.postalCode || "";
+        return [line, city, postal].filter(Boolean).join(", ");
+      }
+
+      function formatReference(ref) {
+        if (!ref) {
+          return "";
+        }
+        return ref.display || ref.reference || "";
+      }
+
+      function formatLastUpdated(value) {
+        if (!value) {
+          return "n/a";
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          return value;
+        }
+        return date.toLocaleString();
+      }
+
+      function summarizeResource(resource) {
+        const type = resource.resourceType || "Resource";
+        let title = "";
+        let subtitle = "";
+        if (type === "Organization") {
+          title = resource.name || "Organization";
+          subtitle =
+            resource.identifier?.[0]?.value ||
+            resource.alias?.[0] ||
+            "";
+        } else if (type === "Location") {
+          title = resource.name || "Location";
+          subtitle = formatAddress(resource.address);
+        } else if (type === "Practitioner") {
+          title = formatHumanName(resource.name?.[0]) || "Practitioner";
+          subtitle = resource.identifier?.[0]?.value || "";
+        } else if (type === "PractitionerRole") {
+          title = formatReference(resource.practitioner) || "PractitionerRole";
+          subtitle = formatReference(resource.organization);
+        } else if (type === "HealthcareService") {
+          title = resource.name || resource.type?.[0]?.text || "HealthcareService";
+          subtitle = formatReference(resource.providedBy);
+        } else if (type === "Endpoint") {
+          title = resource.name || resource.address || "Endpoint";
+          subtitle =
+            resource.connectionType?.display ||
+            resource.connectionType?.code ||
+            "";
+        } else if (type === "OrganizationAffiliation") {
+          title =
+            formatReference(resource.organization) || "OrganizationAffiliation";
+          subtitle = formatReference(resource.participatingOrganization);
+        }
+
+        if (!title) {
+          title = `${type} ${resource.id || ""}`.trim();
+        }
+
+        return { title, subtitle };
+      }
+
+      function buildResourceDetails(result, baseUrl) {
+        const details = document.createElement("details");
+        details.className = "resource-item";
+        if (result.error) {
+          details.dataset.state = "error";
+        }
+        const countText =
+          typeof result.count === "number" ? result.count : "n/a";
+        const updatedText = result.lastUpdated
+          ? formatLastUpdated(result.lastUpdated)
+          : "n/a";
+
+        const summary = document.createElement("summary");
+        summary.innerHTML = `
+          <div class="resource-summary">
+            <div>
+              <div class="resource-type">${result.type}</div>
+              <div class="resource-meta">Last updated: ${updatedText}</div>
+            </div>
+            <div class="resource-count">${countText}</div>
+          </div>
+        `;
+        details.appendChild(summary);
+
+        const body = document.createElement("div");
+        body.className = "resource-entries";
+
+        if (result.error) {
+          body.innerHTML = `<div class="resource-note">Error: ${result.error}</div>`;
+        } else if (result.entries.length === 0) {
+          body.innerHTML = `<div class="resource-note">No entries returned.</div>`;
+        } else {
+          result.entries.forEach((resource) => {
+            const entry = document.createElement("div");
+            entry.className = "resource-entry";
+            const summary = summarizeResource(resource);
+            const lastUpdated = formatLastUpdated(resource.meta?.lastUpdated);
+            entry.innerHTML = `
+              <div class="resource-entry-title">${summary.title}</div>
+              ${
+                summary.subtitle
+                  ? `<div class="resource-entry-sub">${summary.subtitle}</div>`
+                  : ""
+              }
+              <div class="resource-entry-meta">
+                <span>ID: ${resource.id || "n/a"}</span>
+                <span>Updated: ${lastUpdated}</span>
+              </div>
+            `;
+            body.appendChild(entry);
+          });
+        }
+
+        const footer = document.createElement("div");
+        footer.className = "resource-actions";
+        const shownText =
+          typeof result.total === "number" && result.entries.length < result.total
+            ? `Showing ${result.entries.length} of ${result.total}`
+            : `Showing ${result.entries.length}`;
+        footer.innerHTML = `
+          <span class="resource-note">${shownText}</span>
+          <a href="${baseUrl}/${result.type}" target="_blank" rel="noreferrer">Open list</a>
+        `;
+        body.appendChild(footer);
+
+        details.appendChild(body);
+        return details;
+      }
+
+      function renderResourceMatrix() {
+        const container = elements.matrix.body;
+        container.innerHTML = "";
+        MCSD_RESOURCES.forEach((type) => {
+          const row = document.createElement("div");
+          row.className = "resource-row";
+
+          const label = document.createElement("div");
+          label.className = "resource-label";
+          label.textContent = type;
+          row.appendChild(label);
+
+          ["client", "admin"].forEach((key) => {
+            const cell = document.createElement("div");
+            cell.className = "resource-cell";
+            const state = resourceState[key];
+            const result = state.results.get(type);
+            if (!result) {
+              const placeholder = document.createElement("div");
+              placeholder.className = "resource-placeholder";
+              placeholder.textContent = state.base
+                ? "No data returned."
+                : "Not loaded yet.";
+              cell.appendChild(placeholder);
+            } else {
+              cell.appendChild(buildResourceDetails(result, state.base));
+            }
+            row.appendChild(cell);
+          });
+
+          container.appendChild(row);
+        });
+      }
+
+      async function loadResources(section) {
+        const baseUrl = normalizeBase(section.base.value);
+        if (!baseUrl) {
+          setStatus(section.status, "Please enter a base URL.");
+          return;
+        }
+        if (section.allowedHosts) {
+          const host = getHostname(baseUrl);
+          if (!host) {
+            setStatus(section.status, "Please enter a valid admin URL.");
+            return;
+          }
+          if (!section.allowedHosts.has(host)) {
+            setStatus(
+              section.status,
+              `Admin fetch disabled for ${baseUrl}. Use localhost:8080 or mach2.`
+            );
+            return;
+          }
+        }
+        setStatus(section.status, `Loading from ${baseUrl} ...`);
+        const metadataUrl = `${baseUrl}/metadata`;
+        const metadata = await fetchJson(metadataUrl, {
+          headers: { accept: "application/fhir+json" },
+        });
+        let supported = MCSD_RESOURCES.slice();
+        if (metadata.ok && metadata.data?.rest?.[0]?.resource) {
+          const types = metadata.data.rest[0].resource
+            .map((entry) => entry.type)
+            .filter(Boolean);
+          supported = MCSD_RESOURCES.filter((type) => types.includes(type));
+          if (supported.length === 0) {
+            supported = MCSD_RESOURCES.slice();
+          }
+        }
+
+        const results = await Promise.all(
+          supported.map(async (type) => {
+            const listUrl = `${baseUrl}/${type}?_count=${RESOURCE_FETCH_LIMIT}&_sort=-_lastUpdated`;
+            const response = await fetchJson(listUrl, {
+              headers: { accept: "application/fhir+json" },
+            });
+            if (!response.ok) {
+              return {
+                type,
+                error: response.status
+                  ? `HTTP ${response.status}`
+                  : response.text,
+                count: null,
+                total: null,
+                entries: [],
+                lastUpdated: null,
+              };
+            }
+            const entries = Array.isArray(response.data?.entry)
+              ? response.data.entry
+                  .map((entry) => entry.resource)
+                  .filter(Boolean)
+              : [];
+            const total =
+              typeof response.data?.total === "number"
+                ? response.data.total
+                : null;
+            const lastUpdated = entries.find(
+              (resource) => resource?.meta?.lastUpdated
+            )?.meta?.lastUpdated;
+            return {
+              type,
+              count: typeof total === "number" ? total : entries.length,
+              total,
+              entries,
+              lastUpdated: lastUpdated || null,
+              error: null,
+            };
+          })
+        );
+
+        resourceState[section.key] = {
+          base: baseUrl,
+          results: new Map(results.map((result) => [result.type, result])),
+        };
+        renderResourceMatrix();
+        setStatus(
+          section.status,
+          metadata.ok
+            ? `Loaded ${results.length} resource types.`
+            : `Loaded ${results.length} resource types (metadata unavailable).`
+        );
+      }
+
+      async function sendSyncRequest() {
+        const baseUrl = normalizeBase(elements.sync.base.value);
+        const directoryId = elements.sync.directoryId.value.trim();
+        if (!baseUrl || !directoryId) {
+          setStatus(elements.sync.status, "Please enter base URL and directory ID.");
+          return;
+        }
+        const override = elements.sync.override.checked ? "true" : "false";
+        const url = `${baseUrl}/update_resources/${encodeURIComponent(
+          directoryId
+        )}?override_ignore=${override}`;
+
+        setStatus(elements.sync.status, `POST ${url}`);
+        startSyncSpinner();
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { accept: "application/json" },
+          });
+          const text = await response.text();
+          let payload = text;
+          try {
+            payload = JSON.stringify(JSON.parse(text), null, 2);
+          } catch (error) {
+            payload = text || "(empty response)";
+          }
+          elements.sync.output.textContent = payload;
+          setStatus(
+            elements.sync.status,
+            response.ok
+              ? "Sync request completed."
+              : `Sync request failed (HTTP ${response.status}).`
+          );
+        } catch (error) {
+          elements.sync.output.textContent = String(error);
+          setStatus(elements.sync.status, "Sync request failed to send.");
+        } finally {
+          stopSyncSpinner();
+        }
+      }
+
+      function updateCurlPreview() {
+        const baseUrl = normalizeBase(elements.sync.base.value);
+        const directoryId = elements.sync.directoryId.value.trim();
+        const override = elements.sync.override.checked ? "true" : "false";
+        if (!directoryId) {
+          elements.sync.curl.textContent =
+            "Set a directory ID to generate the curl command.";
+          return;
+        }
+        const url = `${baseUrl}/update_resources/${directoryId}?override_ignore=${override}`;
+        elements.sync.curl.textContent = `curl -X POST "${url}" -H "accept: application/json" -d ""`;
+      }
+
+      elements.client.load.addEventListener("click", () =>
+        loadResources(elements.client)
+      );
+      elements.admin.load.addEventListener("click", () =>
+        loadResources(elements.admin)
+      );
+      elements.demo.apply.addEventListener("click", () =>
+        updateDemoOrganization(DEMO_ORG_NEW_NAME)
+      );
+      elements.demo.reset.addEventListener("click", () =>
+        updateDemoOrganization(DEMO_ORG_ORIGINAL_NAME)
+      );
+      elements.sync.button.addEventListener("click", sendSyncRequest);
+      elements.sync.endpoint.addEventListener("change", () =>
+        applyDirectorySelection(elements.sync.endpoint.value)
+      );
+      elements.sync.endpoint.addEventListener("click", () => {
+        if (directoryCache.length === 0) {
+          refreshDirectoryRegistry();
+        }
+      });
+      elements.sync.endpoint.addEventListener("focus", () => {
+        if (directoryCache.length === 0) {
+          refreshDirectoryRegistry();
+        }
+      });
+      elements.sync.base.addEventListener("input", updateCurlPreview);
+      elements.sync.base.addEventListener("change", () => {
+        directoryCache = [];
+        directoryEndpointIndex = new Map();
+        directoryIdIndex = new Map();
+        elements.sync.endpointList.innerHTML = "";
+        elements.sync.endpoint.value = "";
+        elements.sync.directoryId.value = "";
+        setStatus(elements.sync.directoryStatus, "Idle.");
+        updateCurlPreview();
+      });
+      elements.sync.directoryId.addEventListener("input", updateCurlPreview);
+      elements.sync.override.addEventListener("change", updateCurlPreview);
+
+      document.querySelectorAll("#admin-presets button").forEach((button) => {
+        button.addEventListener("click", () => {
+          if (button.dataset.adminBase) {
+            elements.admin.base.value = button.dataset.adminBase;
+          }
+        });
+      });
+
+      renderResourceMatrix();
+      updateCurlPreview();
+    </script>
+  </body>
+</html>
