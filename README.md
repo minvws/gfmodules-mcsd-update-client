@@ -45,6 +45,15 @@ The code examples are only meant to help understand concepts and demonstrate pos
 By using or referencing this code, you acknowledge that you do so at your own
 risk and that the authors assume no liability for any consequences of its use.
 
+## Repository layout
+
+- `services/iti-91`: ITI-91 (mCSD Update Client) service root
+- `services/iti-91/app`: application code
+- `services/iti-91/tests`: ITI-91 tests
+- `services/iti-91/docs`: ITI-91 docs
+- `services/iti-130`: ITI-130 publisher
+- `services/iti-90`: placeholder for future work
+
 ## Setup
 
 In order to test the update mechanism, you need at least two other instances of
@@ -66,6 +75,20 @@ docker compose up
 This will configure the whole system for you and you should be able to use the
 API right away at <http://localhost:8509/docs>.
 
+The ITI-91 config file lives at `poc9-start-stack/iti-91.conf` (copy
+`poc9-start-stack/iti-91.conf.example` to get started).
+
+To enable Caddy, either set `COMPOSE_PROFILES=caddy` in
+`poc9-start-stack/.env` (copy from `poc9-start-stack/.env.example`) or run:
+
+```bash
+docker compose --profile caddy up
+```
+
+This profile requires `secrets/cloudflare_api_token` to be present for Caddy.
+Without Caddy, you can still access the directory directly at
+`http://localhost:8080/fhir`.
+
 ## Seeding directory
 
 There is a mock data seeder available in case you want to seed a mock directory with fake data.
@@ -81,15 +104,18 @@ docker compose run --rm mcsd-update-client poetry run seed http://hapi-directory
 There are two ways to build a docker container from this application. The first is the default mode created with:
 
 ```bash
+cd services/iti-91
 make container-build
 ```
 
-This will build a docker container that will run its migrations to the database specified in app.conf.
+This will build a docker container that will run its migrations to the database specified in
+`poc9-start-stack/iti-91.conf` (mounted as `/src/app.conf`).
 
 The second mode is a "standalone" mode, where it will not generate migrations, and where you must explicitly specify
-an app.conf mount.
+an `iti-91.conf` mount mapped to `/src/app.conf`.
 
 ```bash
+cd services/iti-91
 make container-build-sa
 ```
 

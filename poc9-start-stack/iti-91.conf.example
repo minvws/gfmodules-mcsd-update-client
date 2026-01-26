@@ -69,6 +69,7 @@ redoc_url = /redocs
 host = 0.0.0.0
 port = 8509
 reload = True
+reload_dirs = app
 
 use_ssl = False
 ssl_base_dir = secrets/ssl
@@ -118,7 +119,8 @@ region = eu-west-2
 [client_directory]
 # Directories provider url(s) to fetch directory endpoints from (comma-separated)
 directories_provider_urls = https://knooppunt-test.nuts-services.nl/lrza/mcsd
-# OR use a relative path that points to file that specifies which directories to use. See example file directory_urls.example.json
+# OR use a relative path that points to file that specifies which directories to use.
+# See example file services/iti-91/directory_urls.example.json
 directories_file_path =
 # directories_file_path = directory_urls.json
 use_directory_registry_db = True

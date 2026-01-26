@@ -1,15 +1,19 @@
-import os
-import shutil
-from typing import Any, Dict
 import copy
+import os
 import pathlib
-from typing import List
+import shutil
+import sys
+from typing import Any, Dict, List
 
 from collections.abc import Generator
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 import inject
 import pytest
+
+ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from app.application import create_fastapi_app
 from app.container import get_database

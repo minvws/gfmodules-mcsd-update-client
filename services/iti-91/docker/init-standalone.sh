@@ -8,10 +8,10 @@ if [ ! -e /src/app.conf ]; then
   echo "----------------------------------------------"
   echo ""
   echo "In order to run this module standalone, an app.conf"
-  echo "is needed. Please mount an existing app.conf into the"
-  echo "container in order to run."
+  echo "is needed. Please mount an existing iti-91.conf into"
+  echo "the container as /src/app.conf in order to run."
   echo ""
-  echo "    docker run --mount type=bind,source=./app.conf,target=/src/app.conf ..."
+  echo "    docker run --mount type=bind,source=./iti-91.conf,target=/src/app.conf ..."
   echo ""
   exit 1
 fi

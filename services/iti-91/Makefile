@@ -2,7 +2,7 @@ NEW_UID = 1000
 NEW_GID = 1000
 
 ifdef DOCKER
-  RUN_PREFIX := docker compose run --rm app
+  RUN_PREFIX := docker compose -f ../../poc9-start-stack/docker-compose.yaml run --rm mcsd-update-client
 else
   RUN_PREFIX :=
 endif

@@ -24,6 +24,7 @@ jobs:
               uses: minvws/action-python-poetry-install@v1
               with:
                 python_version: "3.11"
+                working_directory: services/iti-91
 
     lint:
         name: Run code linter
@@ -38,9 +39,11 @@ jobs:
               uses: minvws/action-python-poetry-install@v1
               with:
                 python_version: "3.11"
+                working_directory: services/iti-91
 
             - name: Lint
               run: poetry run $(make lint --just-print --silent)
+              working-directory: services/iti-91
 
     type-check:
         name: Check static types
@@ -55,9 +58,11 @@ jobs:
               uses: minvws/action-python-poetry-install@v1
               with:
                 python_version: "3.11"
+                working_directory: services/iti-91
 
             - name: Check static types
               run: poetry run $(make type-check --just-print --silent)
+              working-directory: services/iti-91
 
     safety-check:
         name: Scan packages for vulnerabilities
@@ -72,8 +77,10 @@ jobs:
               uses: minvws/action-python-poetry-install@v1
               with:
                 python_version: "3.11"
+                working_directory: services/iti-91
             - name: Scan packages for vulnerabilities
               run: poetry run $(make safety-check --just-print --silent)
+              working-directory: services/iti-91
 
     spelling-check:
         name: Run spelling check
@@ -88,11 +95,13 @@ jobs:
               uses: minvws/action-python-poetry-install@v1
               with:
                 python_version: "3.11"
+                working_directory: services/iti-91
 
             - uses: codespell-project/codespell-problem-matcher@v1
 
             - name: Run spelling check
               run: poetry run $(make spelling-check --just-print --silent)
+              working-directory: services/iti-91
 
     test:
         name: Run the tests
@@ -119,17 +128,19 @@ jobs:
               uses: minvws/action-python-poetry-install@v1
               with:
                 python_version: "3.11"
+                working_directory: services/iti-91
 
             - name: Run the tests
               env:
                 APP_ENV: ci
               run: poetry run $(make test --just-print --silent)
+              working-directory: services/iti-91
 
             - name: Upload coverage report
               uses: actions/upload-artifact@v6
               with:
                 name: coverage
-                path: coverage.xml
+                path: services/iti-91/coverage.xml
 
     sonar:
         name: SonarQube
@@ -144,10 +155,13 @@ jobs:
               uses: actions/download-artifact@v7
               with:
                 name: coverage
+                path: services/iti-91
             - name: Run SonarQube scanner
               uses: minvws/action-sonarqube@v1
               with:
                 sonar-token: ${{ secrets.SONAR_TOKEN }}
+              env:
+                SONAR_SCANNER_OPTS: -Dproject.settings=services/iti-91/sonar-project.properties
 
     detect_modified_files:
         name: Modified files
@@ -163,7 +177,7 @@ jobs:
               uses: tj-actions/changed-files@e0021407031f5be11a464abee9a0776171c79891 # v47
               with:
                 files: |
-                  docker/Dockerfile
+                  services/iti-91/docker/Dockerfile
 
     push_container:
         if: |
@@ -203,8 +217,8 @@ jobs:
                 NEW_UID: 1000
                 NEW_GID: 1000
               with:
-                context: .
-                file: docker/Dockerfile
+                context: services/iti-91
+                file: services/iti-91/docker/Dockerfile
                 push: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
                 tags: ${{ steps.meta.outputs.tags }}
                 labels: ${{ steps.meta.outputs.labels }}

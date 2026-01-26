@@ -6,7 +6,7 @@ from os.path import exists
 from typing import Any, Optional
 import logging
 
-from pydantic import BaseModel, Field, ValidationError, computed_field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, computed_field, field_validator, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -387,6 +387,8 @@ class ConfigAzureOauth2(BaseModel):
 
 
 class Config(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     app: ConfigApp
     database: ConfigDatabase
     uvicorn: ConfigUvicorn

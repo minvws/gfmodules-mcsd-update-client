@@ -1,7 +1,7 @@
 services:
   mcsd-update-client:
     build:
-      context: ../
+      context: ../services/iti-91
       dockerfile: docker/Dockerfile
       args:
         NEW_UID: ${NEW_UID:-1000}
@@ -11,22 +11,11 @@ services:
     environment:
       DO_NOT_USE_ON_PRODUCTION: "I'm a fool if I run this application on a production environment."
     volumes:
-      - ../app:/src/app
-      - ../docker:/src/docker
-      - ../seeds:/src/seeds
-      - ../sql:/src/sql
-      - ../tests:/src/tests
-      - ../tools:/src/tools
+      - ../services/iti-91:/src
       - ../secrets:/src/secrets
-      - ../poetry.lock:/src/poetry.lock
-      - ../pyproject.toml:/src/pyproject.toml
-      - ../Makefile:/src/Makefile
-      - ../README.md:/src/README.md
     configs:
       - source: mcsd_update_client_conf
         target: /src/app.conf
-      - source: directory_urls_json
-        target: /src/directory_urls.json
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8509/health"]
       start_period: 30s
@@ -67,11 +56,6 @@ services:
         target: /app/config/application.yaml
     depends_on:
       - postgres
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
     networks:
       - mcsd_update_client_net
     restart: unless-stopped
@@ -100,23 +84,20 @@ services:
   # curl -k --resolve mach2.disyepd.com:443:127.0.0.1 https://mach2.disyepd.com/fhir
   hapi-directory:
     image: "hapiproject/hapi:latest"
+    ports:
+      - "8080:8080"
     configs:
       - source: hapi_directory_config
         target: /app/config/application.yaml
     depends_on:
       - postgres
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     networks:
       - mcsd_update_client_net
     restart: unless-stopped
 
   iti-130-publisher:
     build:
-      context: ../ITI-130
+      context: ../services/iti-130
       dockerfile: Dockerfile
     depends_on:
       hapi-directory-health:
@@ -129,6 +110,8 @@ services:
     build:
       context: .
       dockerfile: caddy/Dockerfile
+    profiles:
+      - caddy
     ports:
       - "443:443"
     volumes:
@@ -236,9 +219,7 @@ services:
 
 configs:
   mcsd_update_client_conf:
-    file: app.conf
-  directory_urls_json:
-    file: directory_urls.json
+    file: iti-91.conf
   hapi_update_client_config:
     file: client.application.yaml
   hapi_notifiedpull_stu3_config:
