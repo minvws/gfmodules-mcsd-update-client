@@ -514,3 +514,11 @@ Query parameters:
 
 - Upstream HTTP fouten (4xx/5xx) worden doorgaans doorgegeven met dezelfde statuscode en JSON body (als die JSON is).
 - Connectieproblemen naar upstream worden als `502` teruggegeven met een `detail` object met een `reason` zoals `timeout`, `dns`, `tls` of `network`.
+
+---
+
+## Licensing
+
+- **Code**: MIT (see `../../LICENSE` and `LICENSE.md`).
+- **Documentation**: CC BY-SA 4.0 (see `../../LICENSES/CC-BY-SA-4.0.txt`).
+- **Third-party dependencies**: see `THIRD_PARTY_LICENSES.md`.

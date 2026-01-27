@@ -38,6 +38,12 @@ This codebase:
 - Does NOT represent a final specification
 - Should NOT be considered feature-complete or secure
 - May contain errors, omissions, or oversimplified implementations
+
+## Licensing
+
+- **Code**: MIT (see `LICENSE`), except where noted (e.g., `services/iti-91`).
+- **Documentation**: CC BY-SA 4.0 (see `LICENSES/CC-BY-SA-4.0.txt`).
+- **Third-party dependencies**: see `THIRD_PARTY_LICENSES.md` files per service.
 - Has NOT been tested or hardened for real-world scenarios
 
 The code examples are only meant to help understand concepts and demonstrate possibilities.

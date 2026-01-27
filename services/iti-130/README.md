@@ -533,3 +533,11 @@ De volgende environment variabelen kunnen als defaults gebruikt worden (ook via 
 - Voor **periodieke updates**: draai met `--since` en beheer de “laatste succesvolle timestamp” extern (scheduler/CI).
 - Als je `--delete-inactive` gebruikt: wees voorzichtig met Endpoint DELETE; NL GF adviseert meestal “status=off”.
 
+
+---
+
+## Licensing
+
+- **Code**: MIT (see `../../LICENSE` and `LICENSE.md`).
+- **Documentation**: CC BY-SA 4.0 (see `../../LICENSES/CC-BY-SA-4.0.txt`).
+- **Third-party dependencies**: see `THIRD_PARTY_LICENSES.md`.

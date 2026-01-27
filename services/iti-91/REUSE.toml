@@ -3,6 +3,7 @@ version = 1
 [[annotations]]
 path = "**"
 SPDX-FileCopyrightText = "iRealisatie - Ministerie van Volksgezondheid, Welzijn en Sport"
+SPDX-FileCopyrightText = "SYS, Supporting Your Systems B.V."
 SPDX-License-Identifier = "EUPL-1.2"
 
 [[annotations]]
@@ -10,6 +11,5 @@ path = [
     "*.md",
     "docs/**"
 ]
-SPDX-FileCopyrightText = "iRealisatie - Ministerie van Volksgezondheid, Welzijn en Sport"
-SPDX-License-Identifier = "CC0-1.0"
-SPDX-FileComment = "Bij het citeren van de inhoud mag niet de indruk gewekt worden dat de Rijksoverheid zonder meer de strekking van het afgeleide werk onderschrijft."
+SPDX-FileCopyrightText = "SYS, Supporting Your Systems B.V."
+SPDX-License-Identifier = "CC-BY-SA-4.0"

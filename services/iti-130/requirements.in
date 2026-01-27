@@ -1,0 +1,7 @@
+SQLAlchemy
+pydantic
+pydantic-settings
+python-dotenv
+python-tds
+sqlalchemy-pytds
+requests
