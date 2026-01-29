@@ -262,7 +262,7 @@ def test_get_all_directories_should_handle_pagination(
     # Mock both page responses using side_effect
     mock_fhir_api.search_resource.return_value = (
         URL("http://example.com/fhir/Organization/?page=2"),
-        [],
+        __mock_bundle_entry4(),
     )
     mock_fhir_api.search_resource_page.side_effect = [
         (URL("http://example.com/fhir/Organization/?page=3"), []),
@@ -271,6 +271,67 @@ def test_get_all_directories_should_handle_pagination(
     api_service.fetch_directories()
     assert mock_fhir_api.search_resource.call_count == 1
     assert mock_fhir_api.search_resource_page.call_count == 2
+
+
+def test_fallback_to_endpoint_search_when_orgs_have_no_endpoint_refs(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
+) -> None:
+    org_only_entries = [
+        BundleEntry(
+            resource=Organization(
+                id="org-no-endpoints",
+                name="Org without endpoints",
+                endpoint=None,
+            )
+        )
+    ]
+    endpoint_entries = [
+        BundleEntry(
+            resource=Endpoint(
+                id="endpoint-only-1",
+                status="active",
+                connectionType={
+                    "system": "http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
+                    "code": "hl7-fhir-rest",
+                    "display": "HL7 FHIR",
+                },
+                payloadType=[
+                    {
+                        "coding": [
+                            {
+                                "system": "http://hl7.org/fhir/endpoint-payload-type",
+                                "code": "any",
+                                "display": "Any",
+                            }
+                        ]
+                    }
+                ],
+                address="http://endpoint-only.example.com/fhir",
+            )
+        )
+    ]
+    mock_fhir_api.search_resource.side_effect = [
+        (None, org_only_entries),
+        (None, endpoint_entries),
+    ]
+    result = api_service.fetch_directories()
+    assert mock_fhir_api.search_resource.call_count == 2
+    assert len(result) == 1
+    assert result[0].endpoint_address == "http://endpoint-only.example.com/fhir"
+    assert result[0].id == "endpoint-only-1"
+
+
+def test_pagination_404_on_getpages_stops_paging(
+    api_service: DirectoryApiService, mock_fhir_api: MagicMock
+) -> None:
+    mock_fhir_api.search_resource.return_value = (
+        URL("http://example.com/fhir?_getpages=abc"),
+        __mock_bundle_entry(),
+    )
+    mock_fhir_api.search_resource_page.side_effect = HTTPException(status_code=404)
+    result = api_service.fetch_directories()
+    assert len(result) == 1
+    assert mock_fhir_api.search_resource_page.call_count == 1
 
 
 def test_get_one_directory_should_return_directory(

@@ -58,6 +58,7 @@ services:
       - mcsd_update_client_net
     restart: unless-stopped
 
+
 ## HAPI FHIR SERVERS
   hapi-update-client:
     image: "hapiproject/hapi:latest"
@@ -101,8 +102,6 @@ services:
     networks:
       - mcsd_update_client_net
     restart: unless-stopped
-
-
 
 
 ## HEALTHCHECK SERVICES FOR HAPI SERVERS
