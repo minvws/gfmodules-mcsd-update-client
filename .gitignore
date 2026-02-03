@@ -13,3 +13,4 @@ services/iti-91/tests/testing_results
 services/iti-91/tests/new_testing_results
 services/iti-91/tests/tests/**
 version.json
+PoC-9-SYS.code-workspace
