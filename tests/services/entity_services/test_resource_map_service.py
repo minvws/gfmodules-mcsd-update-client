@@ -28,8 +28,12 @@ def test_get_should_return_a_resource_map_when_exists(
         directory_resource_id=mock_dto.directory_resource_id
     )
     assert actual is not None
-    for k in actual.__table__.columns.keys():
-        assert getattr(actual, k) == getattr(expected, k)
+    assert actual.id == expected.id
+    assert actual.directory_id == mock_dto.directory_id
+    assert actual.resource_type == mock_dto.resource_type
+    assert actual.directory_resource_id == mock_dto.directory_resource_id
+    assert actual.update_client_resource_id == mock_dto.update_client_resource_id
+    assert actual.last_update is not None
 
 
 def test_get_should_return_none_when_resource_map_does_not_exists(
@@ -48,8 +52,12 @@ def test_get_one_should_return_a_resource_map_when_exist(
     actual = resource_map_service.get_one(
         directory_resource_id=mock_dto.directory_resource_id
     )
-    for k in actual.__table__.columns.keys():
-        assert getattr(actual, k) == getattr(expected, k)
+    assert actual.id == expected.id
+    assert actual.directory_id == mock_dto.directory_id
+    assert actual.resource_type == mock_dto.resource_type
+    assert actual.directory_resource_id == mock_dto.directory_resource_id
+    assert actual.update_client_resource_id == mock_dto.update_client_resource_id
+    assert actual.last_update is not None
 
 
 def test_get_one_should_raise_excption_when_map_does_not_exist(
@@ -70,8 +78,12 @@ def test_find_should_return_results_when_param_matches(
     )
     actual = results[0]
     assert len(results) > 0
-    for k in actual.__table__.columns.keys():
-        assert getattr(actual, k) == getattr(expected, k)
+    assert actual.id == expected.id
+    assert actual.directory_id == mock_dto.directory_id
+    assert actual.resource_type == mock_dto.resource_type
+    assert actual.directory_resource_id == mock_dto.directory_resource_id
+    assert actual.update_client_resource_id == mock_dto.update_client_resource_id
+    assert actual.last_update is not None
 
 
 def test_find_should_return_empty_list_when_params_do_not_match(

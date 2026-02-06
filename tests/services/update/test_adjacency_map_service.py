@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 from unittest.mock import MagicMock, patch
 import pytest
+from fhir.resources.R4B.domainresource import DomainResource
 from requests.exceptions import ConnectionError
 
 from app.models.adjacency.adjacency_map import AdjacencyMap
@@ -271,8 +272,9 @@ def test_create_update_data_should_succeed_and_mark_item_as_new(
     )
     node.update_data = adjacency_map_service.create_update_data(node, None)
     expected_data = create_bundle_entry(mock_org_bundle_entry)
-    assert expected_data.resource is not None
+    assert isinstance(expected_data.resource, DomainResource)
     assert expected_data.request is not None
+
     fhir_service.namespace_resource_references(
         expected_data.resource, mock_directory_id
     )
