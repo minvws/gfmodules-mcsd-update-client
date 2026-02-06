@@ -41,7 +41,7 @@ def collect_errors(bundle: Bundle) -> list[BundleError]:
         return errs
 
     for idx, entry in enumerate(bundle.entry):
-        resp = entry.response  # type: ignore[attr-defined]
+        resp = entry.response
         if not resp:
             continue
 
@@ -59,10 +59,10 @@ def get_ura_from_organization(organization: Organization) -> str:
         """
         for identifier in organization.identifier or []:
             if isinstance(identifier, Identifier):
-                if identifier.system.lower() == ID_SYSTEM_URA:  # type: ignore
-                    if identifier.value is None:  # type: ignore
+                if identifier.system == ID_SYSTEM_URA:
+                    if identifier.value is None:
                         raise ValueError("Identifier value is None")
-                    return str(identifier.value)  # type: ignore
+                    return str(identifier.value)
         logger.error(f"Organization {organization.id} has no URA identifier")
         raise ValueError("No URA identifier found")
 

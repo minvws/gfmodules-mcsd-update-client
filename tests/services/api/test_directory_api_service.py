@@ -2,8 +2,12 @@ from typing import List
 import pytest
 from unittest.mock import MagicMock
 from fhir.resources.R4B.bundle import BundleEntry
+from fhir.resources.R4B.codeableconcept import CodeableConcept
+from fhir.resources.R4B.coding import Coding
+from fhir.resources.R4B.identifier import Identifier
 from fhir.resources.R4B.organization import Organization
 from fhir.resources.R4B.endpoint import Endpoint
+from fhir.resources.R4B.reference import Reference
 from yarl import URL
 from app.models.directory.dto import DirectoryDto
 from app.services.api.fhir_api import FhirApi
@@ -35,16 +39,16 @@ def __mock_bundle_entry() -> List[BundleEntry]:
             resource=Organization(
                 id="test-org-12345",
                 identifier=[
-                    {
-                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                        "value": "12345678",
-                    }
+                    Identifier(
+                        system="http://fhir.nl/fhir/NamingSystem/ura",
+                        value="12345678",
+                    )
                 ],
                 name="Example Organization",
                 endpoint=[
-                    {
-                        "reference": "Endpoint/endpoint-test1",
-                    }
+                    Reference(
+                        reference="Endpoint/endpoint-test1",
+                    )
                 ],
             )
         ),
@@ -52,22 +56,22 @@ def __mock_bundle_entry() -> List[BundleEntry]:
             resource=Endpoint(
                 id="endpoint-test1",
                 status="active",
-                connectionType={
-                    "system": "http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
-                    "code": "hl7-fhir-rest",
-                    "display": "HL7 FHIR",
-                },
+                connectionType=Coding(
+                    system="http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
+                    code="hl7-fhir-rest",
+                    display="HL7 FHIR",
+                ),
                 name="test endpoint 1",
                 payloadType=[
-                    {
-                        "coding": [
-                            {
-                                "system": "http://hl7.org/fhir/endpoint-payload-type",
-                                "code": "any",
-                                "display": "Any",
-                            }
+                    CodeableConcept(
+                        coding=[
+                            Coding(
+                                system="http://hl7.org/fhir/endpoint-payload-type",
+                                code="any",
+                                display="Any",
+                            )
                         ]
-                    }
+                    )
                 ],
                 address="http://example.com/fhir",
             )
@@ -80,16 +84,16 @@ def __mock_bundle_entry2() -> List[BundleEntry]:
             resource=Organization(
                 id="test-org-12346",
                 identifier=[
-                    {
-                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                        "value": "12345678",
-                    }
+                    Identifier(
+                        system="http://fhir.nl/fhir/NamingSystem/ura",
+                        value="12345678",
+                    )
                 ],
                 name="Example Organization",
                 endpoint=[
-                    {
-                        "reference": "https://another-origin.example.com/foo/bar",
-                    }
+                    Reference(
+                        reference="https://another-origin.example.com/foo/bar",
+                    )
                 ],
             )
         ),
@@ -101,16 +105,16 @@ def __mock_bundle_entry3() -> List[BundleEntry]:
             resource=Organization(
                 id="test-org-12347",
                 identifier=[
-                    {
-                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                        "value": "12345678",
-                    }
+                    Identifier(
+                        system="http://fhir.nl/fhir/NamingSystem/ura",
+                        value="12345678",
+                    )
                 ],
                 name="Example Organization",
                 endpoint=[
-                    {
-                        "reference": "https://base_url.example.com/fhir/Endpoint/bar",
-                    }
+                    Reference(
+                        reference="https://base_url.example.com/fhir/Endpoint/",
+                    )
                 ],
             )
         ),
@@ -118,22 +122,22 @@ def __mock_bundle_entry3() -> List[BundleEntry]:
             resource=Endpoint(
                 id="bar",
                 status="active",
-                connectionType={
-                    "system": "http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
-                    "code": "hl7-fhir-rest",
-                    "display": "HL7 FHIR",
-                },
+                connectionType=Coding(
+                    system="http://terminology.hl7.org/CodeSystem/endpoint-connection-type",
+                    code="hl7-fhir-rest",
+                    display="HL7 FHIR",
+                ),
                 name="test endpoint 1",
                 payloadType=[
-                    {
-                        "coding": [
-                            {
-                                "system": "http://hl7.org/fhir/endpoint-payload-type",
-                                "code": "any",
-                                "display": "Any",
-                            }
+                    CodeableConcept(
+                        coding=[
+                            Coding(
+                                system="http://hl7.org/fhir/endpoint-payload-type",
+                                code="any",
+                                display="Any",
+                            )
                         ]
-                    }
+                    )
                 ],
                 address="http://example.com/foo/bar",
             )
@@ -146,16 +150,16 @@ def __mock_bundle_entry4() -> List[BundleEntry]:
             resource=Organization(
                 id="test-org-12347",
                 identifier=[
-                    {
-                        "system": "http://fhir.nl/fhir/NamingSystem/ura",
-                        "value": "12345678",
-                    }
+                    Identifier(
+                        system="http://fhir.nl/fhir/NamingSystem/ura",
+                        value="12345678",
+                    )
                 ],
                 name="Example Organization",
                 endpoint=[
-                    {
-                        "reference": "https://base_url.example.com/fhir/Endpoint/bar",
-                    }
+                    Reference(
+                        reference="https://base_url.example.com/fhir/Endpoint/bar",
+                    )
                 ],
             )
         ),
@@ -201,10 +205,16 @@ def test_get_endpoint_address_should_skip_if_multiple_endpoints(
     api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     entries = __mock_bundle_entry()
-    entries[0].resource.endpoint.append( # type: ignore[attr-defined]
-        {
-            "reference": "Endpoint/endpoint-test2",
-        }
+
+    # First entry is Organization
+    assert isinstance(entries[0].resource, Organization)
+    if entries[0].resource.endpoint is None:
+        entries[0].resource.endpoint = []
+
+    entries[0].resource.endpoint.append(
+        Reference(
+            reference="Endpoint/endpoint-test2",
+        )
     )
     mock_fhir_api.search_resource.return_value = (
         None,
@@ -217,7 +227,11 @@ def test_get_endpoint_address_should_skip_if_no_matching_endpoint(
     api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     entries = __mock_bundle_entry()
-    entries[1].resource.id = "some-other-id" # type: ignore[attr-defined]
+
+    # Second entry is Endpoint
+    assert isinstance(entries[1].resource, Endpoint)
+
+    entries[1].resource.id = "some-other-id"
     mock_fhir_api.search_resource.return_value = (
         None,
         entries
@@ -229,8 +243,12 @@ def test_get_endpoint_address_should_skip_if_address_missing(
     api_service: DirectoryApiService, mock_fhir_api: MagicMock
 ) -> None:
     entries = __mock_bundle_entry()
+
+    # Second entry is Endpoint
+    assert isinstance(entries[1].resource, Endpoint)
+
     try:
-        entries[1].resource.address = None # type: ignore[attr-defined]
+        entries[1].resource.address = None
     except Exception:
         pass
     mock_fhir_api.search_resource.return_value = (

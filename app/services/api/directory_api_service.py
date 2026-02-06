@@ -91,11 +91,10 @@ class DirectoryApiService:
         try:
             for entry in entries:
                 resource = entry.resource
-                if isinstance(resource, Organization):
-                    endpoint_refs = resource.endpoint
+                if isinstance(resource, Organization) and resource.id is not None:
                     try:
                         endpoint_address = self.__get_endpoint_address(
-                            resource.id, endpoint_refs, entries
+                            resource.id, resource.endpoint , entries
                         )
                     except ValueError as e:
                         logger.error(f"Failed to get endpoint address for Organization {resource.id}: {e}")
@@ -114,9 +113,9 @@ class DirectoryApiService:
                 status_code=500,
                 detail=f"Failed to retrieve directories: {e}"
             )
-    
+
     def __get_endpoint_address(
-        self, org_id: str, endpoint_refs: List[Reference], entries: List[BundleEntry]
+        self, org_id: str, endpoint_refs: List[Reference] | None, entries: List[BundleEntry]
     ) -> str:
         if not endpoint_refs or len(endpoint_refs) == 0 or len(endpoint_refs) > 1:
             logger.error(f"Organization {org_id} has no endpoints, skipping")

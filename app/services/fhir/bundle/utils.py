@@ -1,18 +1,7 @@
-from typing import List
+from typing import List, cast, get_args
 from fhir.resources.R4B.bundle import Bundle, BundleEntry
 
 from app.models.fhir.types import HttpValidVerbs
-
-HTTP_VERBS: List[HttpValidVerbs] = [
-    "GET",
-    "POST",
-    "PATCH",
-    "POST",
-    "PUT",
-    "HEAD",
-    "DELETE",
-]
-
 
 def get_resource_from_reference(reference: str) -> tuple[str | None, str | None]:
     """
@@ -29,7 +18,7 @@ def get_resource_type_and_id_from_entry(entry: BundleEntry) -> tuple[str, str]:
     """
     Retrieves the resource type and id from a Bundle entry
     """
-    if entry.resource is not None:
+    if entry.resource is not None and entry.resource.id is not None:
         return entry.resource.get_resource_type(), entry.resource.id
 
     if entry.fullUrl is not None:
@@ -50,14 +39,14 @@ def get_request_method_from_entry(entry: BundleEntry) -> HttpValidVerbs:
     if entry_request is None:
         raise ValueError("Entry request cannot be None")
 
-    method: HttpValidVerbs | None = entry_request.method
+    method: str | None = entry_request.method
     if method is None:
         raise ValueError("Entry request method cannot be None")
 
-    if method not in HTTP_VERBS:
+    if method not in get_args(HttpValidVerbs):
         raise ValueError("Unknown Http method}")
 
-    return method
+    return cast(HttpValidVerbs, method)
 
 
 def filter_history_entries(entries: List[BundleEntry]) -> List[BundleEntry]:
@@ -88,8 +77,8 @@ def get_entries_from_bundle_of_bundles(data: Bundle) -> List[BundleEntry]:
     results: List[BundleEntry] = []
 
     for entry in entries:
-        if isinstance(entry, BundleEntry) and isinstance(entry.resource, Bundle):  # type: ignore[attr-defined]
-            nested_bundle = entry.resource  # type: ignore[attr-defined]
+        if isinstance(entry, BundleEntry) and isinstance(entry.resource, Bundle):
+            nested_bundle = entry.resource
             nested_entries = nested_bundle.entry if nested_bundle.entry else []
             results.extend(nested_entries)
     return results

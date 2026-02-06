@@ -9,10 +9,10 @@ REQUIRED_INTERACTIONS = {"read", "search-type", "history-type"}
 def is_capability_statement_valid(data: Dict[str, Any]) -> bool:
     """
     Check if CapabilityStatement supports mCSD requirements.
-    
+
     Args:
         data: Dictionary FHIR CapabilityStatement
-        
+
     Returns:
         True if supports required operations, False otherwise
     """
@@ -32,7 +32,7 @@ def _find_server_rest(capability_statement: CapabilityStatement) -> CapabilitySt
     """Find the server mode REST configuration."""
     if not capability_statement.rest:
         return None
-        
+
     for rest in capability_statement.rest:
         if rest and getattr(rest, 'mode', None) == "server":
             return rest
@@ -50,7 +50,7 @@ def _validate_mcsd_resources(server_rest: CapabilityStatementRest) -> bool:
     for required_resource in {resource.value for resource in McsdResources}:
         if required_resource not in supported_resources:
             return False
-        
+
         # Check if all required interactions are supported
         resource_interactions = supported_resources[required_resource]
         if not REQUIRED_INTERACTIONS.issubset(resource_interactions):
@@ -65,11 +65,14 @@ def _create_supported_resources_map(server_rest: CapabilityStatementRest) -> Dic
     for resource in server_rest.resource: # type: ignore
         if resource and hasattr(resource, 'type'):
             resource_type = resource.type
+            if not isinstance(resource_type, str) or not resource_type:
+                continue
+
             interactions = set()
             if hasattr(resource, 'interaction') and resource.interaction:
                 interactions = {
-                    getattr(interaction, 'code', None) 
-                    for interaction in resource.interaction 
+                    getattr(interaction, 'code', None)
+                    for interaction in resource.interaction
                     if interaction and hasattr(interaction, 'code')
                 }
             supported_resources[resource_type] = interactions

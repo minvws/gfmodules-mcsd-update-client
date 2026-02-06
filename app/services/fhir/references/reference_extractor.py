@@ -24,7 +24,7 @@ def _from_backbone_element(data: BackboneElement) -> List[Reference]:
     """
     Helper function to extract references from Backbone Element.
     """
-    fields = [getattr(data, name) for name in data.elements_sequence()]  # type: ignore
+    fields = [getattr(data, name) for name in data.elements_sequence()]
     fields = [field for field in fields if fields]
 
     refs = filter_none(
@@ -39,7 +39,7 @@ def from_domain_resource(model: DomainResource) -> List[Reference]:
     of the model.
     """
     # extract fields of the model and filter the None values
-    fields = filter_none([getattr(model, field) for field in model.elements_sequence()])  # type: ignore
+    fields = filter_none([getattr(model, field) for field in model.elements_sequence()])
 
     # get the refs on the root level and filter None
     root_refs = filter_none(
