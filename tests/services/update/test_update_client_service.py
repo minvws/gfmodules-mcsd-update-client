@@ -560,8 +560,16 @@ def test_update_with_bundle_posts_bundle_handles_dtos_and_marks_updated(
     out = update_client_service.update_with_bundle([n1, n2, n3, n4])
 
     assert len(posted) == 1
-    assert len(posted[0].entry or []) == 1
-    assert posted[0].entry[0].request.url.endswith("Organization/A")  # type: ignore[index]
+
+    bundle_entries = posted[0].entry or []
+    assert len(bundle_entries) == 1
+
+    request = bundle_entries[0].request
+    assert request is not None
+
+    request_url = request.url
+    assert request_url is not None
+    assert request_url.endswith("Organization/A")
 
     resource_map_service.add_one.assert_called_once_with(add_dto)
     resource_map_service.update_one.assert_called_once_with(upd_dto)

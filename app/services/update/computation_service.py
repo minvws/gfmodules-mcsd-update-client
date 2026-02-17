@@ -57,7 +57,7 @@ class ComputationService:
         return "update"
 
     def hash_directory_entry(self, entry: BundleEntry) -> int | None:
-        if entry.resource is None:
+        if entry.resource is None or not isinstance(entry.resource, DomainResource):
             return None
 
         resource = copy.deepcopy(entry.resource)
@@ -66,7 +66,7 @@ class ComputationService:
         return self.hash_resource(resource)
 
     def hash_update_client_entry(self, entry: BundleEntry) -> int | None:
-        if entry.resource is None:
+        if entry.resource is None or not isinstance(entry.resource, DomainResource):
             return None
 
         resource = copy.deepcopy(entry.resource)

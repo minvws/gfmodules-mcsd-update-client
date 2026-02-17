@@ -2,6 +2,7 @@ import copy
 import logging
 from typing import List
 
+from fhir.resources.R4B.domainresource import DomainResource
 from fhir.resources.R4B.organization import Organization
 
 from app.db.entities.resource_map import ResourceMap
@@ -221,7 +222,7 @@ class AdjacencyMapService:
         Convert the references found in the bundle entry to a list of NodeReferences
         This supports both absolute and relative references.
         """
-        if entry.resource is None:
+        if entry.resource is None or not isinstance(entry.resource, DomainResource):
             return []
 
         ret = []
@@ -252,20 +253,20 @@ class AdjacencyMapService:
                 entry_request = BundleEntryRequest.model_construct(
                     method="DELETE", url=url
                 )
-                entry.request = entry_request  # type: ignore[assignment]
+                entry.request = entry_request
 
                 if resource_map is None:
                     raise InvalidNodeStateException(
                         f"Resource map for {node.resource_id} {node.resource_type} cannot be None and node marked as delete "
                     )
 
-                dto = ResourceMapUpdateDto(
+                resource_map_update_dto = ResourceMapUpdateDto(
                     directory_id=self.directory_id,
                     resource_type=node.resource_type,
                     directory_resource_id=node.resource_id,
                 )
 
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
+                return NodeUpdateData(bundle_entry=entry, resource_map_dto=resource_map_update_dto)
 
             case "new":
                 entry = BundleEntry.model_construct()
@@ -276,10 +277,11 @@ class AdjacencyMapService:
                     raise InvalidNodeStateException(
                         f"Directory entry for {node.resource_id} {node.resource_type} cannot be None and node marked as `new`"
                     )
+
                 resource = copy.deepcopy(node.directory_entry.resource)
-                if resource is None:
+                if not isinstance(resource, DomainResource):
                     raise InvalidNodeStateException(
-                        f"Resource {node.resource_id} {node.resource_type} cannot be None when a node is marked `new`"
+                        f"Resource {node.resource_id} {node.resource_type} must be a DomainResource when a node is marked `new`"
                     )
 
                 # Filter URAs only for Organizations
@@ -291,14 +293,14 @@ class AdjacencyMapService:
                 entry.resource = resource
                 entry.request = entry_request
 
-                dto = ResourceMapDto(
+                resource_map_dto = ResourceMapDto(
                     directory_id=self.directory_id,
                     directory_resource_id=node.resource_id,
                     update_client_resource_id=update_client_resource_id,
                     resource_type=node.resource_type,
                 )
 
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
+                return NodeUpdateData(bundle_entry=entry, resource_map_dto=resource_map_dto)
 
             case "update":
                 entry = BundleEntry.model_construct()
@@ -311,9 +313,9 @@ class AdjacencyMapService:
                     )
 
                 resource = copy.deepcopy(node.directory_entry.resource)
-                if resource is None:
+                if not isinstance(resource, DomainResource):
                     raise InvalidNodeStateException(
-                        f"Resource {node.resource_id} {node.resource_type} cannot be None and node marked as `update`"
+                        f"Resource {node.resource_id} {node.resource_type} must be a DomainResource when a node is marked `update`"
                     )
 
                 # Filter URAs only for Organizations
@@ -330,13 +332,13 @@ class AdjacencyMapService:
                         f"Resource map for {node.resource_id} {node.resource_type} cannot be None and marked as `update`"
                     )
 
-                dto = ResourceMapUpdateDto(
+                resource_map_update_dto = ResourceMapUpdateDto(
                     directory_id=self.directory_id,
                     directory_resource_id=node.resource_id,
                     resource_type=node.resource_type,
                 )
 
-                return NodeUpdateData(bundle_entry=entry, resource_map_dto=dto)
+                return NodeUpdateData(bundle_entry=entry, resource_map_dto=resource_map_update_dto)
 
             case "unknown":
                 raise InvalidNodeStateException(

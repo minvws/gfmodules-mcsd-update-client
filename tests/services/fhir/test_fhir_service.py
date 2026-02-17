@@ -296,8 +296,8 @@ def test_create_bundle_request_should_succeed(fhir_service: FhirService) -> None
     assert len(results.entry) == 1
     assert isinstance(results.entry, List)
     assert isinstance(results.entry[0], BundleEntry)
-    assert isinstance(results.entry[0].request, BundleEntryRequest)  # type: ignore[attr-defined]
-    assert results.entry[0].request.method == "GET"  # type: ignore[attr-defined]
+    assert isinstance(results.entry[0].request, BundleEntryRequest)
+    assert results.entry[0].request.method == "GET"
 
 
 def test_get_entries_from_bundle_of_bundles_should_succeed(

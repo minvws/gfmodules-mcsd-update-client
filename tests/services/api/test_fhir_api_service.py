@@ -110,6 +110,16 @@ def test_build_next_params_should_succeed(
     assert mock_params == actual
 
 
+def test_empty_next_params_should_succeed(
+    fhir_api: FhirApi, base_url: str
+) -> None:
+    url = URL(base_url)
+
+    actual = fhir_api.get_next_params(url)
+
+    assert {} == actual
+
+
 @patch(PATCHED_MODULE)
 def test_get_history_batch_should_succeed(
     mock_response: MagicMock,
