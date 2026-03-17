@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 
 ID_SYSTEM_URA = "http://fhir.nl/fhir/namingsystem/ura" # NOSONAR
 
+
+def _normalize_identifier_system(value: str | None) -> str:
+    if value is None:
+        return ""
+    return value.strip().lower()
+
 def validate_resource_type(resource_type: str) -> bool:
     return any(resource_type in r.value for r in McsdResources)
 
@@ -41,7 +47,7 @@ def collect_errors(bundle: Bundle) -> list[BundleError]:
         return errs
 
     for idx, entry in enumerate(bundle.entry):
-        resp = entry.response  # type: ignore[attr-defined]
+        resp = entry.response
         if not resp:
             continue
 
@@ -54,17 +60,17 @@ def collect_errors(bundle: Bundle) -> list[BundleError]:
     return errs
 
 def get_ura_from_organization(organization: Organization) -> str:
-        """
-        Extracts the URA from the Organization resource's identifier.
-        """
-        for identifier in organization.identifier or []:
-            if isinstance(identifier, Identifier):
-                if identifier.system.lower() == ID_SYSTEM_URA:  # type: ignore
-                    if identifier.value is None:  # type: ignore
-                        raise ValueError("Identifier value is None")
-                    return str(identifier.value)  # type: ignore
-        logger.error(f"Organization {organization.id} has no URA identifier")
-        raise ValueError("No URA identifier found")
+    """
+    Extracts the URA from the Organization resource's identifier.
+    """
+    for identifier in organization.identifier or []:
+        if isinstance(identifier, Identifier):
+            if _normalize_identifier_system(identifier.system) == ID_SYSTEM_URA:
+                if identifier.value is None:
+                    raise ValueError("Identifier value is None")
+                return str(identifier.value)
+    logger.error(f"Organization {organization.id} has no URA identifier")
+    raise ValueError("No URA identifier found")
 
 
 

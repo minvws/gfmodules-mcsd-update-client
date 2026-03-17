@@ -111,12 +111,8 @@ class FhirApi(HttpService):
             raise HTTPException(status_code=500, detail=response.json())
 
         page_bundle = self.__fhir_service.create_bundle(response.json())
-        next_url = None
+        next_url = self.get_next_url_from_page_bundle(page_bundle)
         entries = page_bundle.entry if page_bundle.entry else []
-        if page_bundle.link is not None and len(page_bundle.link) > 0:
-            for link in page_bundle.link:
-                if link.relation == "next":  # type: ignore[attr-defined]
-                    next_url = URL(link.url)  # type: ignore[attr-defined]
 
         return next_url, entries
 
@@ -170,12 +166,30 @@ class FhirApi(HttpService):
         return is_capability_statement_valid(data)
 
     @staticmethod
-    def get_next_params(url: URL) -> Dict[str, Any]:
+    def get_next_params(url: URL | None) -> Dict[str, Any] | None:
         """
         Helper function to extract query parameter from URL.
         """
+        if url is None:
+            return None
+
         query = url.query
         return dict(query)
+
+    @staticmethod
+    def get_next_url_from_page_bundle(
+        bundle: Bundle,
+    ) -> URL | None:
+        """
+        Helper function to extract the next url from a page bundle
+        """
+        next_url = None
+        if bundle.link is not None and len(bundle.link) > 0:
+            for link in bundle.link:
+                if link.relation == "next" and link.url is not None:
+                    next_url = URL(link.url)
+
+        return next_url
 
     def get_history_batch(
         self,
@@ -196,11 +210,7 @@ class FhirApi(HttpService):
             raise HTTPException(status_code=500, detail=response.json())
 
         page_bundle = self.__fhir_service.create_bundle(response.json())
-        next_params = None
+        next_params = self.get_next_params(self.get_next_url_from_page_bundle(page_bundle))
         entries = filter_history_entries(page_bundle.entry) if page_bundle.entry else []
-        if page_bundle.link is not None and len(page_bundle.link) > 0:
-            for link in page_bundle.link:
-                if link.relation == "next":  # type: ignore[attr-defined]
-                    next_params = self.get_next_params(URL(link.url))  # type: ignore[attr-defined]
 
         return next_params, entries

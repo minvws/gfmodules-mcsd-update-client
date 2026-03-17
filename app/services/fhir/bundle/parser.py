@@ -43,7 +43,7 @@ def create_request_bundle(data: list[BundleRequestParams]) -> Bundle:
             method="GET", url=f"/{ref.resource_type}/{ref.id}/_history"
         )
         bundle_entry = BundleEntry.model_construct()
-        bundle_entry.request = bunlde_request  # type: ignore[assignment]
+        bundle_entry.request = bunlde_request
         request_bundle.entry.append(bundle_entry)
 
     return request_bundle
