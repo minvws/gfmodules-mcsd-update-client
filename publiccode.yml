@@ -41,7 +41,7 @@ description:
       The application implements the mCSD (Mobile Care Services Discovery)
       ITI-91 Request Care Services Update transaction for performing CRUD
       operations on FHIR resources via HTTP. The client operates
-      independently of the FHIR store type and can be used to update a caredirectory.
+      independently of the FHIR store type and can be used to update a care directory.
     features:
       - Implementation of mCSD ITI-91 transaction
       - CRUD operations on FHIR resources
