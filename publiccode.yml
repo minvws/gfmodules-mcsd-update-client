@@ -54,8 +54,13 @@ legal:
 maintenance:
   type: internal
   contacts:
-    - name: irealisatie.nl
-      email: helpdesk@irealisatie.nl
+    - name: iRealisatie - Team Generieke Functies
+      email: maintainer@irealisatie.nl
+      affiliation: Ministerie van Volksgezondheid, Welzijn en Sport
+
+organisation:
+  uri: https://www.rijksoverheid.nl/ministeries/ministerie-van-volksgezondheid-welzijn-en-sport
+  name: Ministerie van Volksgezondheid, Welzijn en Sport
 
 localisation:
   localisationReady: false
