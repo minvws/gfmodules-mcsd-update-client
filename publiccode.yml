@@ -1,5 +1,5 @@
 publiccodeYmlVersion: "0.5"
-name: mCSD Update Client
+name: Generieke Functies mCSD Update Client
 url: https://github.com/minvws/gfmodules-mcsd-update-client
 platforms:
   - web
