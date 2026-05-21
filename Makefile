@@ -29,10 +29,10 @@ safety-check: ## Check for security vulnerabilities
 	$(RUN_PREFIX) pip-audit
 
 spelling-check: ## Check spelling mistakes
-	$(RUN_PREFIX) codespell . --skip="./publiccode.yml"
+	$(RUN_PREFIX) codespell . --skip=./publiccode.yml
 
 spelling-fix: ## Fix spelling mistakes
-	$(RUN_PREFIX) codespell . --write-changes --interactive=3  --skip="./publiccode.yml"
+	$(RUN_PREFIX) codespell . --write-changes --interactive=3  --skip=./publiccode.yml
 
 test: ## Runs automated tests
 	$(RUN_PREFIX) pytest --cov --cov-report=term --cov-report=xml
