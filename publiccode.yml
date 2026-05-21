@@ -1,0 +1,63 @@
+publiccodeYmlVersion: "0.5"
+name: mCSD Update Client
+url: https://github.com/minvws/gfmodules-mcsd-update-client
+platforms:
+  - web
+categories:
+  - application-development
+developmentStatus: development
+softwareType: standalone/backend
+intendedAudience:
+  countries:
+    - NL
+  scope:
+    - government
+    - healthcare
+
+description:
+  nl:
+    shortDescription: >-
+      mCSD Update Client voor het uitvoeren van updates op FHIR-gebaseerde
+      zorgdienstregisters via de ITI-91 transactie.
+    longDescription: |
+      De mCSD Update Client is onderdeel van het 'Generieke Functies,
+      lokalisatie en addressering' project van het Ministerie van
+      Volksgezondheid, Welzijn en Sport. De applicatie implementeert de
+      mCSD (Mobile Care Services Discovery) ITI-91 Request Care Services
+      Update transactie voor het uitvoeren van CRUD-operaties op FHIR-
+      resources via HTTP. De client werkt onafhankelijk van het type
+      FHIR-store en kan worden gebruikt om een zorgregister bij te werken.
+    features:
+      - Implementatie van mCSD ITI-91 transactie
+      - CRUD-operaties op FHIR-resources
+      - Ondersteuning voor meerdere FHIR-store types
+  en:
+    shortDescription: >-
+      mCSD Update Client for performing updates on FHIR-based care service
+      directories via the ITI-91 transaction.
+    longDescription: |
+      The mCSD Update Client is part of the 'Generieke Functies, lokalisatie
+      en addressering' project of the Ministry of Health, Welfare and Sport.
+      The application implements the mCSD (Mobile Care Services Discovery)
+      ITI-91 Request Care Services Update transaction for performing CRUD
+      operations on FHIR resources via HTTP. The client operates
+      independently of the FHIR store type and can be used to update a caredirectory.
+    features:
+      - Implementation of mCSD ITI-91 transaction
+      - CRUD operations on FHIR resources
+      - Support for multiple FHIR store types
+
+legal:
+  license: EUPL-1.2
+  mainCopyrightOwner: Ministerie van Volksgezondheid, Welzijn en Sport
+
+maintenance:
+  type: internal
+  contacts:
+    - name: irealisatie.nl
+      email: helpdesk@irealisatie.nl
+
+localisation:
+  localisationReady: false
+  availableLanguages:
+    - en
