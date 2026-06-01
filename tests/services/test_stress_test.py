@@ -24,7 +24,7 @@ MOCK_DATA_PATH = "tests/mock_data"
 TEST_RESULTS_PATH = "tests/testing_results"
 CACHE: Dict[str, Any] = {}
 
-monitor_data = []
+monitor_data: List[Dict[str, float | int]] = []
 monitoring = False
 iteration = 0
 
