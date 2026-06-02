@@ -277,6 +277,11 @@ class UpdateClientService:
                 if node.update_data.resource_map_dto is not None:
                     dtos.append(node.update_data.resource_map_dto)
 
+        if len(bundle.entry) == 0:
+            logger.info("No entries to update in bundle, skipping bundle update...")
+            self.__handle_dtos(dtos)
+            return nodes
+
         _, errors = self.__update_client_fhir_api.post_bundle(bundle)
         if len(errors) > 0:
             logger.error(f"Errors occurred when updating bundle: {errors}")
